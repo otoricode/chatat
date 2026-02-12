@@ -20,6 +20,10 @@ func (m *mockWAProvider) GetBusinessNumber() string {
 	return m.businessNumber
 }
 
+func (m *mockWAProvider) SendMessage(_ context.Context, _ string, _ string) error {
+	return nil
+}
+
 func setupReverseOTPTest(t *testing.T) (*miniredis.Miniredis, *redis.Client, *mockWAProvider) {
 	t.Helper()
 	s := miniredis.RunT(t)

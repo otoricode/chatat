@@ -1,5 +1,7 @@
 package handler_test
 
+import "context"
+
 // mockSMSProvider implements service.SMSProvider for testing.
 type mockSMSProvider struct {
 	lastPhone   string
@@ -20,4 +22,8 @@ type mockWAProvider struct {
 
 func (m *mockWAProvider) GetBusinessNumber() string {
 	return m.businessNumber
+}
+
+func (m *mockWAProvider) SendMessage(_ context.Context, _ string, _ string) error {
+	return nil
 }
