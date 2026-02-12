@@ -32,11 +32,11 @@ Setiap kali menyelesaikan satu phase, jalankan checklist ini:
 - [x] `go test ./...` pass untuk semua repository
 
 ## Phase 03 — API & WebSocket Foundation
-- [ ] HTTP router terkonfigurasi (Chi/Gin)
-- [ ] Middleware stack: auth, CORS, rate limit, logging, recovery
-- [ ] Error handling & response pattern
-- [ ] WebSocket hub: connection, rooms, broadcast
-- [ ] Health check endpoint berfungsi
+- [x] HTTP router terkonfigurasi (Chi/Gin)
+- [x] Middleware stack: auth, CORS, rate limit, logging, recovery
+- [x] Error handling & response pattern
+- [x] WebSocket hub: connection, rooms, broadcast
+- [x] Health check endpoint berfungsi
 
 ## Phase 04 — Authentication System
 - [ ] SMS OTP 6-digit: send, verify, expire
@@ -244,8 +244,8 @@ Setiap kali menyelesaikan satu phase, jalankan checklist ini:
 | Phase | Status | Tanggal Mulai | Tanggal Selesai |
 |-------|--------|---------------|-----------------|
 | 01    | `[x]`  | 2025-07-11    | 2025-07-11      |
-| 02    | `[ ]`  |               |                 |
-| 03    | `[ ]`  |               |                 |
+| 02    | `[x]`  | 2025-07-12    | 2025-07-12      |
+| 03    | `[x]`  | 2025-07-13    | 2025-07-13      |
 | 04    | `[ ]`  |               |                 |
 | 05    | `[ ]`  |               |                 |
 | 06    | `[ ]`  |               |                 |

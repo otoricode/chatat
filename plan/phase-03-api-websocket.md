@@ -82,17 +82,17 @@
    - Skip health check dari log
 
 ### Acceptance Criteria:
-- [ ] Router terdefinisi dengan semua route groups
-- [ ] Auth middleware: block unauthorized, pass authorized
-- [ ] CORS middleware: proper headers set
-- [ ] Rate limit: enforce limit, return 429
-- [ ] Logger: request/response logging
-- [ ] Recovery: panic tidak crash server
+- [x] Router terdefinisi dengan semua route groups
+- [x] Auth middleware: block unauthorized, pass authorized
+- [x] CORS middleware: proper headers set
+- [x] Rate limit: enforce limit, return 429
+- [x] Logger: request/response logging
+- [x] Recovery: panic tidak crash server
 
 ### Testing:
-- [ ] Unit test: auth middleware (valid token, invalid token, expired token)
-- [ ] Unit test: rate limit middleware
-- [ ] Integration test: full request cycle
+- [x] Unit test: auth middleware (valid token, invalid token, expired token)
+- [x] Unit test: rate limit middleware
+- [x] Integration test: full request cycle
 
 ---
 
@@ -166,17 +166,17 @@
    - `ParsePagination(r) (cursor string, limit int)` — parse query params
 
 ### Acceptance Criteria:
-- [ ] Semua response consistent format (success/error)
-- [ ] Error codes standardized
-- [ ] Request body validation
-- [ ] Pagination support (cursor-based)
-- [ ] User ID extractable dari context
+- [x] Semua response consistent format (success/error)
+- [x] Error codes standardized
+- [x] Request body validation
+- [x] Pagination support (cursor-based)
+- [x] User ID extractable dari context
 
 ### Testing:
-- [ ] Unit test: JSON response formatting
-- [ ] Unit test: error response formatting
-- [ ] Unit test: request body decoding
-- [ ] Unit test: pagination parsing
+- [x] Unit test: JSON response formatting
+- [x] Unit test: error response formatting
+- [x] Unit test: request body decoding
+- [x] Unit test: pagination parsing
 
 ---
 
@@ -257,23 +257,23 @@
    - User room: `user:{userID}` (for direct notifications)
 
 ### Acceptance Criteria:
-- [ ] WebSocket upgrade berfungsi
-- [ ] Authentication via token
-- [ ] Client register/unregister
-- [ ] Room join/leave
-- [ ] Send to specific user
-- [ ] Broadcast to room (exclude sender)
-- [ ] Online status tracking
-- [ ] Ping/pong keepalive
-- [ ] Graceful disconnect handling
+- [x] WebSocket upgrade berfungsi
+- [x] Authentication via token
+- [x] Client register/unregister
+- [x] Room join/leave
+- [x] Send to specific user
+- [x] Broadcast to room (exclude sender)
+- [x] Online status tracking
+- [x] Ping/pong keepalive
+- [x] Graceful disconnect handling
 
 ### Testing:
-- [ ] Unit test: hub register/unregister
-- [ ] Unit test: room join/leave
-- [ ] Unit test: broadcast to room
-- [ ] Unit test: send to user
-- [ ] Unit test: online status
-- [ ] Integration test: WebSocket connection lifecycle
+- [x] Unit test: hub register/unregister
+- [x] Unit test: room join/leave
+- [x] Unit test: broadcast to room
+- [x] Unit test: send to user
+- [x] Unit test: online status
+- [x] Integration test: WebSocket connection lifecycle
 
 ---
 
@@ -342,36 +342,36 @@
    ```
 
 ### Acceptance Criteria:
-- [ ] All dependencies wired via NewDependencies
-- [ ] Repository interfaces defined
-- [ ] Service interfaces defined
-- [ ] Handler structs accept services via constructor
-- [ ] Clean separation: handler → service → repository
-- [ ] Main.go clean dan minimal
+- [x] All dependencies wired via NewDependencies
+- [x] Repository interfaces defined
+- [x] Service interfaces defined
+- [x] Handler structs accept services via constructor
+- [x] Clean separation: handler → service → repository
+- [x] Main.go clean dan minimal
 
 ### Testing:
-- [ ] Integration test: server startup
-- [ ] Integration test: health check via HTTP
-- [ ] Integration test: WebSocket connection
+- [x] Integration test: server startup
+- [x] Integration test: health check via HTTP
+- [x] Integration test: WebSocket connection
 
 ---
 
 ## Phase 03 Review
 
 ### Testing Checklist:
-- [ ] `make dev` — server berjalan dengan semua middleware
-- [ ] Health check — `GET /health` return 200
-- [ ] Auth middleware — protected routes return 401 tanpa token
-- [ ] CORS — proper headers di response
-- [ ] Rate limit — return 429 setelah limit
-- [ ] WebSocket — connection establish, ping/pong
-- [ ] `go test ./...` — semua test pass
+- [x] `make dev` — server berjalan dengan semua middleware
+- [x] Health check — `GET /health` return 200
+- [x] Auth middleware — protected routes return 401 tanpa token
+- [x] CORS — proper headers di response
+- [x] Rate limit — return 429 setelah limit
+- [x] WebSocket — connection establish, ping/pong
+- [x] `go test ./...` — semua test pass
 
 ### Review Checklist:
-- [ ] Router structure sesuai REST conventions
-- [ ] Error codes sesuai `docs/error-handling.md`
-- [ ] Middleware order correct (logger first, auth before handlers)
-- [ ] WebSocket properly authenticated
-- [ ] No goroutine leaks
-- [ ] Naming sesuai `docs/naming-conventions.md`
-- [ ] Commit: `feat(api): implement API router and WebSocket hub`
+- [x] Router structure sesuai REST conventions
+- [x] Error codes sesuai `docs/error-handling.md`
+- [x] Middleware order correct (logger first, auth before handlers)
+- [x] WebSocket properly authenticated
+- [x] No goroutine leaks
+- [x] Naming sesuai `docs/naming-conventions.md`
+- [x] Commit: `feat(api): implement API router and WebSocket hub`
