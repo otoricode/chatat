@@ -1,0 +1,286 @@
+package service
+
+import (
+	"context"
+	"testing"
+
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/otoritech/chatat/internal/model"
+	"github.com/otoritech/chatat/pkg/apperror"
+)
+
+type mockUserRepo struct {
+	users     map[uuid.UUID]*model.User
+	byPhone   map[string]*model.User
+	byHash    map[string]*model.User
+	createErr error
+	updateErr error
+	deleteErr error
+}
+
+func newMockUserRepo() *mockUserRepo {
+	return &mockUserRepo{
+		users:   make(map[uuid.UUID]*model.User),
+		byPhone: make(map[string]*model.User),
+		byHash:  make(map[string]*model.User),
+	}
+}
+
+func (m *mockUserRepo) Create(_ context.Context, input model.CreateUserInput) (*model.User, error) {
+	if m.createErr != nil {
+		return nil, m.createErr
+	}
+	u := &model.User{
+		ID:     uuid.New(),
+		Phone:  input.Phone,
+		Name:   input.Name,
+		Avatar: input.Avatar,
+	}
+	m.users[u.ID] = u
+	m.byPhone[u.Phone] = u
+	return u, nil
+}
+
+func (m *mockUserRepo) FindByID(_ context.Context, id uuid.UUID) (*model.User, error) {
+	u, ok := m.users[id]
+	if !ok {
+		return nil, apperror.NotFound("user", id.String())
+	}
+	return u, nil
+}
+
+func (m *mockUserRepo) FindByPhone(_ context.Context, phone string) (*model.User, error) {
+	u, ok := m.byPhone[phone]
+	if !ok {
+		return nil, apperror.NotFound("user", phone)
+	}
+	return u, nil
+}
+
+func (m *mockUserRepo) FindByPhones(_ context.Context, phones []string) ([]*model.User, error) {
+	var result []*model.User
+	for _, p := range phones {
+		if u, ok := m.byPhone[p]; ok {
+			result = append(result, u)
+		}
+	}
+	return result, nil
+}
+
+func (m *mockUserRepo) FindByPhoneHashes(_ context.Context, hashes []string) ([]*model.User, error) {
+	var result []*model.User
+	for _, h := range hashes {
+		if u, ok := m.byHash[h]; ok {
+			result = append(result, u)
+		}
+	}
+	return result, nil
+}
+
+func (m *mockUserRepo) Update(_ context.Context, id uuid.UUID, input model.UpdateUserInput) (*model.User, error) {
+	if m.updateErr != nil {
+		return nil, m.updateErr
+	}
+	u, ok := m.users[id]
+	if !ok {
+		return nil, apperror.NotFound("user", id.String())
+	}
+	if input.Name != nil {
+		u.Name = *input.Name
+	}
+	if input.Avatar != nil {
+		u.Avatar = *input.Avatar
+	}
+	if input.Status != nil {
+		u.Status = *input.Status
+	}
+	return u, nil
+}
+
+func (m *mockUserRepo) UpdatePhoneHash(_ context.Context, id uuid.UUID, hash string) error {
+	u, ok := m.users[id]
+	if !ok {
+		return apperror.NotFound("user", id.String())
+	}
+	u.PhoneHash = hash
+	m.byHash[hash] = u
+	return nil
+}
+
+func (m *mockUserRepo) UpdateLastSeen(_ context.Context, id uuid.UUID) error {
+	if _, ok := m.users[id]; !ok {
+		return apperror.NotFound("user", id.String())
+	}
+	return nil
+}
+
+func (m *mockUserRepo) Delete(_ context.Context, id uuid.UUID) error {
+	if m.deleteErr != nil {
+		return m.deleteErr
+	}
+	if _, ok := m.users[id]; !ok {
+		return apperror.NotFound("user", id.String())
+	}
+	delete(m.users, id)
+	return nil
+}
+
+func (m *mockUserRepo) addUser(u *model.User) {
+	m.users[u.ID] = u
+	m.byPhone[u.Phone] = u
+	if u.PhoneHash != "" {
+		m.byHash[u.PhoneHash] = u
+	}
+}
+
+func TestUserService_GetProfile(t *testing.T) {
+	repo := newMockUserRepo()
+	svc := NewUserService(repo)
+
+	userID := uuid.New()
+	repo.addUser(&model.User{ID: userID, Phone: "+6281234567890", Name: "Test", Avatar: "\U0001F60A"})
+
+	t.Run("success", func(t *testing.T) {
+		user, err := svc.GetProfile(context.Background(), userID)
+		require.NoError(t, err)
+		assert.Equal(t, "Test", user.Name)
+	})
+
+	t.Run("not found", func(t *testing.T) {
+		_, err := svc.GetProfile(context.Background(), uuid.New())
+		require.Error(t, err)
+		assert.True(t, apperror.IsNotFound(err))
+	})
+}
+
+func TestUserService_UpdateProfile(t *testing.T) {
+	repo := newMockUserRepo()
+	svc := NewUserService(repo)
+
+	userID := uuid.New()
+	repo.addUser(&model.User{ID: userID, Phone: "+6281234567890", Name: "Old", Avatar: "\U0001F60A"})
+
+	t.Run("update name", func(t *testing.T) {
+		name := "New"
+		user, err := svc.UpdateProfile(context.Background(), userID, model.UpdateUserInput{Name: &name})
+		require.NoError(t, err)
+		assert.Equal(t, "New", user.Name)
+	})
+
+	t.Run("empty name rejected", func(t *testing.T) {
+		empty := ""
+		_, err := svc.UpdateProfile(context.Background(), userID, model.UpdateUserInput{Name: &empty})
+		require.Error(t, err)
+	})
+
+	t.Run("invalid avatar rejected", func(t *testing.T) {
+		bad := "abc"
+		_, err := svc.UpdateProfile(context.Background(), userID, model.UpdateUserInput{Avatar: &bad})
+		require.Error(t, err)
+	})
+
+	t.Run("status too long rejected", func(t *testing.T) {
+		long := ""
+		for i := 0; i < 201; i++ {
+			long += "a"
+		}
+		_, err := svc.UpdateProfile(context.Background(), userID, model.UpdateUserInput{Status: &long})
+		require.Error(t, err)
+	})
+}
+
+func TestUserService_SetupProfile(t *testing.T) {
+	repo := newMockUserRepo()
+	svc := NewUserService(repo)
+
+	userID := uuid.New()
+	repo.addUser(&model.User{ID: userID, Phone: "+6281234567890", Name: "", Avatar: ""})
+
+	t.Run("success", func(t *testing.T) {
+		user, err := svc.SetupProfile(context.Background(), userID, "Andi", "\U0001F60A")
+		require.NoError(t, err)
+		assert.Equal(t, "Andi", user.Name)
+		assert.Equal(t, "\U0001F60A", user.Avatar)
+	})
+
+	t.Run("name required", func(t *testing.T) {
+		_, err := svc.SetupProfile(context.Background(), userID, "", "\U0001F60A")
+		require.Error(t, err)
+	})
+
+	t.Run("default avatar", func(t *testing.T) {
+		user, err := svc.SetupProfile(context.Background(), userID, "Budi", "")
+		require.NoError(t, err)
+		assert.Equal(t, "\U0001F464", user.Avatar)
+	})
+}
+
+func TestUserService_UpdateLastSeen_Debounce(t *testing.T) {
+	repo := newMockUserRepo()
+	svc := NewUserService(repo).(*userService)
+	svc.debounceDur = 0 // disable debounce for test
+
+	userID := uuid.New()
+	repo.addUser(&model.User{ID: userID, Phone: "+6281234567890", Name: "Test"})
+
+	err := svc.UpdateLastSeen(context.Background(), userID)
+	require.NoError(t, err)
+}
+
+func TestUserService_DeleteAccount(t *testing.T) {
+	repo := newMockUserRepo()
+	svc := NewUserService(repo)
+
+	userID := uuid.New()
+	repo.addUser(&model.User{ID: userID, Phone: "+6281234567890", Name: "Test"})
+
+	t.Run("success", func(t *testing.T) {
+		err := svc.DeleteAccount(context.Background(), userID)
+		require.NoError(t, err)
+
+		// Verify deleted
+		_, err = svc.GetProfile(context.Background(), userID)
+		require.Error(t, err)
+		assert.True(t, apperror.IsNotFound(err))
+	})
+
+	t.Run("not found", func(t *testing.T) {
+		err := svc.DeleteAccount(context.Background(), uuid.New())
+		require.Error(t, err)
+		assert.True(t, apperror.IsNotFound(err))
+	})
+}
+
+func TestIsValidEmoji(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		want  bool
+	}{
+		{"smiling face", "\U0001F60A", true},
+		{"person", "\U0001F464", true},
+		{"flag composite", "\U0001F1EE\U0001F1E9", true},
+		{"ascii", "abc", false},
+		{"empty", "", false},
+		{"number", "123", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, isValidEmoji(tt.input))
+		})
+	}
+}
+
+func TestHashPhone(t *testing.T) {
+	h1 := hashPhone("+6281234567890")
+	h2 := hashPhone("+6281234567890")
+	h3 := hashPhone("+6289999999999")
+
+	assert.Equal(t, h1, h2)
+	assert.NotEqual(t, h1, h3)
+	assert.Len(t, h1, 64) // SHA-256 hex is 64 chars
+}
