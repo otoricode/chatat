@@ -63,7 +63,13 @@ func NewDependencies(cfg *config.Config, db *pgxpool.Pool, redisClient *redis.Cl
 
 	// Services
 	smsProvider := service.NewLogSMSProvider()
-	waProvider := service.NewLogWhatsAppProvider("+628001234567")
+
+	var waProvider service.WhatsAppProvider
+	if cfg.WABaseURL != "" && cfg.WABusinessPhone != "" {
+		waProvider = service.NewGOWAProvider(cfg.WABaseURL, cfg.WABusinessPhone)
+	} else {
+		waProvider = service.NewLogWhatsAppProvider("+628001234567")
+	}
 
 	otpService := service.NewOTPService(redisClient, smsProvider, service.DefaultOTPConfig())
 	reverseOTPService := service.NewReverseOTPService(redisClient, waProvider, 0)
@@ -72,7 +78,7 @@ func NewDependencies(cfg *config.Config, db *pgxpool.Pool, redisClient *redis.Cl
 
 	// Auth handler
 	authHandler := NewAuthHandler(otpService, reverseOTPService, tokenService, sessionService, userRepo)
-	webhookHandler := NewWebhookHandler(reverseOTPService)
+	webhookHandler := NewWebhookHandler(reverseOTPService, cfg.WAWebhookSecret)
 
 	deps := &Dependencies{
 		Config: cfg,
