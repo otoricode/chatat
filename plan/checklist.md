@@ -18,11 +18,11 @@ Setiap kali menyelesaikan satu phase, jalankan checklist ini:
 ---
 
 ## Phase 01 — Project Setup
-- [ ] Go project initialized (`go mod init`)
-- [ ] React Native project initialized (CLI/Expo)
-- [ ] PostgreSQL + Redis Docker berjalan
-- [ ] Dev tools siap (golangci-lint, ESLint, Prettier)
-- [ ] Skeleton berjalan tanpa error
+- [x] Go project initialized (`go mod init`)
+- [x] React Native project initialized (CLI/Expo)
+- [x] PostgreSQL + Redis Docker berjalan
+- [x] Dev tools siap (golangci-lint, ESLint, Prettier)
+- [x] Skeleton berjalan tanpa error
 
 ## Phase 02 — Database Layer
 - [ ] PostgreSQL database terbuat
@@ -243,7 +243,7 @@ Setiap kali menyelesaikan satu phase, jalankan checklist ini:
 
 | Phase | Status | Tanggal Mulai | Tanggal Selesai |
 |-------|--------|---------------|-----------------|
-| 01    | `[ ]`  |               |                 |
+| 01    | `[x]`  | 2025-07-11    | 2025-07-11      |
 | 02    | `[ ]`  |               |                 |
 | 03    | `[ ]`  |               |                 |
 | 04    | `[ ]`  |               |                 |
