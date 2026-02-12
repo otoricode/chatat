@@ -6,6 +6,7 @@ import (
 
 	"github.com/otoritech/chatat/internal/config"
 	"github.com/otoritech/chatat/internal/repository"
+	"github.com/otoritech/chatat/internal/service"
 	"github.com/otoritech/chatat/internal/ws"
 )
 
@@ -15,6 +16,12 @@ type Dependencies struct {
 	DB     *pgxpool.Pool
 	Redis  *redis.Client
 	Hub    *ws.Hub
+
+	// Services
+	OTPService     service.OTPService
+	ReverseOTP     service.ReverseOTPService
+	TokenService   service.TokenService
+	SessionService service.SessionService
 
 	// Repositories
 	UserRepo        repository.UserRepository
@@ -28,8 +35,9 @@ type Dependencies struct {
 	DocHistoryRepo  repository.DocumentHistoryRepository
 	TopicMsgRepo    repository.TopicMessageRepository
 
-	// Handlers (stubs for now, will be implemented in later phases)
-	AuthHandler     *AuthStubHandler
+	// Handlers
+	AuthHandler     *AuthHandler
+	WebhookHandler  *WebhookHandler
 	UserHandler     *UserStubHandler
 	ContactHandler  *ContactStubHandler
 	ChatHandler     *ChatStubHandler
@@ -53,11 +61,29 @@ func NewDependencies(cfg *config.Config, db *pgxpool.Pool, redisClient *redis.Cl
 	docHistoryRepo := repository.NewDocumentHistoryRepository(db)
 	topicMsgRepo := repository.NewTopicMessageRepository(db)
 
+	// Services
+	smsProvider := service.NewLogSMSProvider()
+	waProvider := service.NewLogWhatsAppProvider("+628001234567")
+
+	otpService := service.NewOTPService(redisClient, smsProvider, service.DefaultOTPConfig())
+	reverseOTPService := service.NewReverseOTPService(redisClient, waProvider, 0)
+	tokenService := service.NewTokenService(redisClient, service.DefaultTokenConfig(cfg.JWTSecret))
+	sessionService := service.NewSessionService(redisClient, tokenService, 0)
+
+	// Auth handler
+	authHandler := NewAuthHandler(otpService, reverseOTPService, tokenService, sessionService, userRepo)
+	webhookHandler := NewWebhookHandler(reverseOTPService)
+
 	deps := &Dependencies{
 		Config: cfg,
 		DB:     db,
 		Redis:  redisClient,
 		Hub:    hub,
+
+		OTPService:     otpService,
+		ReverseOTP:     reverseOTPService,
+		TokenService:   tokenService,
+		SessionService: sessionService,
 
 		UserRepo:        userRepo,
 		ChatRepo:        chatRepo,
@@ -70,8 +96,8 @@ func NewDependencies(cfg *config.Config, db *pgxpool.Pool, redisClient *redis.Cl
 		DocHistoryRepo:  docHistoryRepo,
 		TopicMsgRepo:    topicMsgRepo,
 
-		// Stub handlers for routes not yet implemented
-		AuthHandler:     &AuthStubHandler{},
+		AuthHandler:     authHandler,
+		WebhookHandler:  webhookHandler,
 		UserHandler:     &UserStubHandler{},
 		ContactHandler:  &ContactStubHandler{},
 		ChatHandler:     &ChatStubHandler{},

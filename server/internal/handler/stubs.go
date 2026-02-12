@@ -15,18 +15,6 @@ func notImplemented(w http.ResponseWriter, _ *http.Request) {
 	response.OK(w, notImplementedResponse{Message: "not implemented yet"})
 }
 
-// AuthStubHandler is a placeholder for auth endpoints.
-type AuthStubHandler struct{}
-
-func (h *AuthStubHandler) SendOTP(w http.ResponseWriter, r *http.Request)   { notImplemented(w, r) }
-func (h *AuthStubHandler) VerifyOTP(w http.ResponseWriter, r *http.Request) { notImplemented(w, r) }
-func (h *AuthStubHandler) InitReverseOTP(w http.ResponseWriter, r *http.Request) {
-	notImplemented(w, r)
-}
-func (h *AuthStubHandler) CheckReverseOTP(w http.ResponseWriter, r *http.Request) {
-	notImplemented(w, r)
-}
-
 // UserStubHandler is a placeholder for user endpoints.
 type UserStubHandler struct{}
 
