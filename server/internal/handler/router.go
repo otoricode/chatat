@@ -61,11 +61,15 @@ func NewRouter(cfg *config.Config, deps *Dependencies) *chi.Mux {
 			r.Route("/users", func(r chi.Router) {
 				r.Get("/me", deps.UserHandler.GetMe)
 				r.Put("/me", deps.UserHandler.UpdateMe)
+				r.Post("/me/setup", deps.UserHandler.SetupProfile)
+				r.Delete("/me", deps.UserHandler.DeleteAccount)
 			})
 
 			r.Route("/contacts", func(r chi.Router) {
 				r.Post("/sync", deps.ContactHandler.Sync)
 				r.Get("/", deps.ContactHandler.List)
+				r.Get("/search", deps.ContactHandler.Search)
+				r.Get("/{userId}", deps.ContactHandler.GetProfile)
 			})
 
 			r.Route("/chats", func(r chi.Router) {

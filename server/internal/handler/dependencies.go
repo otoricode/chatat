@@ -22,9 +22,12 @@ type Dependencies struct {
 	ReverseOTP     service.ReverseOTPService
 	TokenService   service.TokenService
 	SessionService service.SessionService
+	UserService    service.UserService
+	ContactService service.ContactService
 
 	// Repositories
 	UserRepo        repository.UserRepository
+	ContactRepo     repository.ContactRepository
 	ChatRepo        repository.ChatRepository
 	MessageRepo     repository.MessageRepository
 	TopicRepo       repository.TopicRepository
@@ -38,8 +41,8 @@ type Dependencies struct {
 	// Handlers
 	AuthHandler     *AuthHandler
 	WebhookHandler  *WebhookHandler
-	UserHandler     *UserStubHandler
-	ContactHandler  *ContactStubHandler
+	UserHandler     *UserHandler
+	ContactHandler  *ContactHandler
 	ChatHandler     *ChatStubHandler
 	TopicHandler    *TopicStubHandler
 	DocumentHandler *DocumentStubHandler
@@ -51,6 +54,7 @@ type Dependencies struct {
 func NewDependencies(cfg *config.Config, db *pgxpool.Pool, redisClient *redis.Client, hub *ws.Hub) *Dependencies {
 	// Repositories
 	userRepo := repository.NewUserRepository(db)
+	contactRepo := repository.NewContactRepository(db)
 	chatRepo := repository.NewChatRepository(db)
 	messageRepo := repository.NewMessageRepository(db)
 	topicRepo := repository.NewTopicRepository(db)
@@ -75,10 +79,17 @@ func NewDependencies(cfg *config.Config, db *pgxpool.Pool, redisClient *redis.Cl
 	reverseOTPService := service.NewReverseOTPService(redisClient, waProvider, 0)
 	tokenService := service.NewTokenService(redisClient, service.DefaultTokenConfig(cfg.JWTSecret))
 	sessionService := service.NewSessionService(redisClient, tokenService, 0)
+	userService := service.NewUserService(userRepo)
+	contactService := service.NewContactService(userRepo, contactRepo, hub)
+
+	// Status notifier: broadcasts online/offline events to contacts
+	_ = service.NewStatusNotifier(hub, contactRepo, userRepo, redisClient)
 
 	// Auth handler
 	authHandler := NewAuthHandler(otpService, reverseOTPService, tokenService, sessionService, userRepo)
 	webhookHandler := NewWebhookHandler(reverseOTPService, cfg.WAWebhookSecret)
+	userHandler := NewUserHandler(userService)
+	contactHandler := NewContactHandler(contactService)
 
 	deps := &Dependencies{
 		Config: cfg,
@@ -90,8 +101,11 @@ func NewDependencies(cfg *config.Config, db *pgxpool.Pool, redisClient *redis.Cl
 		ReverseOTP:     reverseOTPService,
 		TokenService:   tokenService,
 		SessionService: sessionService,
+		UserService:    userService,
+		ContactService: contactService,
 
 		UserRepo:        userRepo,
+		ContactRepo:     contactRepo,
 		ChatRepo:        chatRepo,
 		MessageRepo:     messageRepo,
 		TopicRepo:       topicRepo,
@@ -104,8 +118,8 @@ func NewDependencies(cfg *config.Config, db *pgxpool.Pool, redisClient *redis.Cl
 
 		AuthHandler:     authHandler,
 		WebhookHandler:  webhookHandler,
-		UserHandler:     &UserStubHandler{},
-		ContactHandler:  &ContactStubHandler{},
+		UserHandler:     userHandler,
+		ContactHandler:  contactHandler,
 		ChatHandler:     &ChatStubHandler{},
 		TopicHandler:    &TopicStubHandler{},
 		DocumentHandler: &DocumentStubHandler{},

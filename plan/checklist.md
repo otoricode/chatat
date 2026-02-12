@@ -45,11 +45,11 @@ Setiap kali menyelesaikan satu phase, jalankan checklist ini:
 - [x] Phone number normalization (E.164)
 - [x] Session management: satu device per nomor
 
-## Phase 05 — User & Contact System
-- [ ] User profile CRUD (name, avatar emoji, status)
-- [ ] Contact sync API: upload hashed phone numbers, match registered users
-- [ ] Contact list endpoint + online/last seen status
-- [ ] User search by phone number
+## Phase 05 — User & Contact System ✅ (2025-06-13)
+- [x] User profile CRUD (name, avatar emoji, status)
+- [x] Contact sync API: upload hashed phone numbers, match registered users
+- [x] Contact list endpoint + online/last seen status
+- [x] User search by phone number
 
 ## Phase 06 — Mobile App Shell
 - [ ] React Navigation: stack + bottom tabs (Chat, Dokumen)
@@ -246,8 +246,8 @@ Setiap kali menyelesaikan satu phase, jalankan checklist ini:
 | 01    | `[x]`  | 2025-07-11    | 2025-07-11      |
 | 02    | `[x]`  | 2025-07-12    | 2025-07-12      |
 | 03    | `[x]`  | 2025-07-13    | 2025-07-13      |
-| 04    | `[ ]`  |               |                 |
-| 05    | `[ ]`  |               |                 |
+| 04    | `[x]`  | 2025-06-13    | 2025-06-13      |
+| 05    | `[x]`  | 2025-06-13    | 2025-06-13      |
 | 06    | `[ ]`  |               |                 |
 | 07    | `[ ]`  |               |                 |
 | 08    | `[ ]`  |               |                 |
