@@ -53,16 +53,16 @@
 7. Test koneksi dan migration runner
 
 ### Acceptance Criteria:
-- [ ] Connection pool terbuat dan berfungsi
-- [ ] Migration runner auto-run saat startup
-- [ ] `make migrate-up` dan `make migrate-down` bekerja
-- [ ] `make migrate-create name=xxx` membuat file baru
-- [ ] Concurrent query tidak deadlock
+- [x] Connection pool terbuat dan berfungsi
+- [x] Migration runner auto-run saat startup
+- [x] `make migrate-up` dan `make migrate-down` bekerja
+- [x] `make migrate-create name=xxx` membuat file baru
+- [x] Concurrent query tidak deadlock
 
 ### Testing:
-- [ ] Unit test: pool creation
-- [ ] Unit test: migration runner (up & down)
-- [ ] Unit test: concurrent queries
+- [x] Unit test: pool creation
+- [x] Unit test: migration runner (up & down)
+- [x] Unit test: concurrent queries
 
 ---
 
@@ -98,15 +98,15 @@
 3. Test connection dari main.go
 
 ### Acceptance Criteria:
-- [ ] Redis client terbuat dan berfungsi
-- [ ] Ping test sukses
-- [ ] Set/Get/Delete operations bekerja
-- [ ] TTL-based expiry bekerja
+- [x] Redis client terbuat dan berfungsi
+- [x] Ping test sukses
+- [x] Set/Get/Delete operations bekerja
+- [x] TTL-based expiry bekerja
 
 ### Testing:
-- [ ] Unit test: connection
-- [ ] Unit test: set/get with TTL
-- [ ] Unit test: pub/sub basic
+- [x] Unit test: connection
+- [x] Unit test: set/get with TTL
+- [x] Unit test: pub/sub basic
 
 ---
 
@@ -173,21 +173,21 @@
    - `Delete(ctx, id) error`
 
 ### Acceptance Criteria:
-- [ ] Migration membuat tabel `users`
-- [ ] CRUD operations berfungsi
-- [ ] Phone number UNIQUE constraint enforced
-- [ ] UUID auto-generated
-- [ ] `FindByPhones` batch query berfungsi untuk contact matching
-- [ ] Index pada phone dan last_seen
+- [x] Migration membuat tabel `users`
+- [x] CRUD operations berfungsi
+- [x] Phone number UNIQUE constraint enforced
+- [x] UUID auto-generated
+- [x] `FindByPhones` batch query berfungsi untuk contact matching
+- [x] Index pada phone dan last_seen
 
 ### Testing:
-- [ ] Unit test: create user
-- [ ] Unit test: find by id (exists dan not found)
-- [ ] Unit test: find by phone
-- [ ] Unit test: find by phones (batch)
-- [ ] Unit test: update user
-- [ ] Unit test: delete user
-- [ ] Unit test: duplicate phone handling
+- [x] Unit test: create user
+- [x] Unit test: find by id (exists dan not found)
+- [x] Unit test: find by phone
+- [x] Unit test: find by phones (batch)
+- [x] Unit test: update user
+- [x] Unit test: delete user
+- [x] Unit test: duplicate phone handling
 
 ---
 
@@ -263,22 +263,22 @@
      - `Search(ctx, chatID, query) ([]*Message, error)`
 
 ### Acceptance Criteria:
-- [ ] Chat type check constraint berfungsi
-- [ ] Member role check constraint berfungsi
-- [ ] CASCADE delete: hapus chat → hapus members + messages
-- [ ] Personal chat: unique pair (user1, user2)
-- [ ] Cursor pagination pada messages berfungsi
-- [ ] Reply to message reference berfungsi
+- [x] Chat type check constraint berfungsi
+- [x] Member role check constraint berfungsi
+- [x] CASCADE delete: hapus chat → hapus members + messages
+- [x] Personal chat: unique pair (user1, user2)
+- [x] Cursor pagination pada messages berfungsi
+- [x] Reply to message reference berfungsi
 
 ### Testing:
-- [ ] Unit test: create personal chat
-- [ ] Unit test: create group chat
-- [ ] Unit test: add/remove member
-- [ ] Unit test: send message
-- [ ] Unit test: reply to message
-- [ ] Unit test: cursor pagination (order by created_at DESC)
-- [ ] Unit test: cascade delete
-- [ ] Unit test: soft delete message
+- [x] Unit test: create personal chat
+- [x] Unit test: create group chat
+- [x] Unit test: add/remove member
+- [x] Unit test: send message
+- [x] Unit test: reply to message
+- [x] Unit test: cursor pagination (order by created_at DESC)
+- [x] Unit test: cascade delete
+- [x] Unit test: soft delete message
 
 ---
 
@@ -359,17 +359,17 @@
 5. Buat `internal/repository/topic_message_repo.go` (same pattern as message_repo)
 
 ### Acceptance Criteria:
-- [ ] Topic parent must be a valid chat
-- [ ] Topic members must be members of parent chat
-- [ ] CASCADE: delete chat → delete topics → delete topic_messages
-- [ ] Topic messages support same features as chat messages
+- [x] Topic parent must be a valid chat
+- [x] Topic members must be members of parent chat
+- [x] CASCADE: delete chat → delete topics → delete topic_messages
+- [x] Topic messages support same features as chat messages
 
 ### Testing:
-- [ ] Unit test: create topic from personal chat
-- [ ] Unit test: create topic from group chat
-- [ ] Unit test: topic member validation (must be parent member)
-- [ ] Unit test: topic message CRUD
-- [ ] Unit test: cascade delete chain
+- [x] Unit test: create topic from personal chat
+- [x] Unit test: create topic from group chat
+- [x] Unit test: topic member validation (must be parent member)
+- [x] Unit test: topic message CRUD
+- [x] Unit test: cascade delete chain
 
 ---
 
@@ -493,24 +493,24 @@
      - `ListByDocument(ctx, docID) ([]*DocumentHistory, error)`
 
 ### Acceptance Criteria:
-- [ ] Document context: chat_id XOR topic_id XOR standalone
-- [ ] Collaborator roles enforced
-- [ ] Signer tracking with timestamp
-- [ ] Block sort_order untuk ordering
-- [ ] Block parent (untuk toggle children)
-- [ ] Locked document tidak bisa di-update (enforce di service layer)
-- [ ] Tags many-to-many berfungsi
-- [ ] CASCADE delete: document → blocks, collaborators, signers, tags, history
+- [x] Document context: chat_id XOR topic_id XOR standalone
+- [x] Collaborator roles enforced
+- [x] Signer tracking with timestamp
+- [x] Block sort_order untuk ordering
+- [x] Block parent (untuk toggle children)
+- [x] Locked document tidak bisa di-update (enforce di service layer)
+- [x] Tags many-to-many berfungsi
+- [x] CASCADE delete: document → blocks, collaborators, signers, tags, history
 
 ### Testing:
-- [ ] Unit test: create document (in chat, in topic, standalone)
-- [ ] Unit test: collaborator CRUD
-- [ ] Unit test: signer flow (add, sign, check all signed)
-- [ ] Unit test: lock document (manual + signatures)
-- [ ] Unit test: block CRUD + reorder
-- [ ] Unit test: tag CRUD
-- [ ] Unit test: history logging
-- [ ] Unit test: cascade delete
+- [x] Unit test: create document (in chat, in topic, standalone)
+- [x] Unit test: collaborator CRUD
+- [x] Unit test: signer flow (add, sign, check all signed)
+- [x] Unit test: lock document (manual + signatures)
+- [x] Unit test: block CRUD + reorder
+- [x] Unit test: tag CRUD
+- [x] Unit test: history logging
+- [x] Unit test: cascade delete
 
 ---
 
@@ -566,19 +566,19 @@
    - `Delete(ctx, id) error`
 
 ### Acceptance Criteria:
-- [ ] Entity bisa free-form (nama + type bebas)
-- [ ] Contact entity link ke user
-- [ ] Many-to-many: document ↔ entity
-- [ ] Entity global per user (bisa dipakai di dokumen mana saja)
-- [ ] Search entity by name
+- [x] Entity bisa free-form (nama + type bebas)
+- [x] Contact entity link ke user
+- [x] Many-to-many: document ↔ entity
+- [x] Entity global per user (bisa dipakai di dokumen mana saja)
+- [x] Search entity by name
 
 ### Testing:
-- [ ] Unit test: create entity (regular + contact)
-- [ ] Unit test: link/unlink entity to document
-- [ ] Unit test: list entities by document
-- [ ] Unit test: list documents by entity
-- [ ] Unit test: search entity
-- [ ] Unit test: cascade delete
+- [x] Unit test: create entity (regular + contact)
+- [x] Unit test: link/unlink entity to document
+- [x] Unit test: list entities by document
+- [x] Unit test: list documents by entity
+- [x] Unit test: search entity
+- [x] Unit test: cascade delete
 
 ---
 
@@ -620,35 +620,35 @@
    - `GetUnreadCount(ctx, chatID, userID) (int, error)`
 
 ### Acceptance Criteria:
-- [ ] Status: sent → delivered → read (one-way)
-- [ ] Per-user tracking untuk group messages
-- [ ] Batch mark-as-read berfungsi
-- [ ] Unread count query efisien
+- [x] Status: sent → delivered → read (one-way)
+- [x] Per-user tracking untuk group messages
+- [x] Batch mark-as-read berfungsi
+- [x] Unread count query efisien
 
 ### Testing:
-- [ ] Unit test: status transitions
-- [ ] Unit test: batch mark as read
-- [ ] Unit test: unread count
-- [ ] Unit test: cascade delete
+- [x] Unit test: status transitions
+- [x] Unit test: batch mark as read
+- [x] Unit test: unread count
+- [x] Unit test: cascade delete
 
 ---
 
 ## Phase 02 Review
 
 ### Testing Checklist:
-- [ ] Semua migration up tanpa error
-- [ ] Semua migration down tanpa error (rollback)
-- [ ] Semua repository CRUD tested
-- [ ] Cascade delete tested end-to-end
-- [ ] Constraint violations handled gracefully
-- [ ] Concurrent access tested
-- [ ] `go test ./...` — semua test pass
+- [x] Semua migration up tanpa error
+- [x] Semua migration down tanpa error (rollback)
+- [x] Semua repository CRUD tested
+- [x] Cascade delete tested end-to-end
+- [x] Constraint violations handled gracefully
+- [x] Concurrent access tested
+- [x] `go test ./...` — semua test pass
 
 ### Review Checklist:
-- [ ] Schema sesuai `spesifikasi-chatat.md` data structures
-- [ ] Model structs sesuai `docs/go-style-guide.md`
-- [ ] Error handling sesuai `docs/error-handling.md`
-- [ ] Naming sesuai `docs/naming-conventions.md`
-- [ ] Migration files sequential dan atomic
-- [ ] No panic/fatal di repository code
-- [ ] Commit: `feat(db): implement database layer with migrations`
+- [x] Schema sesuai `spesifikasi-chatat.md` data structures
+- [x] Model structs sesuai `docs/go-style-guide.md`
+- [x] Error handling sesuai `docs/error-handling.md`
+- [x] Naming sesuai `docs/naming-conventions.md`
+- [x] Migration files sequential dan atomic
+- [x] No panic/fatal di repository code
+- [x] Commit: `feat(db): implement database layer with migrations`

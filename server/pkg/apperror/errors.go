@@ -107,3 +107,23 @@ func Internal(err error) *AppError {
 		Err:        err,
 	}
 }
+
+// IsNotFound checks whether an error is a not-found error.
+func IsNotFound(err error) bool {
+	return errors.Is(err, ErrNotFound)
+}
+
+// IsConflict checks whether an error is a conflict error.
+func IsConflict(err error) bool {
+	return errors.Is(err, ErrConflict)
+}
+
+// IsForbidden checks whether an error is a forbidden error.
+func IsForbidden(err error) bool {
+	return errors.Is(err, ErrForbidden)
+}
+
+// IsUnauthorized checks whether an error is an unauthorized error.
+func IsUnauthorized(err error) bool {
+	return errors.Is(err, ErrUnauthorized)
+}

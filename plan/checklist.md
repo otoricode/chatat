@@ -25,11 +25,11 @@ Setiap kali menyelesaikan satu phase, jalankan checklist ini:
 - [x] Skeleton berjalan tanpa error
 
 ## Phase 02 — Database Layer
-- [ ] PostgreSQL database terbuat
-- [ ] Migration system berjalan (golang-migrate)
-- [ ] Semua tabel core terbuat: users, chats, messages, topics, documents, blocks, entities
-- [ ] Repository pattern untuk setiap tabel
-- [ ] `go test ./...` pass untuk semua repository
+- [x] PostgreSQL database terbuat
+- [x] Migration system berjalan (golang-migrate)
+- [x] Semua tabel core terbuat: users, chats, messages, topics, documents, blocks, entities
+- [x] Repository pattern untuk setiap tabel
+- [x] `go test ./...` pass untuk semua repository
 
 ## Phase 03 — API & WebSocket Foundation
 - [ ] HTTP router terkonfigurasi (Chi/Gin)

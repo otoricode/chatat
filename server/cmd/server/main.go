@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/otoritech/chatat/internal/config"
+	"github.com/otoritech/chatat/internal/database"
 	"github.com/otoritech/chatat/pkg/response"
 )
 
@@ -39,8 +41,37 @@ func main() {
 		Str("port", cfg.Port).
 		Msg("starting chatat server")
 
+	// Run database migrations
+	migrationsPath := filepath.Join("migrations")
+	if err := database.RunMigrations(cfg.DatabaseURL, migrationsPath); err != nil {
+		log.Fatal().Err(err).Msg("failed to run database migrations")
+	}
+
+	// Create database connection pool
+	ctx := context.Background()
+	dbPool, err := database.NewPool(ctx, cfg.DatabaseURL)
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to create database pool")
+	}
+	defer dbPool.Close()
+
+	// Create Redis client
+	redisClient, err := database.NewRedisClient(cfg.RedisURL)
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to create redis client")
+	}
+	defer func() {
+		if err := redisClient.Close(); err != nil {
+			log.Error().Err(err).Msg("failed to close redis client")
+		}
+	}()
+
 	// Create router
 	r := newRouter(cfg)
+
+	// Avoid unused variable warnings — these will be used in later phases
+	_ = dbPool
+	_ = redisClient
 
 	// Create HTTP server
 	srv := &http.Server{
@@ -66,10 +97,10 @@ func main() {
 
 	log.Info().Msg("shutting down server")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	if err := srv.Shutdown(ctx); err != nil {
+	if err := srv.Shutdown(shutdownCtx); err != nil {
 		log.Error().Err(err).Msg("server forced to shutdown")
 	}
 
