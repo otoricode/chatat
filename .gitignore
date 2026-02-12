@@ -1,3 +1,63 @@
 .github/copilot-instructions.md
 next.txt
 next-step.js
+
+# Dependencies
+node_modules/
+vendor/
+
+# Build outputs
+server/bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary and coverage
+*.test
+*.out
+coverage/
+*.coverprofile
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Expo / React Native
+mobile/.expo/
+mobile/dist/
+mobile/ios/
+mobile/android/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+
+# Docker volumes (local)
+pgdata/
+redisdata/
+
+# OS files
+Thumbs.db
+ehthumbs.db
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Temporary files
+tmp/
+temp/
