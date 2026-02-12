@@ -1,0 +1,27 @@
+{
+  "common": {
+    "appName": "Chatat",
+    "loading": "Memuat...",
+    "error": "Terjadi kesalahan",
+    "retry": "Coba Lagi",
+    "cancel": "Batal",
+    "save": "Simpan",
+    "delete": "Hapus",
+    "edit": "Edit",
+    "done": "Selesai",
+    "search": "Cari",
+    "noResults": "Tidak ada hasil"
+  },
+  "auth": {
+    "enterPhone": "Masukkan nomor telepon",
+    "enterOTP": "Masukkan kode OTP",
+    "login": "Masuk",
+    "verify": "Verifikasi"
+  },
+  "chat": {
+    "chats": "Chat",
+    "newChat": "Chat Baru",
+    "typeMessage": "Ketik pesan...",
+    "send": "Kirim"
+  }
+}

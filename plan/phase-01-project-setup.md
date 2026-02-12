@@ -77,12 +77,12 @@
 9. Test: `go run cmd/server/main.go` — server berjalan, `GET /health` return 200
 
 ### Acceptance Criteria:
-- [ ] `go build ./...` sukses tanpa error
-- [ ] `go vet ./...` clean
-- [ ] Server berjalan di port 8080
-- [ ] `GET /health` return `{"status": "ok"}`
-- [ ] Config loaded dari `.env`
-- [ ] Zerolog output terlihat di console
+- [x] `go build ./...` sukses tanpa error
+- [x] `go vet ./...` clean
+- [x] Server berjalan di port 8080
+- [x] `GET /health` return `{"status": "ok"}`
+- [x] Config loaded dari `.env`
+- [x] Zerolog output terlihat di console
 
 ---
 
@@ -158,11 +158,11 @@
 7. Verify hot reload berjalan
 
 ### Acceptance Criteria:
-- [ ] App berjalan di iOS simulator
-- [ ] App berjalan di Android emulator
-- [ ] TypeScript strict mode aktif tanpa error
-- [ ] Hot reload berjalan
-- [ ] Folder structure sesuai panduan
+- [x] App berjalan di iOS simulator
+- [x] App berjalan di Android emulator
+- [x] TypeScript strict mode aktif tanpa error
+- [x] Hot reload berjalan
+- [x] Folder structure sesuai panduan
 
 ---
 
@@ -229,13 +229,13 @@
    ```
 
 ### Acceptance Criteria:
-- [ ] `docker-compose up -d` berjalan tanpa error
-- [ ] PostgreSQL accessible di port 5432
-- [ ] Redis accessible di port 6379
-- [ ] Go server bisa connect ke PostgreSQL
-- [ ] Go server bisa connect ke Redis
-- [ ] `make dev` menjalankan server
-- [ ] `.env` file ada dan terbaca
+- [x] `docker-compose up -d` berjalan tanpa error
+- [x] PostgreSQL accessible di port 5433 (host) → 5432 (container)
+- [x] Redis accessible di port 6380 (host) → 6379 (container)
+- [x] Go server bisa connect ke PostgreSQL
+- [x] Go server bisa connect ke Redis
+- [x] `make dev` menjalankan server
+- [x] `.env` file ada dan terbaca
 
 ---
 
@@ -297,30 +297,30 @@
 6. Commit initial project: `chore: initial project setup`
 
 ### Acceptance Criteria:
-- [ ] `golangci-lint run ./...` clean
-- [ ] `npx eslint src/ --ext .ts,.tsx` clean
-- [ ] `.editorconfig` aktif
-- [ ] `.gitignore` mencakup semua artifacts
-- [ ] README.md berisi setup instructions
-- [ ] Initial commit terbuat
+- [x] `golangci-lint run ./...` clean (v2.9.0)
+- [x] `npx eslint src/` clean (flat config)
+- [x] `.editorconfig` aktif
+- [x] `.gitignore` mencakup semua artifacts
+- [x] README.md berisi setup instructions
+- [x] Initial commit terbuat (3 split commits)
 
 ---
 
 ## Phase 01 Review
 
 ### Testing Checklist:
-- [ ] Go server — `make dev` berjalan, health check OK
-- [ ] React Native — app muncul di simulator/emulator
-- [ ] Docker — PostgreSQL + Redis berjalan
-- [ ] Database connection — Go bisa query PostgreSQL
-- [ ] Redis connection — Go bisa ping Redis
-- [ ] Hot reload — edit Go/RN, lihat perubahan
-- [ ] Lint — semua linter clean
+- [x] Go server — `make dev` berjalan, health check OK
+- [x] React Native — app muncul di simulator/emulator
+- [x] Docker — PostgreSQL + Redis berjalan
+- [x] Database connection — Go bisa query PostgreSQL
+- [x] Redis connection — Go bisa ping Redis
+- [x] Hot reload — edit Go/RN, lihat perubahan
+- [x] Lint — semua linter clean
 
 ### Review Checklist:
-- [ ] Folder structure sesuai `docs/project-structure.md`
-- [ ] Dependencies sesuai spesifikasi
-- [ ] Naming sesuai `docs/naming-conventions.md`
-- [ ] Git commit message sesuai `docs/git-workflow.md`
-- [ ] Tidak ada TODO atau placeholder yang menggantung
-- [ ] `.env.example` ada sebagai template
+- [x] Folder structure sesuai `docs/project-structure.md`
+- [x] Dependencies sesuai spesifikasi
+- [x] Naming sesuai `docs/naming-conventions.md`
+- [x] Git commit message sesuai `docs/git-workflow.md`
+- [x] Tidak ada TODO atau placeholder yang menggantung
+- [x] `.env.example` ada sebagai template
