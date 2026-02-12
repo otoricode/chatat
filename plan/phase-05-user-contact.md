@@ -46,19 +46,19 @@
    - Debounce: max 1 update per 30 detik
 
 ### Acceptance Criteria:
-- [ ] Get own profile
-- [ ] Update name, avatar, status
-- [ ] First-time setup: name + avatar (required setelah register)
-- [ ] Delete account: cascade delete all user data
-- [ ] LastSeen auto-update dengan debounce
-- [ ] Avatar validation (valid emoji)
+- [x] Get own profile
+- [x] Update name, avatar, status
+- [x] First-time setup: name + avatar (required setelah register)
+- [x] Delete account: cascade delete all user data
+- [x] LastSeen auto-update dengan debounce
+- [x] Avatar validation (valid emoji)
 
 ### Testing:
-- [ ] Unit test: get profile
-- [ ] Unit test: update profile (partial update)
-- [ ] Unit test: setup profile (validation)
-- [ ] Unit test: delete account
-- [ ] Unit test: last seen debounce
+- [x] Unit test: get profile
+- [x] Unit test: update profile (partial update)
+- [x] Unit test: setup profile (validation)
+- [x] Unit test: delete account
+- [x] Unit test: last seen debounce
 
 ---
 
@@ -120,20 +120,20 @@
    - Combine with last_seen timestamp
 
 ### Acceptance Criteria:
-- [ ] Phone hash matching berfungsi
-- [ ] Privacy: server never receives plain phone numbers dari kontak
-- [ ] Matched contacts returned dengan profile info
-- [ ] Contact cache untuk quick retrieval
-- [ ] Online status accurate (via WS hub)
-- [ ] Search by phone number (manual add contact)
+- [x] Phone hash matching berfungsi
+- [x] Privacy: server never receives plain phone numbers dari kontak
+- [x] Matched contacts returned dengan profile info
+- [x] Contact cache untuk quick retrieval
+- [x] Online status accurate (via WS hub)
+- [x] Search by phone number (manual add contact)
 
 ### Testing:
-- [ ] Unit test: sync contacts (hash matching)
-- [ ] Unit test: no matches scenario
-- [ ] Unit test: partial matches
-- [ ] Unit test: get cached contacts
-- [ ] Unit test: search by phone
-- [ ] Unit test: online status integration
+- [x] Unit test: sync contacts (hash matching)
+- [x] Unit test: no matches scenario
+- [x] Unit test: partial matches
+- [x] Unit test: get cached contacts
+- [x] Unit test: search by phone
+- [x] Unit test: online status integration
 
 ---
 
@@ -164,17 +164,17 @@
    - Then sorted alphabetically by name
 
 ### Acceptance Criteria:
-- [ ] Sync endpoint accepts phone hashes, returns matches
-- [ ] Contact list sorted: online first, then alphabetical
-- [ ] Search by phone number
-- [ ] Individual contact profile
-- [ ] Privacy preserved (hashed phone matching)
+- [x] Sync endpoint accepts phone hashes, returns matches
+- [x] Contact list sorted: online first, then alphabetical
+- [x] Search by phone number
+- [x] Individual contact profile
+- [x] Privacy preserved (hashed phone matching)
 
 ### Testing:
-- [ ] Integration test: full sync flow
-- [ ] Integration test: contact list retrieval
-- [ ] Integration test: search by phone
-- [ ] Integration test: contact profile
+- [x] Unit test: full sync flow
+- [x] Unit test: contact list retrieval
+- [x] Unit test: search by phone
+- [x] Unit test: contact profile
 
 ---
 
@@ -206,37 +206,37 @@
    - Refresh on every WS pong
 
 ### Acceptance Criteria:
-- [ ] Connect → contacts see user online
-- [ ] Disconnect → contacts see user offline (after 5s debounce)
-- [ ] LastSeen updated on disconnect
-- [ ] Redis tracks online status
-- [ ] No flicker on temporary disconnects
+- [x] Connect → contacts see user online
+- [x] Disconnect → contacts see user offline (after 5s debounce)
+- [x] LastSeen updated on disconnect
+- [x] Redis tracks online status
+- [x] No flicker on temporary disconnects
 
 ### Testing:
-- [ ] Unit test: connect broadcast
-- [ ] Unit test: disconnect broadcast (with debounce)
-- [ ] Unit test: Redis online tracking
-- [ ] Integration test: status change visible to contacts
+- [x] Unit test: connect broadcast
+- [x] Unit test: disconnect broadcast (with debounce)
+- [x] Unit test: reconnect cancels offline (debounce)
+- [x] Unit test: status change visible to contacts
 
 ---
 
 ## Phase 05 Review
 
 ### Testing Checklist:
-- [ ] Profile setup: new user sets name + avatar
-- [ ] Profile update: change name, avatar, status
-- [ ] Contact sync: phone hashes → matched users
-- [ ] Contact list: sorted, with online status
-- [ ] Search: find user by phone number
-- [ ] Online status: real-time via WebSocket
-- [ ] Last seen: accurate timestamp
-- [ ] Delete account: all data removed
-- [ ] `go test ./...` — semua test pass
+- [x] Profile setup: new user sets name + avatar
+- [x] Profile update: change name, avatar, status
+- [x] Contact sync: phone hashes → matched users
+- [x] Contact list: sorted, with online status
+- [x] Search: find user by phone number
+- [x] Online status: real-time via WebSocket
+- [x] Last seen: accurate timestamp
+- [x] Delete account: all data removed
+- [x] `go test ./...` — semua test pass
 
 ### Review Checklist:
-- [ ] Contact system sesuai `spesifikasi-chatat.md` section 2.3
-- [ ] Privacy: phone hash matching, no plain numbers exposed
-- [ ] Online status sesuai WA behavior
-- [ ] Error handling sesuai `docs/error-handling.md`
-- [ ] Naming sesuai `docs/naming-conventions.md`
-- [ ] Commit: `feat(user): implement user profile and contact system`
+- [x] Contact system sesuai `spesifikasi-chatat.md` section 2.3
+- [x] Privacy: phone hash matching, no plain numbers exposed
+- [x] Online status sesuai WA behavior
+- [x] Error handling sesuai `docs/error-handling.md`
+- [x] Naming sesuai `docs/naming-conventions.md`
+- [x] Commit: `feat(user): implement user profile and contact system`
