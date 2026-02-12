@@ -1,4 +1,4 @@
-.PHONY: dev db-up db-down db-reset test lint fmt build clean
+.PHONY: dev db-up db-down db-reset test lint fmt build clean migrate-up migrate-down migrate-create
 
 # --- Server ---
 
@@ -33,6 +33,17 @@ db-down:
 
 db-reset:
 	docker compose down -v && docker compose up -d
+
+# --- Migrations ---
+
+migrate-up:
+	migrate -path server/migrations -database "$(DATABASE_URL)" up
+
+migrate-down:
+	migrate -path server/migrations -database "$(DATABASE_URL)" down 1
+
+migrate-create:
+	migrate create -ext sql -dir server/migrations -seq $(name)
 
 # --- Mobile ---
 
