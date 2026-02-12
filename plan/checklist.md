@@ -38,12 +38,12 @@ Setiap kali menyelesaikan satu phase, jalankan checklist ini:
 - [x] WebSocket hub: connection, rooms, broadcast
 - [x] Health check endpoint berfungsi
 
-## Phase 04 — Authentication System
-- [ ] SMS OTP 6-digit: send, verify, expire
-- [ ] Reverse OTP via WhatsApp: generate code, verify incoming WA message
-- [ ] JWT token: generate, validate, refresh
-- [ ] Phone number normalization (E.164)
-- [ ] Session management: satu device per nomor
+## Phase 04 — Authentication System ✅ (2025-06-13)
+- [x] SMS OTP 6-digit: send, verify, expire
+- [x] Reverse OTP via WhatsApp: generate code, verify incoming WA message
+- [x] JWT token: generate, validate, refresh
+- [x] Phone number normalization (E.164)
+- [x] Session management: satu device per nomor
 
 ## Phase 05 — User & Contact System
 - [ ] User profile CRUD (name, avatar emoji, status)

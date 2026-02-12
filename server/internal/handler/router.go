@@ -36,18 +36,27 @@ func NewRouter(cfg *config.Config, deps *Dependencies) *chi.Mux {
 
 	// API v1
 	r.Route("/api/v1", func(r chi.Router) {
-		// Public routes
+		// Public routes (auth)
 		r.Group(func(r chi.Router) {
 			r.Use(mw.RateLimit(5.0/60.0, 5)) // 5 req/min for auth
 			r.Post("/auth/otp/send", deps.AuthHandler.SendOTP)
 			r.Post("/auth/otp/verify", deps.AuthHandler.VerifyOTP)
 			r.Post("/auth/reverse-otp/init", deps.AuthHandler.InitReverseOTP)
 			r.Post("/auth/reverse-otp/check", deps.AuthHandler.CheckReverseOTP)
+			r.Post("/auth/refresh", deps.AuthHandler.RefreshToken)
+		})
+
+		// Webhook routes (server-to-server, no user auth)
+		r.Route("/webhooks", func(r chi.Router) {
+			r.Post("/whatsapp", deps.WebhookHandler.HandleWhatsApp)
 		})
 
 		// Protected routes
 		r.Group(func(r chi.Router) {
 			r.Use(mw.Auth(cfg.JWTSecret))
+
+			// Auth (requires token)
+			r.Post("/auth/logout", deps.AuthHandler.Logout)
 
 			r.Route("/users", func(r chi.Router) {
 				r.Get("/me", deps.UserHandler.GetMe)

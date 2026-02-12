@@ -40,18 +40,18 @@
 4. Hash function: SHA-256 untuk privacy saat contact matching
 
 ### Acceptance Criteria:
-- [ ] Indonesian numbers: `081xxx` → `+6281xxx`
-- [ ] International format pass-through: `+1xxx` → `+1xxx`
-- [ ] Invalid numbers return error
-- [ ] Hash consistent dan irreversible
-- [ ] Strip spaces, dashes, parentheses
+- [x] Indonesian numbers: `081xxx` → `+6281xxx`
+- [x] International format pass-through: `+1xxx` → `+1xxx`
+- [x] Invalid numbers return error
+- [x] Hash consistent dan irreversible
+- [x] Strip spaces, dashes, parentheses
 
 ### Testing:
-- [ ] Unit test: normalize Indonesian numbers (berbagai format)
-- [ ] Unit test: normalize international numbers
-- [ ] Unit test: invalid numbers
-- [ ] Unit test: hash consistency
-- [ ] Benchmark: normalize performance
+- [x] Unit test: normalize Indonesian numbers (berbagai format)
+- [x] Unit test: normalize international numbers
+- [x] Unit test: invalid numbers
+- [x] Unit test: hash consistency
+- [x] Benchmark: normalize performance
 
 ---
 
@@ -105,21 +105,21 @@
    - Production: Twilio, Vonage, atau local provider
 
 ### Acceptance Criteria:
-- [ ] 6-digit OTP generated secara random
-- [ ] OTP expire setelah 5 menit
-- [ ] Max 3 attempts per OTP
-- [ ] Rate limit: 1 per 60 detik, 5 per hari
-- [ ] Constant-time comparison (timing attack prevention)
-- [ ] Redis storage dengan TTL
+- [x] 6-digit OTP generated secara random
+- [x] OTP expire setelah 5 menit
+- [x] Max 3 attempts per OTP
+- [x] Rate limit: 1 per 60 detik, 5 per hari
+- [x] Constant-time comparison (timing attack prevention)
+- [x] Redis storage dengan TTL
 
 ### Testing:
-- [ ] Unit test: generate OTP
-- [ ] Unit test: verify correct OTP
-- [ ] Unit test: verify wrong OTP
-- [ ] Unit test: OTP expiry
-- [ ] Unit test: max attempts exceeded
-- [ ] Unit test: rate limiting (cooldown)
-- [ ] Unit test: rate limiting (daily max)
+- [x] Unit test: generate OTP
+- [x] Unit test: verify correct OTP
+- [x] Unit test: verify wrong OTP
+- [x] Unit test: OTP expiry
+- [x] Unit test: max attempts exceeded
+- [x] Unit test: rate limiting (cooldown)
+- [x] Unit test: rate limiting (daily max)
 
 ---
 
@@ -170,19 +170,19 @@
    - Production: WhatsApp Business API (Cloud API)
 
 ### Acceptance Criteria:
-- [ ] Session created dengan unique code
-- [ ] Server WhatsApp number returned to client
-- [ ] Incoming WA message matched to session
-- [ ] Session verified → user authenticated
-- [ ] Session expires after 5 minutes
-- [ ] Rate limiting same as SMS OTP
+- [x] Session created dengan unique code
+- [x] Server WhatsApp number returned to client
+- [x] Incoming WA message matched to session
+- [x] Session verified → user authenticated
+- [x] Session expires after 5 minutes
+- [x] Rate limiting same as SMS OTP
 
 ### Testing:
-- [ ] Unit test: init session
-- [ ] Unit test: verify via webhook
-- [ ] Unit test: check verification (pending, verified, expired)
-- [ ] Unit test: session expiry
-- [ ] Integration test: full reverse OTP flow (mock WA)
+- [x] Unit test: init session
+- [x] Unit test: verify via webhook
+- [x] Unit test: check verification (pending, verified, expired)
+- [x] Unit test: session expiry
+- [x] Integration test: full reverse OTP flow (mock WA)
 
 ---
 
@@ -222,20 +222,20 @@
 4. Update auth middleware untuk check blacklist
 
 ### Acceptance Criteria:
-- [ ] Access token generated dengan proper claims
-- [ ] Refresh token stored di Redis
-- [ ] Token validation (signature, expiry, blacklist)
-- [ ] Token refresh flow berfungsi
-- [ ] Token revocation (logout)
-- [ ] Blacklisted token rejected
+- [x] Access token generated dengan proper claims
+- [x] Refresh token stored di Redis
+- [x] Token validation (signature, expiry, blacklist)
+- [x] Token refresh flow berfungsi
+- [x] Token revocation (logout)
+- [x] Blacklisted token rejected
 
 ### Testing:
-- [ ] Unit test: generate token pair
-- [ ] Unit test: validate valid token
-- [ ] Unit test: validate expired token
-- [ ] Unit test: validate blacklisted token
-- [ ] Unit test: refresh token
-- [ ] Unit test: revoke token
+- [x] Unit test: generate token pair
+- [x] Unit test: validate valid token
+- [x] Unit test: validate expired token
+- [x] Unit test: validate blacklisted token
+- [x] Unit test: refresh token
+- [x] Unit test: revoke token
 
 ---
 
@@ -283,23 +283,23 @@
    - `isNewUser: true` flag → mobile app shows profile setup screen
 
 ### Acceptance Criteria:
-- [ ] SMS OTP flow: send → verify → get tokens
-- [ ] Reverse OTP flow: init → user sends WA → check → get tokens
-- [ ] New user auto-created on first verification
-- [ ] Existing user: return user data with tokens
-- [ ] `isNewUser` flag accurate
-- [ ] Refresh token flow berfungsi
-- [ ] Logout revokes tokens
-- [ ] All error cases handled (invalid phone, wrong OTP, expired, rate limited)
+- [x] SMS OTP flow: send → verify → get tokens
+- [x] Reverse OTP flow: init → user sends WA → check → get tokens
+- [x] New user auto-created on first verification
+- [x] Existing user: return user data with tokens
+- [x] `isNewUser` flag accurate
+- [x] Refresh token flow berfungsi
+- [x] Logout revokes tokens
+- [x] All error cases handled (invalid phone, wrong OTP, expired, rate limited)
 
 ### Testing:
-- [ ] Integration test: full SMS OTP flow
-- [ ] Integration test: full Reverse OTP flow
-- [ ] Integration test: new user registration
-- [ ] Integration test: existing user login
-- [ ] Integration test: token refresh
-- [ ] Integration test: logout
-- [ ] Integration test: error cases
+- [x] Integration test: full SMS OTP flow
+- [x] Integration test: full Reverse OTP flow
+- [x] Integration test: new user registration
+- [x] Integration test: existing user login
+- [x] Integration test: token refresh
+- [x] Integration test: logout
+- [x] Integration test: error cases
 
 ---
 
@@ -320,37 +320,37 @@
 4. Saat token refresh: check if device ID matches
 
 ### Acceptance Criteria:
-- [ ] Login di device baru → device lama logout otomatis
-- [ ] Previous refresh token invalidated
-- [ ] Device ID tracking di Redis
-- [ ] Token refresh only valid for same device
+- [x] Login di device baru → device lama logout otomatis
+- [x] Previous refresh token invalidated
+- [x] Device ID tracking di Redis
+- [x] Token refresh only valid for same device
 
 ### Testing:
-- [ ] Unit test: single device enforcement
-- [ ] Unit test: device switch revokes old session
-- [ ] Unit test: device ID mismatch on refresh
+- [x] Unit test: single device enforcement
+- [x] Unit test: device switch revokes old session
+- [x] Unit test: device ID mismatch on refresh
 
 ---
 
 ## Phase 04 Review
 
 ### Testing Checklist:
-- [ ] SMS OTP: send → receive code → verify → get tokens
-- [ ] Reverse OTP: init → send WA → check → get tokens
-- [ ] New user: create + profile setup flag
-- [ ] Existing user: login + return user data
-- [ ] Token refresh: new pair generated
-- [ ] Logout: tokens revoked
-- [ ] Single device: old device kicked
-- [ ] Rate limit: enforced on OTP endpoints
-- [ ] Invalid inputs: proper error responses
-- [ ] `go test ./...` — semua test pass
+- [x] SMS OTP: send → receive code → verify → get tokens
+- [x] Reverse OTP: init → send WA → check → get tokens
+- [x] New user: create + profile setup flag
+- [x] Existing user: login + return user data
+- [x] Token refresh: new pair generated
+- [x] Logout: tokens revoked
+- [x] Single device: old device kicked
+- [x] Rate limit: enforced on OTP endpoints
+- [x] Invalid inputs: proper error responses
+- [x] `go test ./...` — semua test pass
 
 ### Review Checklist:
-- [ ] Auth flow sesuai `spesifikasi-chatat.md` section 2
-- [ ] Phone normalization E.164
-- [ ] OTP security: crypto/rand, constant-time compare
-- [ ] JWT security: proper secret, appropriate TTL
-- [ ] Rate limiting effective
-- [ ] Error codes sesuai `docs/error-handling.md`
-- [ ] Commit: `feat(auth): implement OTP and Reverse OTP authentication`
+- [x] Auth flow sesuai `spesifikasi-chatat.md` section 2
+- [x] Phone normalization E.164
+- [x] OTP security: crypto/rand, constant-time compare
+- [x] JWT security: proper secret, appropriate TTL
+- [x] Rate limiting effective
+- [x] Error codes sesuai `docs/error-handling.md`
+- [x] Commit: `feat(auth): implement OTP and Reverse OTP authentication`
