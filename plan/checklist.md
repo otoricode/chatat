@@ -51,12 +51,12 @@ Setiap kali menyelesaikan satu phase, jalankan checklist ini:
 - [x] Contact list endpoint + online/last seen status
 - [x] User search by phone number
 
-## Phase 06 — Mobile App Shell
-- [ ] React Navigation: stack + bottom tabs (Chat, Dokumen)
-- [ ] Dark theme (WA-style colors dari spec)
-- [ ] Typography setup (Plus Jakarta Sans, Inter, JetBrains Mono)
-- [ ] Shared components: Loading, Empty, Error, Avatar, Badge
-- [ ] FAB (Floating Action Button) per tab
+## Phase 06 — Mobile App Shell ✅ (2026-02-13)
+- [x] React Navigation: stack + bottom tabs (Chat, Dokumen)
+- [x] Dark theme (WA-style colors dari spec)
+- [x] Typography setup (Plus Jakarta Sans, Inter, JetBrains Mono)
+- [x] Shared components: Loading, Empty, Error, Avatar, Badge
+- [x] FAB (Floating Action Button) per tab
 
 ## Phase 07 — Chat Personal
 - [ ] Backend: personal chat creation, message send/receive API
@@ -248,7 +248,7 @@ Setiap kali menyelesaikan satu phase, jalankan checklist ini:
 | 03    | `[x]`  | 2025-07-13    | 2025-07-13      |
 | 04    | `[x]`  | 2025-06-13    | 2025-06-13      |
 | 05    | `[x]`  | 2025-06-13    | 2025-06-13      |
-| 06    | `[ ]`  |               |                 |
+| 06    | `[x]`  | 2026-02-13    | 2026-02-13      |
 | 07    | `[ ]`  |               |                 |
 | 08    | `[ ]`  |               |                 |
 | 09    | `[ ]`  |               |                 |
