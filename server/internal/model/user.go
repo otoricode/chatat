@@ -11,6 +11,7 @@ import (
 type User struct {
 	ID        uuid.UUID `json:"id"`
 	Phone     string    `json:"phone"`
+	PhoneHash string    `json:"-"`
 	Name      string    `json:"name"`
 	Avatar    string    `json:"avatar"`
 	Status    string    `json:"status"`
