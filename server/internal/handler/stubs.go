@@ -15,18 +15,6 @@ func notImplemented(w http.ResponseWriter, _ *http.Request) {
 	response.OK(w, notImplementedResponse{Message: "not implemented yet"})
 }
 
-// UserStubHandler is a placeholder for user endpoints.
-type UserStubHandler struct{}
-
-func (h *UserStubHandler) GetMe(w http.ResponseWriter, r *http.Request)    { notImplemented(w, r) }
-func (h *UserStubHandler) UpdateMe(w http.ResponseWriter, r *http.Request) { notImplemented(w, r) }
-
-// ContactStubHandler is a placeholder for contact endpoints.
-type ContactStubHandler struct{}
-
-func (h *ContactStubHandler) Sync(w http.ResponseWriter, r *http.Request) { notImplemented(w, r) }
-func (h *ContactStubHandler) List(w http.ResponseWriter, r *http.Request) { notImplemented(w, r) }
-
 // ChatStubHandler is a placeholder for chat endpoints.
 type ChatStubHandler struct{}
 
