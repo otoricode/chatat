@@ -1,0 +1,27 @@
+{
+  "common": {
+    "appName": "Chatat",
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "retry": "Try Again",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "done": "Done",
+    "search": "Search",
+    "noResults": "No results found"
+  },
+  "auth": {
+    "enterPhone": "Enter phone number",
+    "enterOTP": "Enter OTP code",
+    "login": "Login",
+    "verify": "Verify"
+  },
+  "chat": {
+    "chats": "Chats",
+    "newChat": "New Chat",
+    "typeMessage": "Type a message...",
+    "send": "Send"
+  }
+}
