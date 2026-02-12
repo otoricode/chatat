@@ -2,20 +2,27 @@ package ws
 
 import (
 	"sync"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 )
 
+// disconnectDebounce is the time to wait before broadcasting offline status.
+const disconnectDebounce = 5 * time.Second
+
 // Hub maintains the set of active clients and broadcasts messages to rooms.
 type Hub struct {
-	clients    map[uuid.UUID]*Client
-	rooms      map[string]map[uuid.UUID]*Client
-	register   chan *Client
-	unregister chan *Client
-	broadcast  chan *BroadcastMessage
-	done       chan struct{}
-	mu         sync.RWMutex
+	clients          map[uuid.UUID]*Client
+	rooms            map[string]map[uuid.UUID]*Client
+	register         chan *Client
+	unregister       chan *Client
+	broadcast        chan *BroadcastMessage
+	done             chan struct{}
+	mu               sync.RWMutex
+	onConnect        func(userID uuid.UUID)
+	onDisconnect     func(userID uuid.UUID)
+	disconnectTimers map[uuid.UUID]*time.Timer
 }
 
 // BroadcastMessage represents a message to be broadcast to a room.
@@ -28,13 +35,21 @@ type BroadcastMessage struct {
 // NewHub creates a new Hub instance.
 func NewHub() *Hub {
 	return &Hub{
-		clients:    make(map[uuid.UUID]*Client),
-		rooms:      make(map[string]map[uuid.UUID]*Client),
-		register:   make(chan *Client),
-		unregister: make(chan *Client),
-		broadcast:  make(chan *BroadcastMessage, 256),
-		done:       make(chan struct{}),
+		clients:          make(map[uuid.UUID]*Client),
+		rooms:            make(map[string]map[uuid.UUID]*Client),
+		register:         make(chan *Client),
+		unregister:       make(chan *Client),
+		broadcast:        make(chan *BroadcastMessage, 256),
+		done:             make(chan struct{}),
+		disconnectTimers: make(map[uuid.UUID]*time.Timer),
 	}
+}
+
+// SetEventCallbacks sets the callbacks for client connect/disconnect events.
+// The callbacks are invoked asynchronously from the Hub's event loop.
+func (h *Hub) SetEventCallbacks(onConnect, onDisconnect func(uuid.UUID)) {
+	h.onConnect = onConnect
+	h.onDisconnect = onDisconnect
 }
 
 // Run starts the hub event loop. Should be called in a goroutine.
@@ -46,9 +61,19 @@ func (h *Hub) Run() {
 
 		case client := <-h.register:
 			h.mu.Lock()
+			// Cancel pending disconnect timer if user reconnects quickly
+			if timer, ok := h.disconnectTimers[client.UserID]; ok {
+				timer.Stop()
+				delete(h.disconnectTimers, client.UserID)
+				log.Debug().Str("user_id", client.UserID.String()).Msg("reconnect: cancelled offline broadcast")
+			}
 			h.clients[client.UserID] = client
 			h.mu.Unlock()
 			log.Debug().Str("user_id", client.UserID.String()).Msg("client registered")
+
+			if h.onConnect != nil {
+				go h.onConnect(client.UserID)
+			}
 
 		case client := <-h.unregister:
 			h.mu.Lock()
@@ -62,6 +87,21 @@ func (h *Hub) Run() {
 					if len(members) == 0 {
 						delete(h.rooms, roomID)
 					}
+				}
+
+				// Debounce disconnect: wait before broadcasting offline
+				if h.onDisconnect != nil {
+					userID := client.UserID
+					h.disconnectTimers[userID] = time.AfterFunc(disconnectDebounce, func() {
+						h.mu.Lock()
+						delete(h.disconnectTimers, userID)
+						h.mu.Unlock()
+
+						// Only broadcast offline if user is still disconnected
+						if !h.IsOnline(userID) {
+							h.onDisconnect(userID)
+						}
+					})
 				}
 			}
 			h.mu.Unlock()
