@@ -13,6 +13,11 @@ type Config struct {
 	RedisURL    string
 	JWTSecret   string
 	Environment string // development, staging, production
+
+	// WhatsApp (GOWA) configuration
+	WABaseURL       string // e.g. http://localhost:3000
+	WAWebhookSecret string // HMAC secret for webhook signature verification
+	WABusinessPhone string // WhatsApp business phone number (E.164)
 }
 
 // Load reads configuration from environment variables and returns a Config.
@@ -24,6 +29,10 @@ func Load() (*Config, error) {
 		RedisURL:    getEnv("REDIS_URL", ""),
 		JWTSecret:   getEnv("JWT_SECRET", ""),
 		Environment: getEnv("ENVIRONMENT", "development"),
+
+		WABaseURL:       getEnv("WA_BASE_URL", "http://localhost:3000"),
+		WAWebhookSecret: getEnv("WA_WEBHOOK_SECRET", "chatat-webhook-secret"),
+		WABusinessPhone: getEnv("WA_BUSINESS_PHONE", ""),
 	}
 
 	if err := cfg.validate(); err != nil {
