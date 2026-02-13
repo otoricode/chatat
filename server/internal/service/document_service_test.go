@@ -1214,3 +1214,117 @@ func TestDocumentService_Update_EditorCollaborator(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "EditorUpdated", result.Title)
 }
+
+func TestDocumentService_Create_Errors(t *testing.T) {
+	ctx := context.Background()
+	userRepo := &docTestUserRepo{users: make(map[uuid.UUID]*model.User)}
+	ownerID := uuid.New()
+
+	t.Run("default title and icon", func(t *testing.T) {
+		svc := NewDocumentService(newMockDocumentRepo(), newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), nil)
+		doc, err := svc.Create(ctx, CreateDocumentInput{OwnerID: ownerID})
+		require.NoError(t, err)
+		assert.Equal(t, "Dokumen Tanpa Judul", doc.Document.Title)
+		assert.NotEmpty(t, doc.Document.Icon)
+		assert.True(t, doc.Document.IsStandalone)
+	})
+
+	t.Run("with template having rows and columns", func(t *testing.T) {
+		svc := NewDocumentService(newMockDocumentRepo(), newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), nil)
+		doc, err := svc.Create(ctx, CreateDocumentInput{
+			OwnerID:    ownerID,
+			TemplateID: "inventaris-aset",
+		})
+		require.NoError(t, err)
+		assert.NotEmpty(t, doc.Blocks)
+	})
+
+	t.Run("with template having emoji and color", func(t *testing.T) {
+		svc := NewDocumentService(newMockDocumentRepo(), newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), nil)
+		// Use notulen-rapat or absensi which may have callout blocks
+		doc, err := svc.Create(ctx, CreateDocumentInput{
+			OwnerID:    ownerID,
+			TemplateID: "notulen-rapat",
+		})
+		require.NoError(t, err)
+		assert.NotEmpty(t, doc.Blocks)
+	})
+}
+
+func TestDocumentService_ListAll_Error(t *testing.T) {
+	ctx := context.Background()
+	userRepo := &docTestUserRepo{users: make(map[uuid.UUID]*model.User)}
+	docRepo := newMockDocumentRepo()
+
+	svc := NewDocumentService(docRepo, newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), nil)
+	ownerID := uuid.New()
+
+	// Add doc owned by user
+	_, err := svc.Create(ctx, CreateDocumentInput{Title: "MyDoc", OwnerID: ownerID})
+	require.NoError(t, err)
+
+	items, err := svc.ListAll(ctx, ownerID)
+	require.NoError(t, err)
+	assert.Len(t, items, 1)
+}
+
+func TestDocumentService_Update_LockedDoc(t *testing.T) {
+	ctx := context.Background()
+	ownerID := uuid.New()
+	userRepo := &docTestUserRepo{users: make(map[uuid.UUID]*model.User)}
+	docRepo := newMockDocumentRepo()
+
+	svc := NewDocumentService(docRepo, newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), nil)
+	doc, _ := svc.Create(ctx, CreateDocumentInput{Title: "LockedDoc", OwnerID: ownerID})
+
+	// Lock manually
+	docRepo.docs[doc.Document.ID].Locked = true
+
+	newTitle := "Attempted"
+	_, err := svc.Update(ctx, doc.Document.ID, ownerID, model.UpdateDocumentInput{Title: &newTitle})
+	require.Error(t, err)
+}
+
+func TestDocumentService_Update_NonOwnerNonEditor(t *testing.T) {
+	ctx := context.Background()
+	ownerID := uuid.New()
+	viewerID := uuid.New()
+	userRepo := &docTestUserRepo{users: make(map[uuid.UUID]*model.User)}
+	docRepo := newMockDocumentRepo()
+
+	svc := NewDocumentService(docRepo, newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), nil)
+	doc, _ := svc.Create(ctx, CreateDocumentInput{Title: "ViewerDoc", OwnerID: ownerID})
+	_ = svc.AddCollaborator(ctx, doc.Document.ID, ownerID, viewerID, model.CollaboratorRoleViewer)
+
+	newTitle := "Attempted"
+	_, err := svc.Update(ctx, doc.Document.ID, viewerID, model.UpdateDocumentInput{Title: &newTitle})
+	require.Error(t, err)
+}
+
+func TestDocumentService_Delete_LockedDoc(t *testing.T) {
+	ctx := context.Background()
+	ownerID := uuid.New()
+	userRepo := &docTestUserRepo{users: make(map[uuid.UUID]*model.User)}
+	docRepo := newMockDocumentRepo()
+
+	svc := NewDocumentService(docRepo, newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), nil)
+	doc, _ := svc.Create(ctx, CreateDocumentInput{Title: "LockedDoc", OwnerID: ownerID})
+	docRepo.docs[doc.Document.ID].Locked = true
+
+	err := svc.Delete(ctx, doc.Document.ID, ownerID)
+	require.Error(t, err)
+}
+
+func TestDocumentService_Delete_NonOwner(t *testing.T) {
+	ctx := context.Background()
+	ownerID := uuid.New()
+	otherID := uuid.New()
+	userRepo := &docTestUserRepo{users: make(map[uuid.UUID]*model.User)}
+	docRepo := newMockDocumentRepo()
+
+	svc := NewDocumentService(docRepo, newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), nil)
+	doc, _ := svc.Create(ctx, CreateDocumentInput{Title: "NotMine", OwnerID: ownerID})
+
+	err := svc.Delete(ctx, doc.Document.ID, otherID)
+	require.Error(t, err)
+}

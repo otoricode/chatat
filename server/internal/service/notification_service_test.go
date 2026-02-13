@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/google/uuid"
@@ -54,7 +55,9 @@ func (m *mockPushSender) SendMulti(_ context.Context, tokens []string, notif mod
 // -- Mock device token repo --
 
 type mockDeviceTokenRepo struct {
-	tokens map[uuid.UUID][]*model.DeviceToken
+	tokens      map[uuid.UUID][]*model.DeviceToken
+	findErr     error
+	findUsrsErr error
 }
 
 func newMockDeviceTokenRepo() *mockDeviceTokenRepo {
@@ -104,6 +107,9 @@ func (m *mockDeviceTokenRepo) DeleteByToken(_ context.Context, token string) err
 }
 
 func (m *mockDeviceTokenRepo) FindByUser(_ context.Context, userID uuid.UUID) ([]*model.DeviceToken, error) {
+	if m.findErr != nil {
+		return nil, m.findErr
+	}
 	tokens := m.tokens[userID]
 	if tokens == nil {
 		return []*model.DeviceToken{}, nil
@@ -112,6 +118,9 @@ func (m *mockDeviceTokenRepo) FindByUser(_ context.Context, userID uuid.UUID) ([
 }
 
 func (m *mockDeviceTokenRepo) FindByUsers(_ context.Context, userIDs []uuid.UUID) ([]*model.DeviceToken, error) {
+	if m.findUsrsErr != nil {
+		return nil, m.findUsrsErr
+	}
 	var result []*model.DeviceToken
 	for _, uid := range userIDs {
 		result = append(result, m.tokens[uid]...)
@@ -129,7 +138,8 @@ func (m *mockDeviceTokenRepo) DeleteStale(_ context.Context, _ int) (int64, erro
 // -- Mock chat repo for notification tests --
 
 type mockNotifChatRepo struct {
-	members map[uuid.UUID][]*model.ChatMember
+	members    map[uuid.UUID][]*model.ChatMember
+	getMembErr error
 }
 
 func newMockNotifChatRepo() *mockNotifChatRepo {
@@ -137,6 +147,9 @@ func newMockNotifChatRepo() *mockNotifChatRepo {
 }
 
 func (m *mockNotifChatRepo) GetMembers(_ context.Context, chatID uuid.UUID) ([]*model.ChatMember, error) {
+	if m.getMembErr != nil {
+		return nil, m.getMembErr
+	}
 	return m.members[chatID], nil
 }
 
@@ -413,5 +426,82 @@ func TestBuildMessageNotif_ChatType(t *testing.T) {
 	t.Run("group chat type", func(t *testing.T) {
 		n := BuildMessageNotif("Ahmad", "Halo", chatID, "group")
 		assert.Equal(t, model.NotifTypeGroupMessage, n.Type)
+	})
+}
+
+// --- Error-Path Tests ---
+
+func TestNotificationService_SendToUser_Errors(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("find tokens error", func(t *testing.T) {
+		deviceRepo := newMockDeviceTokenRepo()
+		deviceRepo.findErr = errors.New("db error")
+		svc := NewNotificationService(deviceRepo, newMockNotifChatRepo(), newMockPushSender())
+		err := svc.SendToUser(ctx, uuid.New(), model.Notification{Title: "T"})
+		require.Error(t, err)
+	})
+
+	t.Run("send multi error", func(t *testing.T) {
+		deviceRepo := newMockDeviceTokenRepo()
+		sender := newMockPushSender()
+		sender.shouldError = true
+		svc := NewNotificationService(deviceRepo, newMockNotifChatRepo(), sender)
+		userID := uuid.New()
+		_ = svc.RegisterDevice(ctx, userID, "tok1", "ios")
+		err := svc.SendToUser(ctx, userID, model.Notification{Title: "T"})
+		require.Error(t, err)
+	})
+}
+
+func TestNotificationService_SendToUsers_Errors(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("find tokens error", func(t *testing.T) {
+		deviceRepo := newMockDeviceTokenRepo()
+		deviceRepo.findUsrsErr = errors.New("db error")
+		svc := NewNotificationService(deviceRepo, newMockNotifChatRepo(), newMockPushSender())
+		err := svc.SendToUsers(ctx, []uuid.UUID{uuid.New()}, model.Notification{Title: "T"})
+		require.Error(t, err)
+	})
+
+	t.Run("send multi error", func(t *testing.T) {
+		deviceRepo := newMockDeviceTokenRepo()
+		sender := newMockPushSender()
+		sender.shouldError = true
+		svc := NewNotificationService(deviceRepo, newMockNotifChatRepo(), sender)
+		userID := uuid.New()
+		_ = svc.RegisterDevice(ctx, userID, "tok1", "ios")
+		err := svc.SendToUsers(ctx, []uuid.UUID{userID}, model.Notification{Title: "T"})
+		require.Error(t, err)
+	})
+
+	t.Run("no tokens found for users", func(t *testing.T) {
+		deviceRepo := newMockDeviceTokenRepo()
+		svc := NewNotificationService(deviceRepo, newMockNotifChatRepo(), newMockPushSender())
+		err := svc.SendToUsers(ctx, []uuid.UUID{uuid.New()}, model.Notification{Title: "T"})
+		require.NoError(t, err) // empty tokens = no error
+	})
+}
+
+func TestNotificationService_SendToChat_Errors(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("get members error", func(t *testing.T) {
+		chatRepo := newMockNotifChatRepo()
+		chatRepo.getMembErr = errors.New("db error")
+		svc := NewNotificationService(newMockDeviceTokenRepo(), chatRepo, newMockPushSender())
+		err := svc.SendToChat(ctx, uuid.New(), uuid.New(), model.Notification{Title: "T"})
+		require.Error(t, err)
+	})
+
+	t.Run("all members excluded", func(t *testing.T) {
+		chatRepo := newMockNotifChatRepo()
+		senderID := uuid.New()
+		chatID := uuid.New()
+		chatRepo.members[chatID] = []*model.ChatMember{{UserID: senderID}}
+		svc := NewNotificationService(newMockDeviceTokenRepo(), chatRepo, newMockPushSender())
+		err := svc.SendToChat(ctx, chatID, senderID, model.Notification{Title: "T"})
+		require.NoError(t, err) // empty userIDs = no error
 	})
 }

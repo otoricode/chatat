@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -17,6 +18,8 @@ import (
 type mockTopicRepo struct {
 	topics  map[uuid.UUID]*model.Topic
 	members map[uuid.UUID][]*model.TopicMember // topicID -> members
+
+	getMembersErr error
 }
 
 func newMockTopicRepo() *mockTopicRepo {
@@ -104,6 +107,9 @@ func (m *mockTopicRepo) RemoveMember(_ context.Context, topicID, userID uuid.UUI
 }
 
 func (m *mockTopicRepo) GetMembers(_ context.Context, topicID uuid.UUID) ([]*model.TopicMember, error) {
+	if m.getMembersErr != nil {
+		return nil, m.getMembersErr
+	}
 	return m.members[topicID], nil
 }
 
@@ -138,6 +144,11 @@ func (m *mockTopicRepo) Delete(_ context.Context, id uuid.UUID) error {
 type mockTopicMsgRepo struct {
 	messages map[uuid.UUID]*model.TopicMessage
 	byTopic  map[uuid.UUID][]*model.TopicMessage
+
+	createErr      error
+	findErr        error
+	listErr        error
+	markDeletedErr error
 }
 
 func newMockTopicMsgRepo() *mockTopicMsgRepo {
@@ -148,6 +159,9 @@ func newMockTopicMsgRepo() *mockTopicMsgRepo {
 }
 
 func (m *mockTopicMsgRepo) Create(_ context.Context, input model.CreateTopicMessageInput) (*model.TopicMessage, error) {
+	if m.createErr != nil {
+		return nil, m.createErr
+	}
 	msgType := input.Type
 	if msgType == "" {
 		msgType = model.MessageTypeText
@@ -167,6 +181,9 @@ func (m *mockTopicMsgRepo) Create(_ context.Context, input model.CreateTopicMess
 }
 
 func (m *mockTopicMsgRepo) FindByID(_ context.Context, id uuid.UUID) (*model.TopicMessage, error) {
+	if m.findErr != nil {
+		return nil, m.findErr
+	}
 	msg, ok := m.messages[id]
 	if !ok {
 		return nil, apperror.NotFound("topic message", id.String())
@@ -175,6 +192,9 @@ func (m *mockTopicMsgRepo) FindByID(_ context.Context, id uuid.UUID) (*model.Top
 }
 
 func (m *mockTopicMsgRepo) ListByTopic(_ context.Context, topicID uuid.UUID, cursor *time.Time, limit int) ([]*model.TopicMessage, error) {
+	if m.listErr != nil {
+		return nil, m.listErr
+	}
 	msgs := m.byTopic[topicID]
 	if limit <= 0 {
 		limit = 50
@@ -193,6 +213,9 @@ func (m *mockTopicMsgRepo) ListByTopic(_ context.Context, topicID uuid.UUID, cur
 }
 
 func (m *mockTopicMsgRepo) MarkAsDeleted(_ context.Context, id uuid.UUID, forAll bool) error {
+	if m.markDeletedErr != nil {
+		return m.markDeletedErr
+	}
 	msg, ok := m.messages[id]
 	if !ok {
 		return apperror.NotFound("topic message", id.String())
@@ -687,5 +710,132 @@ func TestTopicService_UpdateTopic(t *testing.T) {
 			Name: &newName,
 		})
 		assert.Error(t, err)
+	})
+}
+
+// --- Topic Message Error-Path Tests ---
+
+func TestTopicMessageService_SendMessage_Errors(t *testing.T) {
+	topicRepo := newMockTopicRepo()
+	topicMsgRepo := newMockTopicMsgRepo()
+	svc := NewTopicMessageService(topicMsgRepo, topicRepo, nil)
+
+	topicID := uuid.New()
+	user := uuid.New()
+	topicRepo.topics[topicID] = &model.Topic{ID: topicID, Name: "T"}
+	topicRepo.members[topicID] = []*model.TopicMember{
+		{TopicID: topicID, UserID: user, Role: model.MemberRoleAdmin},
+	}
+
+	t.Run("default type is text", func(t *testing.T) {
+		msg, err := svc.SendMessage(context.Background(), SendTopicMessageInput{
+			TopicID: topicID, SenderID: user, Content: "Hi",
+		})
+		require.NoError(t, err)
+		assert.Equal(t, model.MessageTypeText, msg.Type)
+	})
+
+	t.Run("reply to message in different topic", func(t *testing.T) {
+		otherMsg := &model.TopicMessage{ID: uuid.New(), TopicID: uuid.New()}
+		topicMsgRepo.messages[otherMsg.ID] = otherMsg
+		replyID := otherMsg.ID
+		_, err := svc.SendMessage(context.Background(), SendTopicMessageInput{
+			TopicID: topicID, SenderID: user, Content: "Reply", Type: model.MessageTypeText,
+			ReplyToID: &replyID,
+		})
+		require.Error(t, err)
+	})
+
+	t.Run("reply find generic error", func(t *testing.T) {
+		topicMsgRepo.findErr = errors.New("db error")
+		badID := uuid.New()
+		_, err := svc.SendMessage(context.Background(), SendTopicMessageInput{
+			TopicID: topicID, SenderID: user, Content: "Reply", Type: model.MessageTypeText,
+			ReplyToID: &badID,
+		})
+		require.Error(t, err)
+		topicMsgRepo.findErr = nil
+	})
+
+	t.Run("create error", func(t *testing.T) {
+		topicMsgRepo.createErr = errors.New("db insert failed")
+		_, err := svc.SendMessage(context.Background(), SendTopicMessageInput{
+			TopicID: topicID, SenderID: user, Content: "Hello", Type: model.MessageTypeText,
+		})
+		require.Error(t, err)
+		topicMsgRepo.createErr = nil
+	})
+
+	t.Run("get members error", func(t *testing.T) {
+		topicRepo.getMembersErr = errors.New("db error")
+		_, err := svc.SendMessage(context.Background(), SendTopicMessageInput{
+			TopicID: topicID, SenderID: user, Content: "Hello", Type: model.MessageTypeText,
+		})
+		require.Error(t, err)
+		topicRepo.getMembersErr = nil
+	})
+}
+
+func TestTopicMessageService_GetMessages_Errors(t *testing.T) {
+	topicRepo := newMockTopicRepo()
+	topicMsgRepo := newMockTopicMsgRepo()
+	svc := NewTopicMessageService(topicMsgRepo, topicRepo, nil)
+
+	topicID := uuid.New()
+
+	t.Run("invalid cursor", func(t *testing.T) {
+		_, err := svc.GetMessages(context.Background(), topicID, "bad-cursor", 10)
+		require.Error(t, err)
+	})
+
+	t.Run("list error", func(t *testing.T) {
+		topicMsgRepo.listErr = errors.New("db error")
+		_, err := svc.GetMessages(context.Background(), topicID, "", 10)
+		require.Error(t, err)
+		topicMsgRepo.listErr = nil
+	})
+
+	t.Run("default limit when zero", func(t *testing.T) {
+		page, err := svc.GetMessages(context.Background(), topicID, "", 0)
+		require.NoError(t, err)
+		assert.NotNil(t, page)
+	})
+
+	t.Run("with valid cursor", func(t *testing.T) {
+		cursor := time.Now().Add(time.Hour).Format(time.RFC3339Nano)
+		page, err := svc.GetMessages(context.Background(), topicID, cursor, 10)
+		require.NoError(t, err)
+		assert.NotNil(t, page)
+	})
+}
+
+func TestTopicMessageService_DeleteMessage_Errors(t *testing.T) {
+	topicRepo := newMockTopicRepo()
+	topicMsgRepo := newMockTopicMsgRepo()
+	svc := NewTopicMessageService(topicMsgRepo, topicRepo, nil)
+
+	topicID := uuid.New()
+	sender := uuid.New()
+
+	msg := &model.TopicMessage{ID: uuid.New(), TopicID: topicID, SenderID: sender}
+	topicMsgRepo.messages[msg.ID] = msg
+
+	t.Run("mark deleted error", func(t *testing.T) {
+		topicMsgRepo.markDeletedErr = errors.New("db error")
+		err := svc.DeleteMessage(context.Background(), msg.ID, sender, false)
+		require.Error(t, err)
+		topicMsgRepo.markDeletedErr = nil
+	})
+
+	t.Run("find error", func(t *testing.T) {
+		topicMsgRepo.findErr = errors.New("db error")
+		err := svc.DeleteMessage(context.Background(), msg.ID, sender, false)
+		require.Error(t, err)
+		topicMsgRepo.findErr = nil
+	})
+
+	t.Run("delete for all no hub", func(t *testing.T) {
+		err := svc.DeleteMessage(context.Background(), msg.ID, sender, true)
+		require.NoError(t, err)
 	})
 }

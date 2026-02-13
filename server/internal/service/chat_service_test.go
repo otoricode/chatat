@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -855,5 +856,152 @@ func TestSortChatList(t *testing.T) {
 		items := []*ChatListItem{}
 		sortChatList(items)
 		assert.Len(t, items, 0)
+	})
+}
+
+func TestChatService_ListChats_MoreErrors(t *testing.T) {
+	hub := newTestHub()
+	defer hub.Shutdown()
+
+	t.Run("get last message error", func(t *testing.T) {
+		chatRepo := newMockChatRepo()
+		msgRepo := newMockMessageRepo()
+		userRepo := newMockUserRepo()
+		userA := uuid.New()
+		userB := uuid.New()
+		userRepo.addUser(&model.User{ID: userA, Phone: "+628111", Name: "A", Avatar: "a"})
+		userRepo.addUser(&model.User{ID: userB, Phone: "+628222", Name: "B", Avatar: "b"})
+
+		svc := NewChatService(chatRepo, msgRepo, newMockMessageStatRepo(), userRepo, hub)
+		_, err := svc.CreatePersonalChat(context.Background(), userA, userB)
+		require.NoError(t, err)
+
+		msgRepo.listErr = fmt.Errorf("db error")
+		_, err = svc.ListChats(context.Background(), userA)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "last message")
+		msgRepo.listErr = nil
+	})
+
+	t.Run("get members error for personal chat", func(t *testing.T) {
+		chatRepo := newMockChatRepo()
+		userRepo := newMockUserRepo()
+		userA := uuid.New()
+		userB := uuid.New()
+		userRepo.addUser(&model.User{ID: userA, Phone: "+628111", Name: "A", Avatar: "a"})
+		userRepo.addUser(&model.User{ID: userB, Phone: "+628222", Name: "B", Avatar: "b"})
+
+		svc := NewChatService(chatRepo, newMockMessageRepo(), newMockMessageStatRepo(), userRepo, hub)
+		_, err := svc.CreatePersonalChat(context.Background(), userA, userB)
+		require.NoError(t, err)
+
+		chatRepo.getMembersErr = fmt.Errorf("db error")
+		_, err = svc.ListChats(context.Background(), userA)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "chat members")
+		chatRepo.getMembersErr = nil
+	})
+
+	t.Run("other user find error for personal chat", func(t *testing.T) {
+		chatRepo := newMockChatRepo()
+		userRepo := newMockUserRepo()
+		userA := uuid.New()
+		userB := uuid.New()
+		userRepo.addUser(&model.User{ID: userA, Phone: "+628111", Name: "A", Avatar: "a"})
+		userRepo.addUser(&model.User{ID: userB, Phone: "+628222", Name: "B", Avatar: "b"})
+
+		svc := NewChatService(chatRepo, newMockMessageRepo(), newMockMessageStatRepo(), userRepo, hub)
+		_, err := svc.CreatePersonalChat(context.Background(), userA, userB)
+		require.NoError(t, err)
+
+		userRepo.findErr = errors.New("generic db error")
+		_, err = svc.ListChats(context.Background(), userA)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "other user")
+		userRepo.findErr = nil
+	})
+
+	t.Run("other user not found skipped", func(t *testing.T) {
+		chatRepo := newMockChatRepo()
+		userRepo := newMockUserRepo()
+		userA := uuid.New()
+		userB := uuid.New()
+		userRepo.addUser(&model.User{ID: userA, Phone: "+628111", Name: "A", Avatar: "a"})
+		userRepo.addUser(&model.User{ID: userB, Phone: "+628222", Name: "B", Avatar: "b"})
+
+		svc := NewChatService(chatRepo, newMockMessageRepo(), newMockMessageStatRepo(), userRepo, hub)
+		_, err := svc.CreatePersonalChat(context.Background(), userA, userB)
+		require.NoError(t, err)
+
+		// Remove userB from repo so FindByID returns NotFound
+		delete(userRepo.users, userB)
+		delete(userRepo.byPhone, "+628222")
+
+		items, err := svc.ListChats(context.Background(), userA)
+		require.NoError(t, err)
+		assert.Len(t, items, 1)
+		assert.Nil(t, items[0].OtherUser, "deleted user should be nil")
+	})
+
+	t.Run("group chat skips member lookup", func(t *testing.T) {
+		chatRepo := newMockChatRepo()
+		userRepo := newMockUserRepo()
+		userA := uuid.New()
+		userRepo.addUser(&model.User{ID: userA, Phone: "+628111", Name: "A", Avatar: "a"})
+
+		groupChat := &model.Chat{ID: uuid.New(), Type: model.ChatTypeGroup, Name: "G", CreatedBy: userA}
+		chatRepo.chats[groupChat.ID] = groupChat
+		_ = chatRepo.AddMember(context.Background(), groupChat.ID, userA, model.MemberRoleAdmin)
+
+		svc := NewChatService(chatRepo, newMockMessageRepo(), newMockMessageStatRepo(), userRepo, hub)
+		items, err := svc.ListChats(context.Background(), userA)
+		require.NoError(t, err)
+		assert.Len(t, items, 1)
+		assert.Nil(t, items[0].OtherUser, "group chat should have nil OtherUser")
+	})
+}
+
+func TestChatService_GetChat_MemberErrors(t *testing.T) {
+	hub := newTestHub()
+	defer hub.Shutdown()
+
+	t.Run("member user not found", func(t *testing.T) {
+		chatRepo := newMockChatRepo()
+		userRepo := newMockUserRepo()
+		userA := uuid.New()
+		userB := uuid.New()
+		userRepo.addUser(&model.User{ID: userA, Phone: "+628111", Name: "A", Avatar: "a"})
+		userRepo.addUser(&model.User{ID: userB, Phone: "+628222", Name: "B", Avatar: "b"})
+
+		svc := NewChatService(chatRepo, newMockMessageRepo(), newMockMessageStatRepo(), userRepo, hub)
+		chat, err := svc.CreatePersonalChat(context.Background(), userA, userB)
+		require.NoError(t, err)
+
+		// Remove userB so FindByID returns NotFound
+		delete(userRepo.users, userB)
+		delete(userRepo.byPhone, "+628222")
+
+		detail, err := svc.GetChat(context.Background(), chat.ID, userA)
+		require.NoError(t, err)
+		assert.Len(t, detail.Members, 1, "deleted member should be skipped")
+	})
+
+	t.Run("member user generic error", func(t *testing.T) {
+		chatRepo := newMockChatRepo()
+		userRepo := newMockUserRepo()
+		userA := uuid.New()
+		userB := uuid.New()
+		userRepo.addUser(&model.User{ID: userA, Phone: "+628111", Name: "A", Avatar: "a"})
+		userRepo.addUser(&model.User{ID: userB, Phone: "+628222", Name: "B", Avatar: "b"})
+
+		svc := NewChatService(chatRepo, newMockMessageRepo(), newMockMessageStatRepo(), userRepo, hub)
+		chat, err := svc.CreatePersonalChat(context.Background(), userA, userB)
+		require.NoError(t, err)
+
+		userRepo.findErr = errors.New("generic db error")
+		_, err = svc.GetChat(context.Background(), chat.ID, userA)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "member user")
+		userRepo.findErr = nil
 	})
 }

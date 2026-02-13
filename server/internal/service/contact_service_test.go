@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/google/uuid"
@@ -14,7 +15,8 @@ import (
 )
 
 type mockContactRepo struct {
-	contacts map[uuid.UUID][]repository.UserContact
+	contacts    map[uuid.UUID][]repository.UserContact
+	findByUIDErr error
 }
 
 func newMockContactRepo() *mockContactRepo {
@@ -44,6 +46,9 @@ func (m *mockContactRepo) UpsertBatch(_ context.Context, userID uuid.UUID, conta
 }
 
 func (m *mockContactRepo) FindByUserID(_ context.Context, userID uuid.UUID) ([]repository.UserContact, error) {
+	if m.findByUIDErr != nil {
+		return nil, m.findByUIDErr
+	}
 	return m.contacts[userID], nil
 }
 
@@ -212,4 +217,59 @@ func TestSortContacts(t *testing.T) {
 	assert.Equal(t, "Charlie", contacts[1].Name)
 	assert.Equal(t, "Alice", contacts[2].Name)
 	assert.Equal(t, "Zara", contacts[3].Name)
+}
+
+// --- Error-Path Tests ---
+
+func TestContactService_GetContacts_Errors(t *testing.T) {
+	hub := ws.NewHub()
+
+	t.Run("find by user error", func(t *testing.T) {
+		userRepo := newMockUserRepo()
+		contactRepo := newMockContactRepo()
+		contactRepo.findByUIDErr = errors.New("db error")
+		svc := NewContactService(userRepo, contactRepo, hub)
+		_, err := svc.GetContacts(context.Background(), uuid.New())
+		require.Error(t, err)
+	})
+
+	t.Run("deleted contact skipped", func(t *testing.T) {
+		userRepo := newMockUserRepo()
+		contactRepo := newMockContactRepo()
+		svc := NewContactService(userRepo, contactRepo, hub)
+
+		myID := uuid.New()
+		deletedUserID := uuid.New() // not in userRepo = "deleted"
+		goodUser := &model.User{ID: uuid.New(), Phone: "+628111", Name: "Good"}
+		userRepo.addUser(goodUser)
+
+		contactRepo.contacts[myID] = []repository.UserContact{
+			{UserID: myID, ContactUserID: deletedUserID, ContactName: "Deleted"},
+			{UserID: myID, ContactUserID: goodUser.ID, ContactName: "Good"},
+		}
+
+		contacts, err := svc.GetContacts(context.Background(), myID)
+		require.NoError(t, err)
+		assert.Len(t, contacts, 1) // deleted one skipped
+		assert.Equal(t, "Good", contacts[0].Name)
+	})
+
+	t.Run("find user generic error", func(t *testing.T) {
+		userRepo := newMockUserRepo()
+		contactRepo := newMockContactRepo()
+		svc := NewContactService(userRepo, contactRepo, hub)
+
+		myID := uuid.New()
+		badUser := uuid.New()
+		userRepo.addUser(&model.User{ID: badUser, Phone: "+628222", Name: "Bad"})
+		userRepo.findErr = errors.New("generic db error")
+
+		contactRepo.contacts[myID] = []repository.UserContact{
+			{UserID: myID, ContactUserID: badUser, ContactName: "Bad"},
+		}
+
+		_, err := svc.GetContacts(context.Background(), myID)
+		require.Error(t, err)
+		userRepo.findErr = nil
+	})
 }

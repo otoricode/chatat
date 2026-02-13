@@ -478,3 +478,123 @@ func TestMessageService_MarkChatAsRead_Error(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "mark chat as read")
 }
+
+func TestMessageService_SendMessage_WithNotifSvc(t *testing.T) {
+	hub := newTestHub()
+	defer hub.Shutdown()
+	notif := &mockNotifSvc{}
+
+	t.Run("personal chat push notification", func(t *testing.T) {
+		chatRepo := newMockChatRepo()
+		msgRepo := newMockMessageRepo()
+		userRepo := newMockUserRepo()
+		userA := uuid.New()
+		userB := uuid.New()
+		userRepo.addUser(&model.User{ID: userA, Name: "Alice"})
+		userRepo.addUser(&model.User{ID: userB, Name: "Bob"})
+		chat := &model.Chat{ID: uuid.New(), Type: model.ChatTypePersonal, CreatedBy: userA}
+		chatRepo.chats[chat.ID] = chat
+		_ = chatRepo.AddMember(context.Background(), chat.ID, userA, model.MemberRoleAdmin)
+		_ = chatRepo.AddMember(context.Background(), chat.ID, userB, model.MemberRoleMember)
+
+		svc := NewMessageService(msgRepo, newMockMessageStatRepo(), chatRepo, userRepo, hub, notif)
+		msg, err := svc.SendMessage(context.Background(), SendMessageInput{
+			ChatID: chat.ID, SenderID: userA, Content: "Hi Bob", Type: model.MessageTypeText,
+		})
+		require.NoError(t, err)
+		assert.Equal(t, "Hi Bob", msg.Content)
+		time.Sleep(50 * time.Millisecond) // allow goroutine to finish
+	})
+
+	t.Run("group chat push notification", func(t *testing.T) {
+		chatRepo := newMockChatRepo()
+		msgRepo := newMockMessageRepo()
+		userRepo := newMockUserRepo()
+		userA := uuid.New()
+		userRepo.addUser(&model.User{ID: userA, Name: "Alice"})
+		chat := &model.Chat{ID: uuid.New(), Type: model.ChatTypeGroup, Name: "Team", CreatedBy: userA}
+		chatRepo.chats[chat.ID] = chat
+		_ = chatRepo.AddMember(context.Background(), chat.ID, userA, model.MemberRoleAdmin)
+
+		svc := NewMessageService(msgRepo, newMockMessageStatRepo(), chatRepo, userRepo, hub, notif)
+		msg, err := svc.SendMessage(context.Background(), SendMessageInput{
+			ChatID: chat.ID, SenderID: userA, Content: "Hello team", Type: model.MessageTypeText,
+		})
+		require.NoError(t, err)
+		assert.Equal(t, "Hello team", msg.Content)
+		time.Sleep(50 * time.Millisecond)
+	})
+
+	t.Run("push with sender name empty", func(t *testing.T) {
+		chatRepo := newMockChatRepo()
+		msgRepo := newMockMessageRepo()
+		userRepo := newMockUserRepo()
+		userA := uuid.New()
+		userRepo.addUser(&model.User{ID: userA, Name: ""}) // empty name
+		chat := &model.Chat{ID: uuid.New(), Type: model.ChatTypePersonal, CreatedBy: userA}
+		chatRepo.chats[chat.ID] = chat
+		_ = chatRepo.AddMember(context.Background(), chat.ID, userA, model.MemberRoleAdmin)
+
+		svc := NewMessageService(msgRepo, newMockMessageStatRepo(), chatRepo, userRepo, hub, notif)
+		msg, err := svc.SendMessage(context.Background(), SendMessageInput{
+			ChatID: chat.ID, SenderID: userA, Content: "anon msg",
+		})
+		require.NoError(t, err)
+		assert.Equal(t, "anon msg", msg.Content)
+		time.Sleep(50 * time.Millisecond)
+	})
+}
+
+func TestMessageService_ForwardMessage_CreateError(t *testing.T) {
+	hub := newTestHub()
+	defer hub.Shutdown()
+
+	chatRepo := newMockChatRepo()
+	msgRepo := newMockMessageRepo()
+	userA := uuid.New()
+
+	chat1 := &model.Chat{ID: uuid.New(), Type: model.ChatTypePersonal, CreatedBy: userA}
+	chatRepo.chats[chat1.ID] = chat1
+	_ = chatRepo.AddMember(context.Background(), chat1.ID, userA, model.MemberRoleAdmin)
+
+	chat2 := &model.Chat{ID: uuid.New(), Type: model.ChatTypePersonal, CreatedBy: userA}
+	chatRepo.chats[chat2.ID] = chat2
+	_ = chatRepo.AddMember(context.Background(), chat2.ID, userA, model.MemberRoleAdmin)
+
+	svc := NewMessageService(msgRepo, newMockMessageStatRepo(), chatRepo, nil, hub, nil)
+	original, err := svc.SendMessage(context.Background(), SendMessageInput{
+		ChatID: chat1.ID, SenderID: userA, Content: "Fwd me", Type: model.MessageTypeText,
+	})
+	require.NoError(t, err)
+
+	msgRepo.createErr = fmt.Errorf("db error")
+	_, err = svc.ForwardMessage(context.Background(), original.ID, userA, chat2.ID)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "create forwarded message")
+	msgRepo.createErr = nil
+}
+
+func TestMessageService_DeleteMessage_MarkError(t *testing.T) {
+	hub := newTestHub()
+	defer hub.Shutdown()
+
+	chatRepo := newMockChatRepo()
+	msgRepo := newMockMessageRepo()
+	userA := uuid.New()
+
+	chat := &model.Chat{ID: uuid.New(), Type: model.ChatTypePersonal, CreatedBy: userA}
+	chatRepo.chats[chat.ID] = chat
+	_ = chatRepo.AddMember(context.Background(), chat.ID, userA, model.MemberRoleAdmin)
+
+	svc := NewMessageService(msgRepo, newMockMessageStatRepo(), chatRepo, nil, hub, nil)
+	msg, err := svc.SendMessage(context.Background(), SendMessageInput{
+		ChatID: chat.ID, SenderID: userA, Content: "Hi", Type: model.MessageTypeText,
+	})
+	require.NoError(t, err)
+
+	msgRepo.markDelErr = fmt.Errorf("db error")
+	err = svc.DeleteMessage(context.Background(), msg.ID, userA, false)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "mark as deleted")
+	msgRepo.markDelErr = nil
+}

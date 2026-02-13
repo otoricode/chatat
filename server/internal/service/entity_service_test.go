@@ -637,6 +637,32 @@ func TestEntityService_LinkDocument(t *testing.T) {
 		require.True(t, ok)
 		assert.Equal(t, "FORBIDDEN", appErr.Code)
 	})
+
+	t.Run("unlink forbidden", func(t *testing.T) {
+		// Re-link first
+		_ = svc.LinkToDocument(ctx, entity.ID, doc.ID, userID)
+		otherID := uuid.New()
+		err := svc.UnlinkFromDocument(ctx, entity.ID, doc.ID, otherID)
+		require.Error(t, err)
+		appErr, ok := err.(*apperror.AppError)
+		require.True(t, ok)
+		assert.Equal(t, "FORBIDDEN", appErr.Code)
+	})
+
+	t.Run("link doc not found", func(t *testing.T) {
+		err := svc.LinkToDocument(ctx, entity.ID, uuid.New(), userID)
+		require.Error(t, err)
+	})
+
+	t.Run("link entity not found", func(t *testing.T) {
+		err := svc.LinkToDocument(ctx, uuid.New(), doc.ID, userID)
+		require.Error(t, err)
+	})
+
+	t.Run("unlink entity not found", func(t *testing.T) {
+		err := svc.UnlinkFromDocument(ctx, uuid.New(), doc.ID, userID)
+		require.Error(t, err)
+	})
 }
 
 func TestEntityService_CreateFromContact(t *testing.T) {
