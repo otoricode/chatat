@@ -38,23 +38,6 @@ func (h *TopicStubHandler) Delete(w http.ResponseWriter, r *http.Request)       
 func (h *TopicStubHandler) SendMessage(w http.ResponseWriter, r *http.Request)  { notImplemented(w, r) }
 func (h *TopicStubHandler) ListMessages(w http.ResponseWriter, r *http.Request) { notImplemented(w, r) }
 
-// DocumentStubHandler is a placeholder for document endpoints.
-type DocumentStubHandler struct{}
-
-func (h *DocumentStubHandler) List(w http.ResponseWriter, r *http.Request)    { notImplemented(w, r) }
-func (h *DocumentStubHandler) Create(w http.ResponseWriter, r *http.Request)  { notImplemented(w, r) }
-func (h *DocumentStubHandler) GetByID(w http.ResponseWriter, r *http.Request) { notImplemented(w, r) }
-func (h *DocumentStubHandler) Update(w http.ResponseWriter, r *http.Request)  { notImplemented(w, r) }
-func (h *DocumentStubHandler) Delete(w http.ResponseWriter, r *http.Request)  { notImplemented(w, r) }
-func (h *DocumentStubHandler) Lock(w http.ResponseWriter, r *http.Request)    { notImplemented(w, r) }
-func (h *DocumentStubHandler) Sign(w http.ResponseWriter, r *http.Request)    { notImplemented(w, r) }
-func (h *DocumentStubHandler) AddCollaborator(w http.ResponseWriter, r *http.Request) {
-	notImplemented(w, r)
-}
-func (h *DocumentStubHandler) RemoveCollaborator(w http.ResponseWriter, r *http.Request) {
-	notImplemented(w, r)
-}
-
 // EntityStubHandler is a placeholder for entity endpoints.
 type EntityStubHandler struct{}
 
