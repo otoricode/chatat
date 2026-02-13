@@ -7,3 +7,4 @@ export { topicsApi } from './topics';
 export { documentsApi } from './documents';
 export { entitiesApi } from './entities';
 export { mediaApi } from './media';
+export { notificationsApi } from './notifications';
