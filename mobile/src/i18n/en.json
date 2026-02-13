@@ -454,5 +454,18 @@
     "confirmRestoreTitle": "Restore Data",
     "confirmRestoreMessage": "Current data will be merged with the backup. Continue?",
     "platformHint": "Data is backed up to {{platform}}"
+  },
+  "privacy": {
+    "title": "Privacy",
+    "visibility": "Who can see my info",
+    "lastSeen": "Last Seen",
+    "onlineStatus": "Online Status",
+    "profilePhoto": "Profile Photo",
+    "messaging": "Messaging",
+    "readReceipts": "Read Receipts",
+    "readReceiptsHint": "If turned off, you won't be able to see read receipts from others either.",
+    "everyone": "Everyone",
+    "contacts": "My Contacts",
+    "nobody": "Nobody"
   }
 }

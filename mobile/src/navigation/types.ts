@@ -43,6 +43,7 @@ export type ChatStackParamList = {
   Storage: undefined;
   About: undefined;
   Backup: undefined;
+  PrivacySettings: undefined;
   DocumentEditor: {
     documentId?: string;
     contextType?: string;

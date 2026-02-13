@@ -454,5 +454,18 @@
     "confirmRestoreTitle": "Pulihkan Data",
     "confirmRestoreMessage": "Data saat ini akan digabungkan dengan cadangan. Lanjutkan?",
     "platformHint": "Data dicadangkan ke {{platform}}"
+  },
+  "privacy": {
+    "title": "Privasi",
+    "visibility": "Siapa yang bisa melihat info saya",
+    "lastSeen": "Terakhir Dilihat",
+    "onlineStatus": "Status Online",
+    "profilePhoto": "Foto Profil",
+    "messaging": "Pesan",
+    "readReceipts": "Tanda Dibaca",
+    "readReceiptsHint": "Jika dimatikan, Anda juga tidak akan bisa melihat tanda dibaca dari orang lain.",
+    "everyone": "Semua Orang",
+    "contacts": "Kontak Saya",
+    "nobody": "Tidak Ada"
   }
 }

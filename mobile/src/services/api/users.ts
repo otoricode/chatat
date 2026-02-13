@@ -14,6 +14,13 @@ type SetupProfileRequest = {
   avatar: string;
 };
 
+export type PrivacySettings = {
+  lastSeenVisibility: 'everyone' | 'contacts' | 'nobody';
+  onlineVisibility: 'everyone' | 'contacts' | 'nobody';
+  readReceipts: boolean;
+  profilePhotoVisibility: 'everyone' | 'contacts' | 'nobody';
+};
+
 export const usersApi = {
   getMe: () => apiClient.get<User>('/users/me'),
 
@@ -24,4 +31,10 @@ export const usersApi = {
     apiClient.post<User>('/users/me/setup', data),
 
   deleteAccount: () => apiClient.delete('/users/me'),
+
+  getPrivacy: () =>
+    apiClient.get<PrivacySettings>('/users/me/privacy'),
+
+  updatePrivacy: (data: Partial<PrivacySettings>) =>
+    apiClient.put<PrivacySettings>('/users/me/privacy', data),
 };
