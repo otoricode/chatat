@@ -147,12 +147,12 @@ Setiap kali menyelesaikan satu phase, jalankan checklist ini:
 - [x] Frontend: Document search + entity filter
 
 ## Phase 18 — Internationalization
-- [ ] i18n library setup (react-i18next / i18n-js)
-- [ ] Bahasa Indonesia translations (default)
-- [ ] English translations
-- [ ] Arabic translations
-- [ ] RTL layout support for Arabic
-- [ ] Dynamic language switch
+- [x] i18n library setup (react-i18next / i18n-js)
+- [x] Bahasa Indonesia translations (default)
+- [x] English translations
+- [x] Arabic translations
+- [x] RTL layout support for Arabic
+- [x] Dynamic language switch
 
 ## Phase 19 — Local Storage & Sync
 - [ ] SQLite/WatermelonDB local database setup
