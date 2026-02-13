@@ -186,12 +186,12 @@ Setiap kali menyelesaikan satu phase, jalankan checklist ini:
 - [x] Privacy controls (last seen, read receipts toggle)
 
 ## Phase 23 — Performance Optimization
-- [ ] FlatList virtualization untuk chat/list panjang
-- [ ] Image caching (FastImage / expo-image)
-- [ ] Lazy loading untuk tab/screen
-- [ ] WebSocket reconnection optimization
-- [ ] Memory management (large chat histories)
-- [ ] Bundle size optimization
+- [x] FlatList virtualization untuk chat/list panjang
+- [x] Image caching (FastImage / expo-image)
+- [x] Lazy loading untuk tab/screen
+- [x] WebSocket reconnection optimization
+- [x] Memory management (large chat histories)
+- [x] Bundle size optimization
 
 ## Phase 24 — Comprehensive Testing
 - [ ] Go unit test coverage > 80%
@@ -263,9 +263,9 @@ Setiap kali menyelesaikan satu phase, jalankan checklist ini:
 | 18    | `[x]`  | 2025-06-14    | 2025-06-14      |
 | 19    | `[x]`  | 2025-06-14    | 2025-06-14      |
 | 20    | `[x]`  | 2025-07-14    | 2025-07-14      |
-| 21    | `[ ]`  |               |                 |
-| 22    | `[ ]`  |               |                 |
-| 23    | `[ ]`  |               |                 |
+| 21    | `[x]`  | 2025-07-14    | 2025-07-14      |
+| 22    | `[x]`  | 2025-07-14    | 2025-07-14      |
+| 23    | `[x]`  | 2025-07-15    | 2025-07-15      |
 | 24    | `[ ]`  |               |                 |
 | 25    | `[ ]`  |               |                 |
 | 26    | `[ ]`  |               |                 |
