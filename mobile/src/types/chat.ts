@@ -95,3 +95,40 @@ export interface PaginatedResponse<T> {
     total?: number;
   };
 }
+
+// Topic types
+export interface Topic {
+  id: string;
+  name: string;
+  icon: string;
+  description: string;
+  parentType: ChatType;
+  parentId: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TopicMessage {
+  id: string;
+  topicId: string;
+  senderId: string;
+  content: string;
+  replyToId: string | null;
+  type: MessageType;
+  isDeleted: boolean;
+  deletedForAll: boolean;
+  createdAt: string;
+}
+
+export interface TopicListItem {
+  topic: Topic;
+  lastMessage: TopicMessage | null;
+  memberCount: number;
+}
+
+export interface TopicDetail {
+  topic: Topic;
+  members: MemberInfo[];
+  parent: Chat | null;
+}

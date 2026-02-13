@@ -8,7 +8,9 @@ import { ChatInfoScreen } from '@/screens/chat/ChatInfoScreen';
 import { ContactListScreen } from '@/screens/contact/ContactListScreen';
 import { CreateGroupScreen } from '@/screens/group/CreateGroupScreen';
 import { TopicListScreen } from '@/screens/topic/TopicListScreen';
+import { CreateTopicScreen } from '@/screens/topic/CreateTopicScreen';
 import { TopicScreen } from '@/screens/topic/TopicScreen';
+import { TopicInfoScreen } from '@/screens/topic/TopicInfoScreen';
 import { DocumentEditorScreen } from '@/screens/document/DocumentEditorScreen';
 import { colors } from '@/theme';
 
@@ -56,9 +58,19 @@ export function ChatStackNavigator() {
         options={{ title: 'Topik' }}
       />
       <Stack.Screen
+        name="CreateTopic"
+        component={CreateTopicScreen}
+        options={{ title: 'Buat Topik' }}
+      />
+      <Stack.Screen
         name="Topic"
         component={TopicScreen}
         options={{ title: '' }}
+      />
+      <Stack.Screen
+        name="TopicInfo"
+        component={TopicInfoScreen}
+        options={{ title: 'Info Topik' }}
       />
       <Stack.Screen
         name="DocumentEditor"
