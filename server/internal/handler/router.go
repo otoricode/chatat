@@ -82,6 +82,8 @@ func NewRouter(cfg *config.Config, deps *Dependencies) *chi.Mux {
 					r.Put("/pin", deps.ChatHandler.PinChat)
 					r.Delete("/pin", deps.ChatHandler.UnpinChat)
 					r.Post("/read", deps.ChatHandler.MarkAsRead)
+					r.Get("/info", deps.ChatHandler.GetGroupInfo)
+					r.Post("/leave", deps.ChatHandler.LeaveGroup)
 					r.Post("/messages", deps.ChatHandler.SendMessage)
 					r.Get("/messages", deps.ChatHandler.ListMessages)
 					r.Get("/messages/search", deps.ChatHandler.SearchMessages)
@@ -89,6 +91,7 @@ func NewRouter(cfg *config.Config, deps *Dependencies) *chi.Mux {
 					r.Post("/messages/{messageId}/forward", deps.ChatHandler.ForwardMessage)
 					r.Post("/members", deps.ChatHandler.AddMember)
 					r.Delete("/members/{memberID}", deps.ChatHandler.RemoveMember)
+					r.Put("/members/{memberID}/admin", deps.ChatHandler.PromoteToAdmin)
 				})
 			})
 

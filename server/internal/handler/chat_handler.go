@@ -14,18 +14,25 @@ import (
 type ChatHandler struct {
 	chatService    service.ChatService
 	messageService service.MessageService
+	groupService   service.GroupService
 }
 
 // NewChatHandler creates a new chat handler.
-func NewChatHandler(chatService service.ChatService, messageService service.MessageService) *ChatHandler {
+func NewChatHandler(chatService service.ChatService, messageService service.MessageService, groupService service.GroupService) *ChatHandler {
 	return &ChatHandler{
 		chatService:    chatService,
 		messageService: messageService,
+		groupService:   groupService,
 	}
 }
 
-type createPersonalChatRequest struct {
-	ContactID string `json:"contactId"`
+type createChatRequest struct {
+	Type        string   `json:"type"`
+	ContactID   string   `json:"contactId"`
+	Name        string   `json:"name"`
+	Icon        string   `json:"icon"`
+	Description string   `json:"description"`
+	MemberIDs   []string `json:"memberIds"`
 }
 
 // List handles GET /api/v1/chats
@@ -53,14 +60,41 @@ func (h *ChatHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req createPersonalChatRequest
+	var req createChatRequest
 	if err := DecodeJSON(r, &req); err != nil {
 		response.Error(w, apperror.BadRequest("invalid request body"))
 		return
 	}
 
+	// Group chat creation
+	if req.Type == "group" {
+		memberIDs := make([]uuid.UUID, 0, len(req.MemberIDs))
+		for _, idStr := range req.MemberIDs {
+			id, err := parseUUID(idStr)
+			if err != nil {
+				response.Error(w, apperror.BadRequest("invalid member id: "+idStr))
+				return
+			}
+			memberIDs = append(memberIDs, id)
+		}
+
+		chat, err := h.groupService.CreateGroup(r.Context(), userID, service.CreateGroupInput{
+			Name:        req.Name,
+			Icon:        req.Icon,
+			Description: req.Description,
+			MemberIDs:   memberIDs,
+		})
+		if err != nil {
+			handleServiceError(w, err)
+			return
+		}
+		response.Created(w, chat)
+		return
+	}
+
+	// Personal chat creation
 	if req.ContactID == "" {
-		response.Error(w, apperror.BadRequest("contactId is required"))
+		response.Error(w, apperror.BadRequest("contactId is required for personal chat"))
 		return
 	}
 
@@ -102,14 +136,55 @@ func (h *ChatHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	response.OK(w, detail)
 }
 
-// Update handles PUT /api/v1/chats/{id} (placeholder for group chat update)
+// Update handles PUT /api/v1/chats/{id}
 func (h *ChatHandler) Update(w http.ResponseWriter, r *http.Request) {
-	notImplemented(w, r)
+	userID, err := GetUserID(r)
+	if err != nil {
+		response.Error(w, apperror.Unauthorized("user not authenticated"))
+		return
+	}
+
+	chatID, err := GetPathUUID(r, "id")
+	if err != nil {
+		response.Error(w, apperror.BadRequest("invalid chat id"))
+		return
+	}
+
+	var req service.UpdateGroupInput
+	if err := DecodeJSON(r, &req); err != nil {
+		response.Error(w, apperror.BadRequest("invalid request body"))
+		return
+	}
+
+	chat, err := h.groupService.UpdateGroup(r.Context(), chatID, userID, req)
+	if err != nil {
+		handleServiceError(w, err)
+		return
+	}
+
+	response.OK(w, chat)
 }
 
-// Delete handles DELETE /api/v1/chats/{id} (placeholder)
+// Delete handles DELETE /api/v1/chats/{id}
 func (h *ChatHandler) Delete(w http.ResponseWriter, r *http.Request) {
-	notImplemented(w, r)
+	userID, err := GetUserID(r)
+	if err != nil {
+		response.Error(w, apperror.Unauthorized("user not authenticated"))
+		return
+	}
+
+	chatID, err := GetPathUUID(r, "id")
+	if err != nil {
+		response.Error(w, apperror.BadRequest("invalid chat id"))
+		return
+	}
+
+	if err := h.groupService.DeleteGroup(r.Context(), chatID, userID); err != nil {
+		handleServiceError(w, err)
+		return
+	}
+
+	response.NoContent(w)
 }
 
 // PinChat handles PUT /api/v1/chats/{id}/pin
@@ -328,14 +403,141 @@ func (h *ChatHandler) SearchMessages(w http.ResponseWriter, r *http.Request) {
 	response.OK(w, messages)
 }
 
-// AddMember handles POST /api/v1/chats/{id}/members (for groups)
+// AddMember handles POST /api/v1/chats/{id}/members
 func (h *ChatHandler) AddMember(w http.ResponseWriter, r *http.Request) {
-	notImplemented(w, r)
+	userID, err := GetUserID(r)
+	if err != nil {
+		response.Error(w, apperror.Unauthorized("user not authenticated"))
+		return
+	}
+
+	chatID, err := GetPathUUID(r, "id")
+	if err != nil {
+		response.Error(w, apperror.BadRequest("invalid chat id"))
+		return
+	}
+
+	var req struct {
+		UserID string `json:"userId"`
+	}
+	if err := DecodeJSON(r, &req); err != nil {
+		response.Error(w, apperror.BadRequest("invalid request body"))
+		return
+	}
+
+	memberID, err := parseUUID(req.UserID)
+	if err != nil {
+		response.Error(w, apperror.BadRequest("invalid userId format"))
+		return
+	}
+
+	if err := h.groupService.AddMember(r.Context(), chatID, memberID, userID); err != nil {
+		handleServiceError(w, err)
+		return
+	}
+
+	response.NoContent(w)
 }
 
-// RemoveMember handles DELETE /api/v1/chats/{id}/members/{memberID} (for groups)
+// RemoveMember handles DELETE /api/v1/chats/{id}/members/{memberID}
 func (h *ChatHandler) RemoveMember(w http.ResponseWriter, r *http.Request) {
-	notImplemented(w, r)
+	userID, err := GetUserID(r)
+	if err != nil {
+		response.Error(w, apperror.Unauthorized("user not authenticated"))
+		return
+	}
+
+	chatID, err := GetPathUUID(r, "id")
+	if err != nil {
+		response.Error(w, apperror.BadRequest("invalid chat id"))
+		return
+	}
+
+	memberID, err := GetPathUUID(r, "memberID")
+	if err != nil {
+		response.Error(w, apperror.BadRequest("invalid member id"))
+		return
+	}
+
+	if err := h.groupService.RemoveMember(r.Context(), chatID, memberID, userID); err != nil {
+		handleServiceError(w, err)
+		return
+	}
+
+	response.NoContent(w)
+}
+
+// PromoteToAdmin handles PUT /api/v1/chats/{id}/members/{memberID}/admin
+func (h *ChatHandler) PromoteToAdmin(w http.ResponseWriter, r *http.Request) {
+	userID, err := GetUserID(r)
+	if err != nil {
+		response.Error(w, apperror.Unauthorized("user not authenticated"))
+		return
+	}
+
+	chatID, err := GetPathUUID(r, "id")
+	if err != nil {
+		response.Error(w, apperror.BadRequest("invalid chat id"))
+		return
+	}
+
+	memberID, err := GetPathUUID(r, "memberID")
+	if err != nil {
+		response.Error(w, apperror.BadRequest("invalid member id"))
+		return
+	}
+
+	if err := h.groupService.PromoteToAdmin(r.Context(), chatID, memberID, userID); err != nil {
+		handleServiceError(w, err)
+		return
+	}
+
+	response.NoContent(w)
+}
+
+// LeaveGroup handles POST /api/v1/chats/{id}/leave
+func (h *ChatHandler) LeaveGroup(w http.ResponseWriter, r *http.Request) {
+	userID, err := GetUserID(r)
+	if err != nil {
+		response.Error(w, apperror.Unauthorized("user not authenticated"))
+		return
+	}
+
+	chatID, err := GetPathUUID(r, "id")
+	if err != nil {
+		response.Error(w, apperror.BadRequest("invalid chat id"))
+		return
+	}
+
+	if err := h.groupService.LeaveGroup(r.Context(), chatID, userID); err != nil {
+		handleServiceError(w, err)
+		return
+	}
+
+	response.NoContent(w)
+}
+
+// GetGroupInfo handles GET /api/v1/chats/{id}/info
+func (h *ChatHandler) GetGroupInfo(w http.ResponseWriter, r *http.Request) {
+	userID, err := GetUserID(r)
+	if err != nil {
+		response.Error(w, apperror.Unauthorized("user not authenticated"))
+		return
+	}
+
+	chatID, err := GetPathUUID(r, "id")
+	if err != nil {
+		response.Error(w, apperror.BadRequest("invalid chat id"))
+		return
+	}
+
+	info, err := h.groupService.GetGroupInfo(r.Context(), chatID, userID)
+	if err != nil {
+		handleServiceError(w, err)
+		return
+	}
+
+	response.OK(w, info)
 }
 
 // MarkAsRead handles POST /api/v1/chats/{id}/read

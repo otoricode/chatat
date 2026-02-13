@@ -26,6 +26,7 @@ type Dependencies struct {
 	ContactService service.ContactService
 	ChatService    service.ChatService
 	MessageService service.MessageService
+	GroupService   service.GroupService
 
 	// Repositories
 	UserRepo        repository.UserRepository
@@ -85,6 +86,7 @@ func NewDependencies(cfg *config.Config, db *pgxpool.Pool, redisClient *redis.Cl
 	contactService := service.NewContactService(userRepo, contactRepo, hub)
 	chatService := service.NewChatService(chatRepo, messageRepo, messageStatRepo, userRepo, hub)
 	messageService := service.NewMessageService(messageRepo, messageStatRepo, chatRepo, hub)
+	groupService := service.NewGroupService(chatRepo, messageRepo, messageStatRepo, userRepo, hub)
 
 	// Status notifier: broadcasts online/offline events to contacts
 	_ = service.NewStatusNotifier(hub, contactRepo, userRepo, redisClient)
@@ -94,7 +96,7 @@ func NewDependencies(cfg *config.Config, db *pgxpool.Pool, redisClient *redis.Cl
 	webhookHandler := NewWebhookHandler(reverseOTPService, cfg.WAWebhookSecret)
 	userHandler := NewUserHandler(userService)
 	contactHandler := NewContactHandler(contactService)
-	chatHandler := NewChatHandler(chatService, messageService)
+	chatHandler := NewChatHandler(chatService, messageService, groupService)
 
 	deps := &Dependencies{
 		Config: cfg,
@@ -110,6 +112,7 @@ func NewDependencies(cfg *config.Config, db *pgxpool.Pool, redisClient *redis.Cl
 		ContactService: contactService,
 		ChatService:    chatService,
 		MessageService: messageService,
+		GroupService:   groupService,
 
 		UserRepo:        userRepo,
 		ContactRepo:     contactRepo,
