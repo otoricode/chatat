@@ -16,6 +16,12 @@ import { ImageViewerScreen } from '@/screens/chat/ImageViewerScreen';
 import { DocumentEditorScreen } from '@/screens/document/DocumentEditorScreen';
 import { SearchScreen } from '@/screens/search/SearchScreen';
 import { BackupScreen } from '@/screens/settings/BackupScreen';
+import { SettingsScreen } from '@/screens/settings/SettingsScreen';
+import { EditProfileScreen } from '@/screens/settings/EditProfileScreen';
+import { LanguageScreen } from '@/screens/settings/LanguageScreen';
+import { NotificationSettingsScreen } from '@/screens/settings/NotificationSettingsScreen';
+import { StorageScreen } from '@/screens/settings/StorageScreen';
+import { AboutScreen } from '@/screens/settings/AboutScreen';
 import { colors } from '@/theme';
 
 const Stack = createNativeStackNavigator<ChatStackParamList>();
@@ -96,6 +102,36 @@ export function ChatStackNavigator() {
         name="Search"
         component={SearchScreen}
         options={{ title: t('search.title'), animation: 'fade' }}
+      />
+      <Stack.Screen
+        name="Settings"
+        component={SettingsScreen}
+        options={{ title: t('settings.title') }}
+      />
+      <Stack.Screen
+        name="EditProfile"
+        component={EditProfileScreen}
+        options={{ title: t('settings.editProfile') }}
+      />
+      <Stack.Screen
+        name="Language"
+        component={LanguageScreen}
+        options={{ title: t('settings.language') }}
+      />
+      <Stack.Screen
+        name="NotificationSettings"
+        component={NotificationSettingsScreen}
+        options={{ title: t('settings.notifications') }}
+      />
+      <Stack.Screen
+        name="Storage"
+        component={StorageScreen}
+        options={{ title: t('settings.storage') }}
+      />
+      <Stack.Screen
+        name="About"
+        component={AboutScreen}
+        options={{ title: t('settings.about') }}
       />
       <Stack.Screen
         name="Backup"

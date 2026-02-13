@@ -44,6 +44,10 @@ export function ChatListScreen({ navigation }: Props) {
     navigation.navigate('Search');
   };
 
+  const handleProfilePress = () => {
+    navigation.navigate('Settings');
+  };
+
   const handleChatPress = useCallback(
     (item: ChatListItemType) => {
       navigation.navigate('Chat', {
@@ -85,7 +89,7 @@ export function ChatListScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <Header title={t('chat.title')} onSearchPress={handleSearchPress} />
+      <Header title={t('chat.title')} onSearchPress={handleSearchPress} onProfilePress={handleProfilePress} />
       {chats.length === 0 && !isLoading ? (
         <View style={styles.content}>
           <EmptyState
