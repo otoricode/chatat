@@ -1,5 +1,5 @@
-// Chat screen — individual chat conversation view
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+// Chat screen — individual chat conversation view with tabs
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -19,6 +19,10 @@ import { ChatInput } from '@/components/chat/ChatInput';
 import { AttachmentPicker } from '@/components/chat/AttachmentPicker';
 import type { PickedMedia } from '@/components/chat/AttachmentPicker';
 import { DateSeparator } from '@/components/chat/DateSeparator';
+import { ChatTabBar } from '@/components/chat/ChatTabBar';
+import type { ChatTab } from '@/components/chat/ChatTabBar';
+import { ChatDocumentsTab } from '@/components/chat/ChatDocumentsTab';
+import { ChatTopicsTab } from '@/components/chat/ChatTopicsTab';
 import { useMessageStore } from '@/stores/messageStore';
 import { useChatStore } from '@/stores/chatStore';
 import { useAuthStore } from '@/stores/authStore';
@@ -42,6 +46,7 @@ export function ChatScreen({ route, navigation }: Props) {
     useMessageStore();
   const { markAsRead } = useChatStore();
 
+  const [activeTab, setActiveTab] = useState<ChatTab>('chat');
   const [replyTo, setReplyTo] = useState<{ id: string; content: string } | null>(null);
   const [showAttachment, setShowAttachment] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
@@ -55,6 +60,18 @@ export function ChatScreen({ route, navigation }: Props) {
   // For groups: member map (userId -> User) for sender names
   const [memberMap, setMemberMap] = useState<Record<string, { name: string; avatar: string }>>({});
 
+
+  // Tab definitions: personal has 2 tabs, group has 3 tabs
+  const tabs = useMemo(() => {
+    const base = [
+      { key: 'chat' as ChatTab, label: t('chat.tabChat'), icon: '\u{1F4AC}' },
+      { key: 'documents' as ChatTab, label: t('chat.tabDocuments'), icon: '\u{1F4C4}' },
+    ];
+    if (isGroup) {
+      base.push({ key: 'topics' as ChatTab, label: t('chat.tabTopics'), icon: '\u{1F4CC}' });
+    }
+    return base;
+  }, [isGroup, t]);
   const chatMessages = messages[chatId] ?? [];
   const chatHasMore = hasMore[chatId] ?? false;
 
@@ -317,34 +334,43 @@ export function ChatScreen({ route, navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={90}
-      >
-        <FlatList
-          ref={flatListRef}
-          data={chatMessages}
-          renderItem={renderItem}
-          keyExtractor={keyExtractor}
-          inverted
-          onEndReached={handleEndReached}
-          onEndReachedThreshold={0.3}
-          contentContainerStyle={styles.messageList}
-        />
-        <ChatInput
-          onSend={handleSend}
-          onTyping={() => sendTyping(true)}
-          onAttach={() => setShowAttachment(true)}
-          replyTo={replyTo}
-          onCancelReply={() => setReplyTo(null)}
-        />
-        <AttachmentPicker
-          visible={showAttachment}
-          onClose={() => setShowAttachment(false)}
-          onPick={handleAttach}
-        />
-      </KeyboardAvoidingView>
+      <ChatTabBar tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
+      {activeTab === 'chat' && (
+        <KeyboardAvoidingView
+          style={styles.flex}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          keyboardVerticalOffset={90}
+        >
+          <FlatList
+            ref={flatListRef}
+            data={chatMessages}
+            renderItem={renderItem}
+            keyExtractor={keyExtractor}
+            inverted
+            onEndReached={handleEndReached}
+            onEndReachedThreshold={0.3}
+            contentContainerStyle={styles.messageList}
+          />
+          <ChatInput
+            onSend={handleSend}
+            onTyping={() => sendTyping(true)}
+            onAttach={() => setShowAttachment(true)}
+            replyTo={replyTo}
+            onCancelReply={() => setReplyTo(null)}
+          />
+          <AttachmentPicker
+            visible={showAttachment}
+            onClose={() => setShowAttachment(false)}
+            onPick={handleAttach}
+          />
+        </KeyboardAvoidingView>
+      )}
+      {activeTab === 'documents' && (
+        <ChatDocumentsTab chatId={chatId} />
+      )}
+      {activeTab === 'topics' && isGroup && (
+        <ChatTopicsTab chatId={chatId} />
+      )}
     </SafeAreaView>
   );
 }

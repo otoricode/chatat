@@ -85,7 +85,10 @@
     "deleteForMe": "Delete for me",
     "messageOptions": "Message Options",
     "contactInfo": "Contact Info",
-    "discussionTopics": "Discussion Topics"
+    "discussionTopics": "Discussion Topics",
+    "tabChat": "Chat",
+    "tabDocuments": "Documents",
+    "tabTopics": "Topics"
   },
   "group": {
     "createGroup": "Create Group",
