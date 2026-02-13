@@ -52,7 +52,7 @@ function getStatusIcon(status?: DeliveryStatus): string {
   }
 }
 
-export function MessageBubble({ message, isSelf, senderName, onLongPress, onImagePress, onFilePress, uploadProgress }: Props) {
+function MessageBubbleInner({ message, isSelf, senderName, onLongPress, onImagePress, onFilePress, uploadProgress }: Props) {
   const { t } = useTranslation();
 
   if (message.isDeleted) {
@@ -232,4 +232,15 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: colors.textMuted,
   },
+});
+
+export const MessageBubble = React.memo(MessageBubbleInner, (prev, next) => {
+  return (
+    prev.message.id === next.message.id &&
+    prev.message.isDeleted === next.message.isDeleted &&
+    prev.message.content === next.message.content &&
+    prev.isSelf === next.isSelf &&
+    prev.senderName === next.senderName &&
+    prev.uploadProgress === next.uploadProgress
+  );
 });

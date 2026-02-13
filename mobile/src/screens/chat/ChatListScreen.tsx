@@ -103,6 +103,10 @@ export function ChatListScreen({ navigation }: Props) {
           data={chats}
           renderItem={renderItem}
           keyExtractor={keyExtractor}
+          removeClippedSubviews
+          maxToRenderPerBatch={15}
+          windowSize={10}
+          initialNumToRender={15}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
