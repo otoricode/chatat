@@ -24,6 +24,8 @@ type ChatRepository interface {
 	GetMembers(ctx context.Context, chatID uuid.UUID) ([]*model.ChatMember, error)
 	Update(ctx context.Context, id uuid.UUID, input model.UpdateChatInput) (*model.Chat, error)
 	Delete(ctx context.Context, id uuid.UUID) error
+	Pin(ctx context.Context, id uuid.UUID) error
+	Unpin(ctx context.Context, id uuid.UUID) error
 }
 
 type pgChatRepository struct {
@@ -221,5 +223,31 @@ func (r *pgChatRepository) Delete(ctx context.Context, id uuid.UUID) error {
 		return apperror.NotFound("chat", id.String())
 	}
 
+	return nil
+}
+
+func (r *pgChatRepository) Pin(ctx context.Context, id uuid.UUID) error {
+	result, err := r.db.Exec(ctx,
+		`UPDATE chats SET pinned_at = NOW() WHERE id = $1`, id,
+	)
+	if err != nil {
+		return fmt.Errorf("pin chat: %w", err)
+	}
+	if result.RowsAffected() == 0 {
+		return apperror.NotFound("chat", id.String())
+	}
+	return nil
+}
+
+func (r *pgChatRepository) Unpin(ctx context.Context, id uuid.UUID) error {
+	result, err := r.db.Exec(ctx,
+		`UPDATE chats SET pinned_at = NULL WHERE id = $1`, id,
+	)
+	if err != nil {
+		return fmt.Errorf("unpin chat: %w", err)
+	}
+	if result.RowsAffected() == 0 {
+		return apperror.NotFound("chat", id.String())
+	}
 	return nil
 }

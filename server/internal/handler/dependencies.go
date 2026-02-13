@@ -24,6 +24,8 @@ type Dependencies struct {
 	SessionService service.SessionService
 	UserService    service.UserService
 	ContactService service.ContactService
+	ChatService    service.ChatService
+	MessageService service.MessageService
 
 	// Repositories
 	UserRepo        repository.UserRepository
@@ -43,7 +45,7 @@ type Dependencies struct {
 	WebhookHandler  *WebhookHandler
 	UserHandler     *UserHandler
 	ContactHandler  *ContactHandler
-	ChatHandler     *ChatStubHandler
+	ChatHandler     *ChatHandler
 	TopicHandler    *TopicStubHandler
 	DocumentHandler *DocumentStubHandler
 	EntityHandler   *EntityStubHandler
@@ -81,6 +83,8 @@ func NewDependencies(cfg *config.Config, db *pgxpool.Pool, redisClient *redis.Cl
 	sessionService := service.NewSessionService(redisClient, tokenService, 0)
 	userService := service.NewUserService(userRepo)
 	contactService := service.NewContactService(userRepo, contactRepo, hub)
+	chatService := service.NewChatService(chatRepo, messageRepo, messageStatRepo, userRepo, hub)
+	messageService := service.NewMessageService(messageRepo, messageStatRepo, chatRepo, hub)
 
 	// Status notifier: broadcasts online/offline events to contacts
 	_ = service.NewStatusNotifier(hub, contactRepo, userRepo, redisClient)
@@ -90,6 +94,7 @@ func NewDependencies(cfg *config.Config, db *pgxpool.Pool, redisClient *redis.Cl
 	webhookHandler := NewWebhookHandler(reverseOTPService, cfg.WAWebhookSecret)
 	userHandler := NewUserHandler(userService)
 	contactHandler := NewContactHandler(contactService)
+	chatHandler := NewChatHandler(chatService, messageService)
 
 	deps := &Dependencies{
 		Config: cfg,
@@ -103,6 +108,8 @@ func NewDependencies(cfg *config.Config, db *pgxpool.Pool, redisClient *redis.Cl
 		SessionService: sessionService,
 		UserService:    userService,
 		ContactService: contactService,
+		ChatService:    chatService,
+		MessageService: messageService,
 
 		UserRepo:        userRepo,
 		ContactRepo:     contactRepo,
@@ -120,7 +127,7 @@ func NewDependencies(cfg *config.Config, db *pgxpool.Pool, redisClient *redis.Cl
 		WebhookHandler:  webhookHandler,
 		UserHandler:     userHandler,
 		ContactHandler:  contactHandler,
-		ChatHandler:     &ChatStubHandler{},
+		ChatHandler:     chatHandler,
 		TopicHandler:    &TopicStubHandler{},
 		DocumentHandler: &DocumentStubHandler{},
 		EntityHandler:   &EntityStubHandler{},

@@ -1,0 +1,37 @@
+// DateSeparator — date divider between messages of different days
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { colors, fontSize, fontFamily, spacing } from '@/theme';
+import { formatDateSeparator } from '@/lib/timeFormat';
+
+type Props = {
+  dateStr: string;
+};
+
+export function DateSeparator({ dateStr }: Props) {
+  return (
+    <View style={styles.container}>
+      <View style={styles.badge}>
+        <Text style={styles.text}>{formatDateSeparator(dateStr)}</Text>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+  },
+  badge: {
+    backgroundColor: colors.surface2,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: 8,
+  },
+  text: {
+    fontFamily: fontFamily.uiMedium,
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+  },
+});
