@@ -11,6 +11,7 @@ import { TopicListScreen } from '@/screens/topic/TopicListScreen';
 import { CreateTopicScreen } from '@/screens/topic/CreateTopicScreen';
 import { TopicScreen } from '@/screens/topic/TopicScreen';
 import { TopicInfoScreen } from '@/screens/topic/TopicInfoScreen';
+import { ImageViewerScreen } from '@/screens/chat/ImageViewerScreen';
 import { DocumentEditorScreen } from '@/screens/document/DocumentEditorScreen';
 import { colors } from '@/theme';
 
@@ -71,6 +72,15 @@ export function ChatStackNavigator() {
         name="TopicInfo"
         component={TopicInfoScreen}
         options={{ title: 'Info Topik' }}
+      />
+      <Stack.Screen
+        name="ImageViewer"
+        component={ImageViewerScreen}
+        options={{
+          title: '',
+          animation: 'fade',
+          headerStyle: { backgroundColor: '#000' },
+        }}
       />
       <Stack.Screen
         name="DocumentEditor"

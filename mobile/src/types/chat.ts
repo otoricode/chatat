@@ -132,3 +132,19 @@ export interface TopicDetail {
   members: MemberInfo[];
   parent: Chat | null;
 }
+
+// Media types
+export type MediaType = 'image' | 'file';
+
+export interface MediaResponse {
+  id: string;
+  type: MediaType;
+  filename: string;
+  contentType: string;
+  size: number;
+  width?: number;
+  height?: number;
+  url: string;
+  thumbnailURL: string;
+  createdAt: string;
+}

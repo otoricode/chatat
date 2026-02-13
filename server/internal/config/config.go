@@ -18,6 +18,13 @@ type Config struct {
 	WABaseURL       string // e.g. http://localhost:3000
 	WAWebhookSecret string // HMAC secret for webhook signature verification
 	WABusinessPhone string // WhatsApp business phone number (E.164)
+
+	// S3-compatible storage configuration
+	S3Endpoint  string
+	S3Bucket    string
+	S3AccessKey string
+	S3SecretKey string
+	S3Region    string
 }
 
 // Load reads configuration from environment variables and returns a Config.
@@ -33,6 +40,12 @@ func Load() (*Config, error) {
 		WABaseURL:       getEnv("WA_BASE_URL", "http://localhost:3000"),
 		WAWebhookSecret: getEnv("WA_WEBHOOK_SECRET", "chatat-webhook-secret"),
 		WABusinessPhone: getEnv("WA_BUSINESS_PHONE", ""),
+
+		S3Endpoint:  getEnv("S3_ENDPOINT", "http://localhost:9000"),
+		S3Bucket:    getEnv("S3_BUCKET", "chatat-media"),
+		S3AccessKey: getEnv("S3_ACCESS_KEY", "minioadmin"),
+		S3SecretKey: getEnv("S3_SECRET_KEY", "minioadmin"),
+		S3Region:    getEnv("S3_REGION", "us-east-1"),
 	}
 
 	if err := cfg.validate(); err != nil {

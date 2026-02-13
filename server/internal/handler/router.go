@@ -111,6 +111,13 @@ func NewRouter(cfg *config.Config, deps *Dependencies) *chi.Mux {
 				})
 			})
 
+			r.Route("/media", func(r chi.Router) {
+				r.Post("/upload", deps.MediaHandler.Upload)
+				r.Get("/{id}", deps.MediaHandler.GetByID)
+				r.Get("/{id}/download", deps.MediaHandler.Download)
+				r.Delete("/{id}", deps.MediaHandler.Delete)
+			})
+
 			r.Route("/documents", func(r chi.Router) {
 				r.Get("/", deps.DocumentHandler.List)
 				r.Post("/", deps.DocumentHandler.Create)

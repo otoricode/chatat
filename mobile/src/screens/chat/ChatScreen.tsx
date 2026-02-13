@@ -16,17 +16,20 @@ import type { ChatStackParamList } from '@/navigation/types';
 import { Avatar } from '@/components/ui/Avatar';
 import { MessageBubble } from '@/components/chat/MessageBubble';
 import { ChatInput } from '@/components/chat/ChatInput';
+import { AttachmentPicker } from '@/components/chat/AttachmentPicker';
+import type { PickedMedia } from '@/components/chat/AttachmentPicker';
 import { DateSeparator } from '@/components/chat/DateSeparator';
 import { useMessageStore } from '@/stores/messageStore';
 import { useChatStore } from '@/stores/chatStore';
 import { useAuthStore } from '@/stores/authStore';
 import { chatsApi } from '@/services/api/chats';
+import { mediaApi } from '@/services/api/media';
 import { isDifferentDay } from '@/lib/timeFormat';
 import { formatLastSeen } from '@/lib/timeFormat';
 import { useTypingIndicator } from '@/hooks/useTypingIndicator';
 import { wsClient } from '@/services/ws';
 import { colors, fontSize, fontFamily, spacing } from '@/theme';
-import type { Message } from '@/types/chat';
+import type { Message, MediaResponse } from '@/types/chat';
 
 type Props = NativeStackScreenProps<ChatStackParamList, 'Chat'>;
 
@@ -38,6 +41,8 @@ export function ChatScreen({ route, navigation }: Props) {
   const { markAsRead } = useChatStore();
 
   const [replyTo, setReplyTo] = useState<{ id: string; content: string } | null>(null);
+  const [showAttachment, setShowAttachment] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
   const flatListRef = useRef<FlatList<Message>>(null);
 
   // Find other user info from chat store
@@ -155,6 +160,70 @@ export function ChatScreen({ route, navigation }: Props) {
     [chatId, replyTo, addMessage, sendTyping],
   );
 
+  const handleAttach = useCallback(
+    async (picked: PickedMedia) => {
+      const tempId = `temp_${Date.now()}`;
+      const messageType = picked.type === 'image' ? 'image' : 'file';
+
+      try {
+        // Upload media
+        const uploadRes = await mediaApi.upload(
+          picked.uri,
+          picked.filename,
+          picked.mimeType,
+          {
+            contextType: 'chat',
+            contextId: chatId,
+            onProgress: (progress) => {
+              setUploadProgress((prev) => ({ ...prev, [tempId]: progress }));
+            },
+          },
+        );
+
+        const media = uploadRes.data.data;
+
+        // Send message with media metadata
+        const res = await chatsApi.sendMessage(chatId, {
+          content: media.filename,
+          replyToId: null,
+          type: messageType,
+          metadata: {
+            id: media.id,
+            type: media.type,
+            filename: media.filename,
+            contentType: media.contentType,
+            size: media.size,
+            width: media.width,
+            height: media.height,
+            url: media.url,
+            thumbnailURL: media.thumbnailURL,
+          },
+        });
+
+        addMessage(chatId, res.data.data);
+      } catch {
+        Alert.alert('Gagal', 'Media gagal dikirim. Coba lagi.');
+      } finally {
+        setUploadProgress((prev) => {
+          const next = { ...prev };
+          delete next[tempId];
+          return next;
+        });
+      }
+    },
+    [chatId, addMessage],
+  );
+
+  const handleImagePress = useCallback(
+    (media: MediaResponse) => {
+      navigation.navigate('ImageViewer', {
+        url: media.url,
+        filename: media.filename,
+      });
+    },
+    [navigation],
+  );
+
   const handleMessageLongPress = useCallback(
     (message: Message) => {
       const isSelf = message.senderId === currentUserId;
@@ -233,12 +302,13 @@ export function ChatScreen({ route, navigation }: Props) {
             isSelf={isSelf}
             onLongPress={handleMessageLongPress}
             senderName={showSenderName ? senderName : undefined}
+            onImagePress={handleImagePress}
           />
           {showDate && <DateSeparator dateStr={item.createdAt} />}
         </>
       );
     },
-    [currentUserId, chatMessages, handleMessageLongPress, isGroup, memberMap],
+    [currentUserId, chatMessages, handleMessageLongPress, handleImagePress, isGroup, memberMap],
   );
 
   const keyExtractor = useCallback((item: Message) => item.id, []);
@@ -263,8 +333,14 @@ export function ChatScreen({ route, navigation }: Props) {
         <ChatInput
           onSend={handleSend}
           onTyping={() => sendTyping(true)}
+          onAttach={() => setShowAttachment(true)}
           replyTo={replyTo}
           onCancelReply={() => setReplyTo(null)}
+        />
+        <AttachmentPicker
+          visible={showAttachment}
+          onClose={() => setShowAttachment(false)}
+          onPick={handleAttach}
         />
       </KeyboardAvoidingView>
     </SafeAreaView>

@@ -3,7 +3,9 @@ import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { colors, fontSize, fontFamily, spacing } from '@/theme';
 import { formatMessageTime } from '@/lib/timeFormat';
-import type { Message, DeliveryStatus } from '@/types/chat';
+import type { Message, DeliveryStatus, MediaResponse } from '@/types/chat';
+import { ImageMessage } from './ImageMessage';
+import { FileMessage } from './FileMessage';
 
 // Rotating colors for sender names in group chats
 const SENDER_COLORS = [
@@ -32,6 +34,9 @@ type Props = {
   senderName?: string;
   onLongPress?: (message: Message) => void;
   onSwipeReply?: (message: Message) => void;
+  onImagePress?: (media: MediaResponse) => void;
+  onFilePress?: (media: MediaResponse) => void;
+  uploadProgress?: number;
 };
 
 function getStatusIcon(status?: DeliveryStatus): string {
@@ -46,7 +51,7 @@ function getStatusIcon(status?: DeliveryStatus): string {
   }
 }
 
-export function MessageBubble({ message, isSelf, senderName, onLongPress }: Props) {
+export function MessageBubble({ message, isSelf, senderName, onLongPress, onImagePress, onFilePress, uploadProgress }: Props) {
   if (message.isDeleted) {
     return (
       <View style={[styles.container, isSelf ? styles.selfContainer : styles.otherContainer]}>
@@ -94,7 +99,27 @@ export function MessageBubble({ message, isSelf, senderName, onLongPress }: Prop
           </View>
         )}
 
-        <Text style={isSelf ? styles.selfText : styles.otherText}>{message.content}</Text>
+        {message.type === 'image' && message.metadata && (
+          <ImageMessage
+            media={message.metadata as unknown as MediaResponse}
+            isSelf={isSelf}
+            onPress={() => onImagePress?.(message.metadata as unknown as MediaResponse)}
+            uploadProgress={uploadProgress}
+          />
+        )}
+
+        {message.type === 'file' && message.metadata && (
+          <FileMessage
+            media={message.metadata as unknown as MediaResponse}
+            isSelf={isSelf}
+            onPress={() => onFilePress?.(message.metadata as unknown as MediaResponse)}
+            uploadProgress={uploadProgress}
+          />
+        )}
+
+        {(message.type === 'text' || message.type === 'system') && (
+          <Text style={isSelf ? styles.selfText : styles.otherText}>{message.content}</Text>
+        )}
 
         <View style={styles.meta}>
           <Text style={styles.time}>{formatMessageTime(message.createdAt)}</Text>

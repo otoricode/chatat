@@ -12,11 +12,12 @@ import { colors, fontSize, fontFamily, spacing } from '@/theme';
 type Props = {
   onSend: (text: string) => void;
   onTyping?: () => void;
+  onAttach?: () => void;
   replyTo?: { id: string; content: string } | null;
   onCancelReply?: () => void;
 };
 
-export function ChatInput({ onSend, onTyping, replyTo, onCancelReply }: Props) {
+export function ChatInput({ onSend, onTyping, onAttach, replyTo, onCancelReply }: Props) {
   const [text, setText] = useState('');
 
   const handleChangeText = useCallback((value: string) => {
@@ -49,6 +50,14 @@ export function ChatInput({ onSend, onTyping, replyTo, onCancelReply }: Props) {
         </View>
       )}
       <View style={styles.container}>
+        {onAttach && (
+          <Pressable
+            style={({ pressed }) => [styles.attachButton, pressed && styles.sendPressed]}
+            onPress={onAttach}
+          >
+            <Text style={styles.attachIcon}>{'\u{1F4CE}'}</Text>
+          </Pressable>
+        )}
         <TextInput
           style={styles.input}
           value={text}
@@ -143,5 +152,15 @@ const styles = StyleSheet.create({
   sendIcon: {
     fontSize: 18,
     color: colors.background,
+  },
+  attachButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  attachIcon: {
+    fontSize: 22,
   },
 });

@@ -29,6 +29,9 @@ type Dependencies struct {
 	GroupService        service.GroupService
 	TopicService        service.TopicService
 	TopicMessageService service.TopicMessageService
+	StorageService      service.StorageService
+	ImageService        service.ImageService
+	MediaService        service.MediaService
 
 	// Repositories
 	UserRepo        repository.UserRepository
@@ -42,6 +45,7 @@ type Dependencies struct {
 	MessageStatRepo repository.MessageStatusRepository
 	DocHistoryRepo  repository.DocumentHistoryRepository
 	TopicMsgRepo    repository.TopicMessageRepository
+	MediaRepo       repository.MediaRepository
 
 	// Handlers
 	AuthHandler     *AuthHandler
@@ -50,6 +54,7 @@ type Dependencies struct {
 	ContactHandler  *ContactHandler
 	ChatHandler     *ChatHandler
 	TopicHandler    *TopicHandler
+	MediaHandler    *MediaHandler
 	DocumentHandler *DocumentStubHandler
 	EntityHandler   *EntityStubHandler
 	WSHandler       *WSHandler
@@ -69,6 +74,7 @@ func NewDependencies(cfg *config.Config, db *pgxpool.Pool, redisClient *redis.Cl
 	messageStatRepo := repository.NewMessageStatusRepository(db)
 	docHistoryRepo := repository.NewDocumentHistoryRepository(db)
 	topicMsgRepo := repository.NewTopicMessageRepository(db)
+	mediaRepo := repository.NewMediaRepository(db)
 
 	// Services
 	smsProvider := service.NewLogSMSProvider()
@@ -91,6 +97,12 @@ func NewDependencies(cfg *config.Config, db *pgxpool.Pool, redisClient *redis.Cl
 	groupService := service.NewGroupService(chatRepo, messageRepo, messageStatRepo, userRepo, hub)
 	topicService := service.NewTopicService(topicRepo, topicMsgRepo, chatRepo, userRepo, hub)
 	topicMsgService := service.NewTopicMessageService(topicMsgRepo, topicRepo, hub)
+	storageSvc, err := service.NewStorageService(cfg)
+	if err != nil {
+		panic("failed to create storage service: " + err.Error())
+	}
+	imageSvc := service.NewImageService()
+	mediaSvc := service.NewMediaService(mediaRepo, storageSvc, imageSvc)
 
 	// Status notifier: broadcasts online/offline events to contacts
 	_ = service.NewStatusNotifier(hub, contactRepo, userRepo, redisClient)
@@ -102,6 +114,7 @@ func NewDependencies(cfg *config.Config, db *pgxpool.Pool, redisClient *redis.Cl
 	contactHandler := NewContactHandler(contactService)
 	chatHandler := NewChatHandler(chatService, messageService, groupService)
 	topicHandler := NewTopicHandler(topicService, topicMsgService)
+	mediaHandler := NewMediaHandler(mediaSvc)
 
 	deps := &Dependencies{
 		Config: cfg,
@@ -120,6 +133,9 @@ func NewDependencies(cfg *config.Config, db *pgxpool.Pool, redisClient *redis.Cl
 		GroupService:        groupService,
 		TopicService:        topicService,
 		TopicMessageService: topicMsgService,
+		StorageService:      storageSvc,
+		ImageService:        imageSvc,
+		MediaService:        mediaSvc,
 
 		UserRepo:        userRepo,
 		ContactRepo:     contactRepo,
@@ -132,6 +148,7 @@ func NewDependencies(cfg *config.Config, db *pgxpool.Pool, redisClient *redis.Cl
 		MessageStatRepo: messageStatRepo,
 		DocHistoryRepo:  docHistoryRepo,
 		TopicMsgRepo:    topicMsgRepo,
+		MediaRepo:       mediaRepo,
 
 		AuthHandler:     authHandler,
 		WebhookHandler:  webhookHandler,
@@ -139,6 +156,7 @@ func NewDependencies(cfg *config.Config, db *pgxpool.Pool, redisClient *redis.Cl
 		ContactHandler:  contactHandler,
 		ChatHandler:     chatHandler,
 		TopicHandler:    topicHandler,
+		MediaHandler:    mediaHandler,
 		DocumentHandler: &DocumentStubHandler{},
 		EntityHandler:   &EntityStubHandler{},
 		WSHandler:       NewWSHandler(hub, cfg.JWTSecret, chatRepo, topicRepo, messageStatRepo, redisClient),
