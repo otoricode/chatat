@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { ChatStackParamList } from '@/navigation/types';
 import { colors, fontSize, fontFamily, spacing } from '@/theme';
+import { useTranslation } from 'react-i18next';
 
 type Props = NativeStackScreenProps<ChatStackParamList, 'ImageViewer'>;
 
@@ -23,6 +24,7 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export function ImageViewerScreen({ route, navigation }: Props) {
   const { url, filename } = route.params;
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
 
   React.useLayoutEffect(() => {
@@ -30,7 +32,7 @@ export function ImageViewerScreen({ route, navigation }: Props) {
       headerShown: true,
       headerStyle: { backgroundColor: '#000' },
       headerTintColor: colors.white,
-      headerTitle: filename || 'Gambar',
+      headerTitle: filename || t('media.image'),
       headerRight: () => (
         <Pressable onPress={handleShare} style={headerStyles.button}>
           <Text style={headerStyles.shareIcon}>{'\u{2B06}'}</Text>
@@ -43,10 +45,10 @@ export function ImageViewerScreen({ route, navigation }: Props) {
     try {
       await Share.share({
         url: url,
-        message: filename || 'Gambar',
+        message: filename || t('media.image'),
       });
     } catch {
-      Alert.alert('Gagal', 'Tidak dapat membagikan gambar');
+      Alert.alert(t('common.failed'), t('media.shareFailed'));
     }
   }, [url, filename]);
 

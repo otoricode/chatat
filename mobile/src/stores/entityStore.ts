@@ -1,5 +1,6 @@
 // Entity store — manages entity state
 import { create } from 'zustand';
+import i18n from 'i18next';
 import { entitiesApi } from '@/services/api/entities';
 import type { Entity, EntityListItem } from '@/types/chat';
 
@@ -38,7 +39,7 @@ export const useEntityStore = create<EntityState>()((set) => ({
         isLoading: false,
       });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Gagal memuat entity';
+      const msg = err instanceof Error ? err.message : i18n.t('entity.loadFailed');
       set({ error: msg, isLoading: false });
     }
   },

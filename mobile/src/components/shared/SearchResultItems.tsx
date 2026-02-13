@@ -5,6 +5,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { HighlightedText } from '@/components/shared/HighlightedText';
 import { formatChatListTime } from '@/lib/timeFormat';
 import { colors, fontFamily, fontSize, spacing } from '@/theme';
+import { useTranslation } from 'react-i18next';
 import type {
   MessageSearchResult,
   DocumentSearchResult,
@@ -19,6 +20,7 @@ type MessageResultProps = {
 };
 
 export function MessageResultItem({ item, onPress }: MessageResultProps) {
+  const { t } = useTranslation();
   return (
     <Pressable style={styles.row} onPress={() => onPress(item)}>
       <Avatar emoji="💬" size="sm" />
@@ -27,7 +29,7 @@ export function MessageResultItem({ item, onPress }: MessageResultProps) {
           <Text style={styles.title} numberOfLines={1}>
             {item.chatName}
           </Text>
-          <Text style={styles.time}>{formatChatListTime(item.createdAt)}</Text>
+          <Text style={styles.time}>{formatChatListTime(item.createdAt, t)}</Text>
         </View>
         <Text style={styles.subtitle} numberOfLines={1}>
           {item.senderName}
@@ -45,6 +47,7 @@ type DocumentResultProps = {
 };
 
 export function DocumentResultItem({ item, onPress }: DocumentResultProps) {
+  const { t } = useTranslation();
   return (
     <Pressable style={styles.row} onPress={() => onPress(item)}>
       <Avatar emoji={item.icon || '📄'} size="sm" />
@@ -53,10 +56,10 @@ export function DocumentResultItem({ item, onPress }: DocumentResultProps) {
           <Text style={styles.title} numberOfLines={1}>
             {item.title}
           </Text>
-          <Text style={styles.time}>{formatChatListTime(item.updatedAt)}</Text>
+          <Text style={styles.time}>{formatChatListTime(item.updatedAt, t)}</Text>
         </View>
         {item.locked && (
-          <Text style={styles.lockedBadge}>🔒 Terkunci</Text>
+          <Text style={styles.lockedBadge}>🔒 {t('document.locked')}</Text>
         )}
         <HighlightedText text={item.highlight} />
       </View>
@@ -121,13 +124,14 @@ type SectionHeaderProps = {
 };
 
 export function SectionHeader({ title, count, onSeeAll }: SectionHeaderProps) {
+  const { t } = useTranslation();
   if (count === 0) return null;
   return (
     <View style={styles.sectionHeader}>
       <Text style={styles.sectionTitle}>{title}</Text>
       {onSeeAll && count > 3 && (
         <Pressable onPress={onSeeAll}>
-          <Text style={styles.seeAll}>Lihat Semua</Text>
+          <Text style={styles.seeAll}>{t('common.seeAll')}</Text>
         </Pressable>
       )}
     </View>

@@ -1,6 +1,7 @@
 // ChecklistBlock — checkbox + text
 import React, { useRef, useEffect } from 'react';
 import { View, TextInput, Pressable, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { colors, fontFamily, fontSize, spacing } from '@/theme';
 import type { BlockProps } from '../types';
 
@@ -14,6 +15,7 @@ export const ChecklistBlock = React.memo(function ChecklistBlock({
   onBackspace,
   onSlashTrigger,
 }: BlockProps) {
+  const { t } = useTranslation();
   const inputRef = useRef<TextInput>(null);
 
   useEffect(() => {
@@ -58,7 +60,7 @@ export const ChecklistBlock = React.memo(function ChecklistBlock({
         onKeyPress={handleKeyPress}
         multiline
         editable={!readOnly}
-        placeholder="To-do"
+        placeholder={t('editor.todo')}
         placeholderTextColor={colors.textMuted}
         blurOnSubmit={false}
       />

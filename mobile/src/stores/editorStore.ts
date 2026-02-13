@@ -1,5 +1,6 @@
 // Editor store — manages block editor state
 import { create } from 'zustand';
+import i18n from 'i18next';
 import { documentsApi } from '@/services/api/documents';
 import type { Block, BlockType, DocumentFull } from '@/types/chat';
 
@@ -102,7 +103,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
         saveStatus: 'idle',
       });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Gagal memuat dokumen';
+      const msg = err instanceof Error ? err.message : i18n.t('document.loadFailed');
       set({ error: msg, isLoading: false });
     }
   },
@@ -131,7 +132,7 @@ export const useEditorStore = create<EditorState>()((set, get) => ({
       });
       return doc.document.id;
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Gagal membuat dokumen';
+      const msg = err instanceof Error ? err.message : i18n.t('document.createFailed');
       set({ error: msg, isLoading: false });
       return null;
     }

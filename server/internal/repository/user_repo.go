@@ -36,13 +36,13 @@ func NewUserRepository(db *pgxpool.Pool) UserRepository {
 	return &pgUserRepository{db: db}
 }
 
-var userColumns = "id, phone, COALESCE(phone_hash, '') as phone_hash, name, avatar, status, last_seen, created_at, updated_at"
+var userColumns = "id, phone, COALESCE(phone_hash, '') as phone_hash, name, avatar, status, language, last_seen, created_at, updated_at"
 
 func scanUser(row pgx.Row) (*model.User, error) {
 	var user model.User
 	err := row.Scan(
 		&user.ID, &user.Phone, &user.PhoneHash, &user.Name, &user.Avatar,
-		&user.Status, &user.LastSeen, &user.CreatedAt, &user.UpdatedAt,
+		&user.Status, &user.Language, &user.LastSeen, &user.CreatedAt, &user.UpdatedAt,
 	)
 	return &user, err
 }
@@ -53,7 +53,7 @@ func scanUsers(rows pgx.Rows) ([]*model.User, error) {
 		var user model.User
 		if err := rows.Scan(
 			&user.ID, &user.Phone, &user.PhoneHash, &user.Name, &user.Avatar,
-			&user.Status, &user.LastSeen, &user.CreatedAt, &user.UpdatedAt,
+			&user.Status, &user.Language, &user.LastSeen, &user.CreatedAt, &user.UpdatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("scan user row: %w", err)
 		}
@@ -151,10 +151,11 @@ func (r *pgUserRepository) Update(ctx context.Context, id uuid.UUID, input model
 		   name = COALESCE($2, name),
 		   avatar = COALESCE($3, avatar),
 		   status = COALESCE($4, status),
+		   language = COALESCE($5, language),
 		   updated_at = NOW()
 		 WHERE id = $1
 		 RETURNING `+userColumns,
-		id, input.Name, input.Avatar, input.Status,
+		id, input.Name, input.Avatar, input.Status, input.Language,
 	))
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

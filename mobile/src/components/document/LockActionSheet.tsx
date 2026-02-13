@@ -8,6 +8,7 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { colors, fontSize, fontFamily, spacing } from '@/theme';
 
 interface LockActionSheetProps {
@@ -31,6 +32,8 @@ export function LockActionSheet({
   onUnlock,
   onClose,
 }: LockActionSheetProps) {
+  const { t } = useTranslation();
+
   return (
     <Modal
       visible={visible}
@@ -42,7 +45,7 @@ export function LockActionSheet({
         <View style={styles.sheet}>
           <View style={styles.handle} />
           <Text style={styles.title}>
-            {locked ? 'Dokumen Terkunci' : 'Kunci Dokumen'}
+            {locked ? t('document.lockedTitle') : t('document.lockDocument')}
           </Text>
 
           {loading && (
@@ -58,9 +61,9 @@ export function LockActionSheet({
               <Pressable style={styles.option} onPress={onLockManual}>
                 <Text style={styles.optionIcon}>🔒</Text>
                 <View style={styles.optionContent}>
-                  <Text style={styles.optionLabel}>Kunci Manual</Text>
+                  <Text style={styles.optionLabel}>{t('document.lockManual')}</Text>
                   <Text style={styles.optionDesc}>
-                    Kunci dokumen agar tidak bisa diubah
+                    {t('document.lockManualDesc')}
                   </Text>
                 </View>
               </Pressable>
@@ -68,9 +71,9 @@ export function LockActionSheet({
               <Pressable style={styles.option} onPress={onLockSignatures}>
                 <Text style={styles.optionIcon}>✍️</Text>
                 <View style={styles.optionContent}>
-                  <Text style={styles.optionLabel}>Kunci dengan Tanda Tangan</Text>
+                  <Text style={styles.optionLabel}>{t('document.lockSignatures')}</Text>
                   <Text style={styles.optionDesc}>
-                    Kunci setelah semua penandatangan menandatangani
+                    {t('document.lockSignaturesDesc')}
                   </Text>
                 </View>
               </Pressable>
@@ -85,8 +88,8 @@ export function LockActionSheet({
                 </Text>
                 <Text style={styles.statusText}>
                   {lockedBy === 'signatures'
-                    ? 'Dokumen dikunci dengan tanda tangan'
-                    : 'Dokumen dikunci secara manual'}
+                    ? t('document.lockedBySignatures')
+                    : t('document.lockedManually')}
                 </Text>
               </View>
 
@@ -95,10 +98,10 @@ export function LockActionSheet({
                   <Text style={styles.optionIcon}>🔓</Text>
                   <View style={styles.optionContent}>
                     <Text style={[styles.optionLabel, { color: colors.red }]}>
-                      Buka Kunci
+                      {t('document.unlock')}
                     </Text>
                     <Text style={styles.optionDesc}>
-                      Dokumen dapat diubah kembali
+                      {t('document.unlockDesc')}
                     </Text>
                   </View>
                 </Pressable>
@@ -107,7 +110,7 @@ export function LockActionSheet({
           )}
 
           <Pressable style={styles.cancelBtn} onPress={onClose}>
-            <Text style={styles.cancelText}>Batal</Text>
+            <Text style={styles.cancelText}>{t('common.cancel')}</Text>
           </Pressable>
         </View>
       </Pressable>

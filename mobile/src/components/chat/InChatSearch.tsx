@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { HighlightedText } from '@/components/shared/HighlightedText';
 import { searchApi } from '@/services/api/search';
+import { useTranslation } from 'react-i18next';
 import type { MessageSearchResult } from '@/services/api/search';
 import { colors, fontFamily, fontSize, spacing } from '@/theme';
 
@@ -31,6 +32,7 @@ export function InChatSearch({
   const [results, setResults] = useState<MessageSearchResult[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const { t } = useTranslation();
   const slideAnim = useRef(new Animated.Value(-60)).current;
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<TextInput>(null);
@@ -121,7 +123,7 @@ export function InChatSearch({
           style={styles.input}
           value={query}
           onChangeText={setQuery}
-          placeholder="Cari di chat..."
+          placeholder={t('search.searchInChat')}
           placeholderTextColor={colors.textMuted}
           returnKeyType="search"
         />
@@ -166,7 +168,7 @@ export function InChatSearch({
       {query.length >= 2 && results.length === 0 && !isLoading && (
         <View style={styles.noResult}>
           <Text style={styles.noResultText}>
-            Tidak ditemukan pesan untuk &quot;{query}&quot;
+            {t('search.noMessagesFound', { query })}
           </Text>
         </View>
       )}

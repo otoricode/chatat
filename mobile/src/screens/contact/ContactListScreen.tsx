@@ -15,6 +15,7 @@ import { SearchBar } from '@/components/shared/SearchBar';
 import { Avatar } from '@/components/ui/Avatar';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { useContactStore } from '@/stores/contactStore';
+import { useTranslation } from 'react-i18next';
 import { chatsApi } from '@/services/api/chats';
 import { colors, fontSize, fontFamily, spacing } from '@/theme';
 import type { ContactInfo } from '@/types/chat';
@@ -24,6 +25,7 @@ type Props = NativeStackScreenProps<ChatStackParamList, 'ContactList'>;
 type Section = { type: 'header'; letter: string } | { type: 'contact'; contact: ContactInfo };
 
 export function ContactListScreen({ navigation }: Props) {
+  const { t } = useTranslation();
   const { contacts, isLoading, fetchContacts, searchContacts } = useContactStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
@@ -126,13 +128,13 @@ export function ContactListScreen({ navigation }: Props) {
         <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
           <Text style={styles.backIcon}>{'\u2190'}</Text>
         </Pressable>
-        <Text style={styles.title}>Pilih Kontak</Text>
+        <Text style={styles.title}>{t('contact.contacts')}</Text>
       </View>
 
       <SearchBar
         value={searchQuery}
         onChangeText={setSearchQuery}
-        placeholder="Cari kontak..."
+        placeholder={t('contact.searchContacts')}
       />
 
       <Pressable
@@ -142,14 +144,14 @@ export function ContactListScreen({ navigation }: Props) {
         <View style={styles.groupIconContainer}>
           <Text style={styles.groupIcon}>{'\u{1F465}'}</Text>
         </View>
-        <Text style={styles.createGroupText}>Buat Grup Baru</Text>
+        <Text style={styles.createGroupText}>{t('group.createGroup')}</Text>
       </Pressable>
 
       {filteredContacts.length === 0 && !isLoading ? (
         <EmptyState
           emoji="\u{1F465}"
-          title="Belum ada kontak"
-          description="Kontak yang menggunakan Chatat akan muncul di sini"
+          title={t('contact.noContacts')}
+          description={t('contact.noContactsDesc')}
         />
       ) : (
         <FlatList

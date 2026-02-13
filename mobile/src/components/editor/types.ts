@@ -15,22 +15,22 @@ export interface BlockProps {
 export interface SlashOption {
   type: BlockType;
   icon: string;
-  label: string;
-  description: string;
+  labelKey: string;
+  descriptionKey: string;
 }
 
 export const BLOCK_OPTIONS: SlashOption[] = [
-  { type: 'paragraph', icon: '📝', label: 'Teks', description: 'Teks biasa' },
-  { type: 'heading1', icon: '𝗛₁', label: 'Judul 1', description: 'Judul besar' },
-  { type: 'heading2', icon: '𝗛₂', label: 'Judul 2', description: 'Judul sedang' },
-  { type: 'heading3', icon: '𝗛₃', label: 'Judul 3', description: 'Judul kecil' },
-  { type: 'bullet-list', icon: '•', label: 'Daftar Bullet', description: 'Daftar tak berurutan' },
-  { type: 'numbered-list', icon: '1.', label: 'Daftar Nomor', description: 'Daftar berurutan' },
-  { type: 'checklist', icon: '☑', label: 'Checklist', description: 'Daftar centang' },
-  { type: 'table', icon: '▦', label: 'Tabel', description: 'Tabel data' },
-  { type: 'callout', icon: '💡', label: 'Callout', description: 'Blok perhatian' },
-  { type: 'code', icon: '⌨', label: 'Kode', description: 'Blok kode' },
-  { type: 'toggle', icon: '▶', label: 'Toggle', description: 'Blok toggle' },
-  { type: 'divider', icon: '—', label: 'Pembatas', description: 'Garis horizontal' },
-  { type: 'quote', icon: '❝', label: 'Kutipan', description: 'Blok kutipan' },
+  { type: 'paragraph', icon: '📝', labelKey: 'editor.paragraph', descriptionKey: 'editor.paragraphDesc' },
+  { type: 'heading1', icon: '𝗛₁', labelKey: 'editor.heading1', descriptionKey: 'editor.heading1Desc' },
+  { type: 'heading2', icon: '𝗛₂', labelKey: 'editor.heading2', descriptionKey: 'editor.heading2Desc' },
+  { type: 'heading3', icon: '𝗛₃', labelKey: 'editor.heading3', descriptionKey: 'editor.heading3Desc' },
+  { type: 'bullet-list', icon: '•', labelKey: 'editor.bulletList', descriptionKey: 'editor.bulletListDesc' },
+  { type: 'numbered-list', icon: '1.', labelKey: 'editor.numberedList', descriptionKey: 'editor.numberedListDesc' },
+  { type: 'checklist', icon: '☑', labelKey: 'editor.checklist', descriptionKey: 'editor.checklistDesc' },
+  { type: 'table', icon: '▦', labelKey: 'editor.table', descriptionKey: 'editor.tableDesc' },
+  { type: 'callout', icon: '💡', labelKey: 'editor.callout', descriptionKey: 'editor.calloutDesc' },
+  { type: 'code', icon: '⌨', labelKey: 'editor.code', descriptionKey: 'editor.codeDesc' },
+  { type: 'toggle', icon: '▶', labelKey: 'editor.toggle', descriptionKey: 'editor.toggleDesc' },
+  { type: 'divider', icon: '—', labelKey: 'editor.divider', descriptionKey: 'editor.dividerDesc' },
+  { type: 'quote', icon: '❝', labelKey: 'editor.quote', descriptionKey: 'editor.quoteDesc' },
 ];

@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AuthStackParamList } from '@/navigation/types';
 import { colors, fontSize, spacing, fontFamily } from '@/theme';
+import { useTranslation } from 'react-i18next';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'ReverseOTPWait'>;
 
@@ -12,6 +13,7 @@ const REVERSE_OTP_TIMEOUT = 300; // 5 minutes
 
 export function ReverseOTPWaitScreen({ route, navigation }: Props) {
   const { waNumber, code } = route.params;
+  const { t } = useTranslation();
   const [countdown, setCountdown] = useState(REVERSE_OTP_TIMEOUT);
 
   React.useEffect(() => {
@@ -47,29 +49,29 @@ export function ReverseOTPWaitScreen({ route, navigation }: Props) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>Verifikasi WhatsApp</Text>
+        <Text style={styles.title}>{t('auth.waVerification')}</Text>
         <Text style={styles.description}>
-          Kirim pesan berikut ke WhatsApp untuk verifikasi
+          {t('auth.waVerificationDesc')}
         </Text>
 
         <View style={styles.infoCard}>
-          <Text style={styles.cardLabel}>Nomor WhatsApp</Text>
+          <Text style={styles.cardLabel}>{t('auth.waNumber')}</Text>
           <Text style={styles.waNumber}>{waNumber}</Text>
         </View>
 
         <View style={styles.infoCard}>
-          <Text style={styles.cardLabel}>Kode Verifikasi</Text>
+          <Text style={styles.cardLabel}>{t('auth.verificationCode')}</Text>
           <Text style={styles.code}>{code}</Text>
         </View>
 
         <Pressable style={styles.waButton} onPress={handleOpenWhatsApp}>
-          <Text style={styles.waButtonText}>Buka WhatsApp</Text>
+          <Text style={styles.waButtonText}>{t('auth.openWhatsApp')}</Text>
         </Pressable>
 
         <View style={styles.waitingSection}>
-          <Text style={styles.waitingText}>Menunggu verifikasi...</Text>
+          <Text style={styles.waitingText}>{t('auth.waitingVerification')}</Text>
           <Text style={styles.timerText}>
-            Berlaku selama {formatTime(countdown)}
+            {t('auth.validFor', { time: formatTime(countdown) })}
           </Text>
         </View>
       </View>

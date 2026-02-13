@@ -1,13 +1,14 @@
 // HeadingBlock — H1, H2, H3
 import React, { useRef, useEffect } from 'react';
 import { TextInput, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { colors, fontFamily, fontSize, spacing } from '@/theme';
 import type { BlockProps } from '../types';
 
 const headingConfig = {
-  heading1: { size: fontSize.h1, family: fontFamily.documentBold, placeholder: 'Judul 1' },
-  heading2: { size: fontSize.h2, family: fontFamily.documentBold, placeholder: 'Judul 2' },
-  heading3: { size: fontSize.h3, family: fontFamily.documentMedium, placeholder: 'Judul 3' },
+  heading1: { size: fontSize.h1, family: fontFamily.documentBold, placeholderKey: 'editor.heading1' },
+  heading2: { size: fontSize.h2, family: fontFamily.documentBold, placeholderKey: 'editor.heading2' },
+  heading3: { size: fontSize.h3, family: fontFamily.documentMedium, placeholderKey: 'editor.heading3' },
 } as const;
 
 export const HeadingBlock = React.memo(function HeadingBlock({
@@ -20,6 +21,7 @@ export const HeadingBlock = React.memo(function HeadingBlock({
   onBackspace,
   onSlashTrigger,
 }: BlockProps) {
+  const { t } = useTranslation();
   const inputRef = useRef<TextInput>(null);
   const config = headingConfig[block.type as keyof typeof headingConfig] ?? headingConfig.heading1;
 
@@ -54,7 +56,7 @@ export const HeadingBlock = React.memo(function HeadingBlock({
       onKeyPress={handleKeyPress}
       multiline
       editable={!readOnly}
-      placeholder={config.placeholder}
+      placeholder={t(config.placeholderKey)}
       placeholderTextColor={colors.textMuted}
       blurOnSubmit={false}
     />

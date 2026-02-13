@@ -11,6 +11,7 @@ import {
   Alert,
   StyleSheet,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { entitiesApi } from '@/services/api/entities';
 import { useEntityStore } from '@/stores/entityStore';
 import { colors, fontSize, fontFamily, spacing } from '@/theme';
@@ -23,6 +24,7 @@ type EntityTagBarProps = {
 };
 
 export function EntityTagBar({ documentId, onEntityPress }: EntityTagBarProps) {
+  const { t } = useTranslation();
   const [entities, setEntities] = useState<Entity[]>([]);
   const [showSelector, setShowSelector] = useState(false);
   const [unlinkTarget, setUnlinkTarget] = useState<Entity | null>(null);
@@ -48,7 +50,7 @@ export function EntityTagBar({ documentId, onEntityPress }: EntityTagBarProps) {
         setShowSelector(false);
         loadEntities();
       } catch {
-        Alert.alert('Gagal menautkan entity');
+        Alert.alert(t('entity.linkFailed'));
       }
     },
     [documentId, loadEntities],
@@ -61,7 +63,7 @@ export function EntityTagBar({ documentId, onEntityPress }: EntityTagBarProps) {
       setUnlinkTarget(null);
       loadEntities();
     } catch {
-      Alert.alert('Gagal melepas entity');
+      Alert.alert(t('entity.unlinkFailed'));
     }
   }, [documentId, unlinkTarget, loadEntities]);
 
@@ -100,9 +102,9 @@ export function EntityTagBar({ documentId, onEntityPress }: EntityTagBarProps) {
 
       <ConfirmDialog
         visible={!!unlinkTarget}
-        title="Lepas Entity"
-        message={`Lepaskan "${unlinkTarget?.name}" dari dokumen ini?`}
-        confirmText="Lepas"
+        title={t('entity.unlinkEntity')}
+        message={t('entity.unlinkConfirm', { name: unlinkTarget?.name })}
+        confirmText={t('entity.unlink')}
         variant="danger"
         onConfirm={handleUnlink}
         onCancel={() => setUnlinkTarget(null)}
@@ -124,6 +126,7 @@ function EntitySelectorModal({
   excludeIds: string[];
 }) {
   const { searchEntities } = useEntityStore();
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Entity[]>([]);
 
@@ -157,12 +160,12 @@ function EntitySelectorModal({
       <Pressable style={styles.selectorOverlay} onPress={onDismiss}>
         <Pressable style={styles.selectorSheet} onPress={() => {}}>
           <View style={styles.selectorHandle} />
-          <Text style={styles.selectorTitle}>Pilih Entity</Text>
+          <Text style={styles.selectorTitle}>{t('entity.selectEntity')}</Text>
           <TextInput
             style={styles.selectorInput}
             value={query}
             onChangeText={setQuery}
-            placeholder="Cari entity..."
+            placeholder={t('entity.searchEntity')}
             placeholderTextColor={colors.textMuted}
             autoFocus
           />
@@ -193,11 +196,11 @@ function EntitySelectorModal({
             ListEmptyComponent={
               query.trim() ? (
                 <Text style={styles.selectorEmpty}>
-                  Tidak ada entity yang cocok
+                  {t('entity.noMatch')}
                 </Text>
               ) : (
                 <Text style={styles.selectorEmpty}>
-                  Ketik untuk mencari entity
+                  {t('entity.typeToSearch')}
                 </Text>
               )
             }

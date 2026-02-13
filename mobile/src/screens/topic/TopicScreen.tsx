@@ -19,6 +19,7 @@ import { DateSeparator } from '@/components/chat/DateSeparator';
 import { useTopicStore } from '@/stores/topicStore';
 import { useAuthStore } from '@/stores/authStore';
 import { topicsApi } from '@/services/api/topics';
+import { useTranslation } from 'react-i18next';
 import { isDifferentDay } from '@/lib/timeFormat';
 import { colors, fontSize, fontFamily, spacing } from '@/theme';
 import type { TopicMessage, TopicDetail, Message } from '@/types/chat';
@@ -43,6 +44,7 @@ function toMessage(tm: TopicMessage): Message {
 
 export function TopicScreen({ route, navigation }: Props) {
   const { topicId } = route.params;
+  const { t } = useTranslation();
   const currentUserId = useAuthStore((s) => s.user?.id);
   const { messagesByTopic, fetchMessages, addMessage, deleteMessage } = useTopicStore();
 
@@ -94,7 +96,7 @@ export function TopicScreen({ route, navigation }: Props) {
               {topic.name}
             </Text>
             <Text style={headerStyles.status}>
-              {memberCount} anggota
+              {t('group.memberCount', { count: memberCount })}
             </Text>
           </View>
         </Pressable>
@@ -113,7 +115,7 @@ export function TopicScreen({ route, navigation }: Props) {
         addMessage(topicId, res.data.data);
         setReplyTo(null);
       } catch {
-        Alert.alert('Gagal', 'Pesan gagal dikirim. Coba lagi.');
+        Alert.alert(t('common.failed'), t('chat.sendFailed'));
       }
     },
     [topicId, replyTo, addMessage],
@@ -128,28 +130,28 @@ export function TopicScreen({ route, navigation }: Props) {
         style?: 'cancel' | 'destructive';
       }> = [
         {
-          text: 'Balas',
+          text: t('chat.reply'),
           onPress: () => setReplyTo({ id: message.id, content: message.content }),
         },
       ];
 
       if (isSelf) {
         options.push({
-          text: 'Hapus',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: async () => {
             try {
               await topicsApi.deleteMessage(topicId, message.id, true);
               deleteMessage(topicId, message.id);
             } catch {
-              Alert.alert('Gagal', 'Pesan gagal dihapus.');
+              Alert.alert(t('common.failed'), t('chat.deleteFailed'));
             }
           },
         });
       }
 
-      options.push({ text: 'Batal', style: 'cancel' });
-      Alert.alert('Opsi Pesan', undefined, options);
+      options.push({ text: t('common.cancel'), style: 'cancel' });
+      Alert.alert(t('chat.messageOptions'), undefined, options);
     },
     [topicId, currentUserId, deleteMessage],
   );

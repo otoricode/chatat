@@ -1,6 +1,7 @@
 // ConfirmDialog — confirmation modal
 import React from 'react';
 import { View, Text, Modal, StyleSheet, Pressable } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { colors, fontSize, spacing, fontFamily } from '@/theme';
 
 type ConfirmDialogProps = {
@@ -18,12 +19,16 @@ export function ConfirmDialog({
   visible,
   title,
   message,
-  confirmText = 'Ya',
-  cancelText = 'Batal',
+  confirmText,
+  cancelText,
   variant = 'default',
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
+  const { t } = useTranslation();
+  const resolvedConfirmText = confirmText ?? t('common.yes');
+  const resolvedCancelText = cancelText ?? t('common.cancel');
+
   return (
     <Modal visible={visible} transparent animationType="fade">
       <Pressable style={styles.overlay} onPress={onCancel}>
@@ -32,7 +37,7 @@ export function ConfirmDialog({
           <Text style={styles.message}>{message}</Text>
           <View style={styles.buttons}>
             <Pressable style={styles.cancelButton} onPress={onCancel}>
-              <Text style={styles.cancelText}>{cancelText}</Text>
+              <Text style={styles.cancelText}>{resolvedCancelText}</Text>
             </Pressable>
             <Pressable
               style={[
@@ -47,7 +52,7 @@ export function ConfirmDialog({
                   variant === 'danger' && styles.dangerText,
                 ]}
               >
-                {confirmText}
+                {resolvedConfirmText}
               </Text>
             </Pressable>
           </View>

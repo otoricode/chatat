@@ -17,6 +17,7 @@ import type { ChatStackParamList } from '@/navigation/types';
 import { SearchBar } from '@/components/shared/SearchBar';
 import { Avatar } from '@/components/ui/Avatar';
 import { useContactStore } from '@/stores/contactStore';
+import { useTranslation } from 'react-i18next';
 import { chatsApi } from '@/services/api/chats';
 import { colors, fontSize, fontFamily, spacing } from '@/theme';
 import type { ContactInfo } from '@/types/chat';
@@ -26,6 +27,7 @@ type Props = NativeStackScreenProps<ChatStackParamList, 'CreateGroup'>;
 const EMOJI_OPTIONS = ['💼', '🎯', '🚀', '💡', '🎮', '📚', '🏠', '❤️', '⭐', '🔥', '🎵', '🌟', '👥', '💬', '🛠️', '🎨'];
 
 export function CreateGroupScreen({ navigation }: Props) {
+  const { t } = useTranslation();
   const { contacts, fetchContacts } = useContactStore();
 
   // Step state: 1 = select members, 2 = group details
@@ -67,7 +69,7 @@ export function CreateGroupScreen({ navigation }: Props) {
 
   const handleNext = useCallback(() => {
     if (selectedMembers.length < 2) {
-      Alert.alert('Pilih Anggota', 'Grup harus memiliki minimal 2 anggota selain Anda.');
+      Alert.alert(t('group.addMembers'), t('group.memberCount', { count: 2 }));
       return;
     }
     setStep(2);
@@ -75,7 +77,7 @@ export function CreateGroupScreen({ navigation }: Props) {
 
   const handleCreate = useCallback(async () => {
     if (!groupName.trim()) {
-      Alert.alert('Nama Grup', 'Nama grup harus diisi.');
+      Alert.alert(t('group.groupName'), t('group.groupName'));
       return;
     }
 
@@ -91,7 +93,7 @@ export function CreateGroupScreen({ navigation }: Props) {
       const chat = res.data.data;
       navigation.replace('Chat', { chatId: chat.id, chatType: 'group' });
     } catch {
-      Alert.alert('Gagal', 'Gagal membuat grup. Coba lagi.');
+      Alert.alert(t('common.error'), t('common.retry'));
     } finally {
       setIsCreating(false);
     }
@@ -100,12 +102,12 @@ export function CreateGroupScreen({ navigation }: Props) {
   // Update nav header
   React.useEffect(() => {
     navigation.setOptions({
-      title: step === 1 ? 'Pilih Anggota' : 'Detail Grup',
+      title: step === 1 ? t('group.addMembers') : t('group.groupInfo'),
       headerLeft: step === 2
         ? () => (
             <Pressable onPress={() => setStep(1)} style={{ marginRight: spacing.md }}>
               <Text style={{ color: colors.green, fontFamily: fontFamily.ui, fontSize: fontSize.md }}>
-                Kembali
+                {t('common.back')}
               </Text>
             </Pressable>
           )
@@ -143,7 +145,7 @@ export function CreateGroupScreen({ navigation }: Props) {
         <SearchBar
           value={searchQuery}
           onChangeText={setSearchQuery}
-          placeholder="Cari kontak..."
+          placeholder={t('contact.searchContacts')}
         />
 
         <FlatList
@@ -185,7 +187,7 @@ export function CreateGroupScreen({ navigation }: Props) {
           disabled={selectedMembers.length < 2}
         >
           <Text style={styles.nextButtonText}>
-            Selanjutnya ({selectedMembers.length} dipilih)
+            {t('common.next')} ({selectedMembers.length})
           </Text>
         </Pressable>
       </SafeAreaView>
@@ -197,7 +199,7 @@ export function CreateGroupScreen({ navigation }: Props) {
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView style={styles.detailsContainer} contentContainerStyle={styles.detailsContent}>
         {/* Emoji picker */}
-        <Text style={styles.sectionLabel}>Ikon Grup</Text>
+        <Text style={styles.sectionLabel}>{t('group.groupName')}</Text>
         <View style={styles.emojiGrid}>
           {EMOJI_OPTIONS.map((emoji) => (
             <Pressable
@@ -214,32 +216,30 @@ export function CreateGroupScreen({ navigation }: Props) {
         </View>
 
         {/* Group name */}
-        <Text style={styles.sectionLabel}>Nama Grup</Text>
+        <Text style={styles.sectionLabel}>{t('group.groupName')}</Text>
         <TextInput
           style={styles.textInput}
           value={groupName}
           onChangeText={setGroupName}
-          placeholder="Masukkan nama grup..."
+          placeholder={t('group.groupName')}
           placeholderTextColor={colors.textMuted}
           maxLength={100}
         />
 
         {/* Description */}
-        <Text style={styles.sectionLabel}>Deskripsi (opsional)</Text>
+        <Text style={styles.sectionLabel}>{t('common.edit')}</Text>
         <TextInput
           style={[styles.textInput, styles.textArea]}
           value={groupDescription}
           onChangeText={setGroupDescription}
-          placeholder="Deskripsi grup..."
+          placeholder={t('common.edit')}
           placeholderTextColor={colors.textMuted}
           multiline
           numberOfLines={3}
         />
 
         {/* Selected members preview */}
-        <Text style={styles.sectionLabel}>
-          Anggota ({selectedMembers.length + 1})
-        </Text>
+        <Text style={styles.sectionLabel}>{t('group.members')} ({selectedMembers.length + 1})</Text>
         <View style={styles.memberPreview}>
           {selectedMembers.map((member) => (
             <View key={member.userId} style={styles.memberPreviewItem}>
@@ -260,7 +260,7 @@ export function CreateGroupScreen({ navigation }: Props) {
         {isCreating ? (
           <ActivityIndicator color={colors.background} size="small" />
         ) : (
-          <Text style={styles.createButtonText}>Buat Grup</Text>
+          <Text style={styles.createButtonText}>{t('group.createGroup')}</Text>
         )}
       </Pressable>
     </SafeAreaView>

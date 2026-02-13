@@ -1,10 +1,12 @@
 // SaveIndicator — shows save status
 import React from 'react';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useEditorStore } from '@/stores/editorStore';
 import { colors, fontFamily, fontSize, spacing } from '@/theme';
 
 export function SaveIndicator() {
+  const { t } = useTranslation();
   const saveStatus = useEditorStore((s) => s.saveStatus);
 
   if (saveStatus === 'idle') return null;
@@ -14,19 +16,19 @@ export function SaveIndicator() {
       {saveStatus === 'saving' && (
         <>
           <ActivityIndicator size="small" color={colors.textMuted} />
-          <Text style={styles.text}>Menyimpan...</Text>
+          <Text style={styles.text}>{t('common.saving')}</Text>
         </>
       )}
       {saveStatus === 'saved' && (
         <>
           <Text style={styles.check}>✓</Text>
-          <Text style={styles.text}>Tersimpan</Text>
+          <Text style={styles.text}>{t('editor.saved')}</Text>
         </>
       )}
       {saveStatus === 'error' && (
         <>
           <Text style={styles.errorIcon}>⚠</Text>
-          <Text style={[styles.text, styles.errorText]}>Gagal menyimpan</Text>
+          <Text style={[styles.text, styles.errorText]}>{t('editor.saveFailed')}</Text>
         </>
       )}
     </View>

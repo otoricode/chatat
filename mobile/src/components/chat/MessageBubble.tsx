@@ -1,6 +1,7 @@
 // MessageBubble — chat message bubble component
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { colors, fontSize, fontFamily, spacing } from '@/theme';
 import { formatMessageTime } from '@/lib/timeFormat';
 import type { Message, DeliveryStatus, MediaResponse } from '@/types/chat';
@@ -52,6 +53,8 @@ function getStatusIcon(status?: DeliveryStatus): string {
 }
 
 export function MessageBubble({ message, isSelf, senderName, onLongPress, onImagePress, onFilePress, uploadProgress }: Props) {
+  const { t } = useTranslation();
+
   if (message.isDeleted) {
     return (
       <View style={[styles.container, isSelf ? styles.selfContainer : styles.otherContainer]}>
@@ -62,7 +65,7 @@ export function MessageBubble({ message, isSelf, senderName, onLongPress, onImag
             styles.deletedBubble,
           ]}
         >
-          <Text style={styles.deletedText}>{'\u{1F6AB}'} Pesan dihapus</Text>
+          <Text style={styles.deletedText}>{'\u{1F6AB}'} {t('chat.messageDeleted')}</Text>
         </View>
       </View>
     );
@@ -87,14 +90,14 @@ export function MessageBubble({ message, isSelf, senderName, onLongPress, onImag
         )}
 
         {isForwarded && (
-          <Text style={styles.forwardedLabel}>{'\u{27A1}'} Diteruskan</Text>
+          <Text style={styles.forwardedLabel}>{'\u{27A1}'} {t('chat.forwarded')}</Text>
         )}
 
         {message.replyToId && (
           <View style={styles.replyPreview}>
             <View style={styles.replyBar} />
             <Text style={styles.replyText} numberOfLines={1}>
-              Balasan pesan
+              {t('chat.replyMessage')}
             </Text>
           </View>
         )}

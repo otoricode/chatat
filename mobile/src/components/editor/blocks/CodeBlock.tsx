@@ -2,6 +2,7 @@
 import React, { useRef, useEffect } from 'react';
 import { View, TextInput, Text, Pressable, StyleSheet } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
+import { useTranslation } from 'react-i18next';
 import { colors, fontFamily, fontSize, spacing } from '@/theme';
 import type { BlockProps } from '../types';
 
@@ -12,6 +13,7 @@ export const CodeBlock = React.memo(function CodeBlock({
   onChange,
   onFocus,
 }: BlockProps) {
+  const { t } = useTranslation();
   const inputRef = useRef<TextInput>(null);
 
   useEffect(() => {
@@ -31,7 +33,7 @@ export const CodeBlock = React.memo(function CodeBlock({
       <View style={styles.header}>
         <Text style={styles.language}>{block.language || 'text'}</Text>
         <Pressable onPress={handleCopy} style={styles.copyBtn}>
-          <Text style={styles.copyText}>Salin</Text>
+          <Text style={styles.copyText}>{t('common.copy')}</Text>
         </Pressable>
       </View>
       <TextInput
@@ -42,7 +44,7 @@ export const CodeBlock = React.memo(function CodeBlock({
         onFocus={onFocus}
         multiline
         editable={!readOnly}
-        placeholder="// kode..."
+        placeholder={t('editor.codePlaceholder')}
         placeholderTextColor={colors.textMuted}
         autoCapitalize="none"
         autoCorrect={false}

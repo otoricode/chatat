@@ -6,6 +6,7 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
 } from 'react-native-reanimated';
+import { useTranslation } from 'react-i18next';
 import { colors, fontFamily, fontSize, spacing } from '@/theme';
 import type { BlockProps } from '../types';
 
@@ -18,6 +19,7 @@ export const ToggleBlock = React.memo(function ToggleBlock({
   onBackspace,
   onSlashTrigger,
 }: BlockProps) {
+  const { t } = useTranslation();
   const inputRef = useRef<TextInput>(null);
   const [expanded, setExpanded] = useState(false);
   const rotation = useSharedValue(0);
@@ -69,7 +71,7 @@ export const ToggleBlock = React.memo(function ToggleBlock({
           onKeyPress={handleKeyPress}
           multiline
           editable={!readOnly}
-          placeholder="Toggle header..."
+          placeholder={t('editor.toggleHeader')}
           placeholderTextColor={colors.textMuted}
           blurOnSubmit={false}
         />

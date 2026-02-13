@@ -13,6 +13,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { ChatStackParamList } from '@/navigation/types';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { useTopicStore } from '@/stores/topicStore';
+import { useTranslation } from 'react-i18next';
 import { useChatStore } from '@/stores/chatStore';
 import { formatMessageTime } from '@/lib/timeFormat';
 import { colors, fontSize, fontFamily, spacing } from '@/theme';
@@ -21,6 +22,7 @@ import type { TopicListItem } from '@/types/chat';
 type Props = NativeStackScreenProps<ChatStackParamList, 'TopicList'>;
 
 export function TopicListScreen({ route, navigation }: Props) {
+  const { t } = useTranslation();
   const { chatId } = route.params;
   const { topicsByChat, isLoading, fetchTopics } = useTopicStore();
   const chatItem = useChatStore((s) => s.chats.find((c) => c.chat.id === chatId));
@@ -69,11 +71,11 @@ export function TopicListScreen({ route, navigation }: Props) {
           <View style={styles.topicSub}>
             <Text style={styles.lastMessage} numberOfLines={1}>
               {item.lastMessage?.isDeleted
-                ? 'Pesan dihapus'
-                : item.lastMessage?.content ?? 'Belum ada pesan'}
+                ? t('chat.messageDeleted')
+                : item.lastMessage?.content ?? t('chat.noChats')}
             </Text>
             <Text style={styles.memberCount}>
-              {item.memberCount} anggota
+              {t('group.memberCount', { count: item.memberCount })}
             </Text>
           </View>
         </View>
@@ -100,14 +102,14 @@ export function TopicListScreen({ route, navigation }: Props) {
         <View style={styles.emptyContainer}>
           <EmptyState
             emoji="📌"
-            title="Belum ada topik"
-            description="Buat topik untuk diskusi terfokus dalam chat ini"
+            title={t('topic.noTopics')}
+            description={t('topic.noTopicsDesc')}
           />
           <TouchableOpacity
             style={styles.createButton}
             onPress={() => navigation.navigate('CreateTopic', { chatId, chatType })}
           >
-            <Text style={styles.createButtonText}>Buat Topik</Text>
+            <Text style={styles.createButtonText}>{t('topic.newTopic')}</Text>
           </TouchableOpacity>
         </View>
       ) : (

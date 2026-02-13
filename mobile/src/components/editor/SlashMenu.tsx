@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Modal,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { colors, fontFamily, fontSize, spacing } from '@/theme';
 import { BLOCK_OPTIONS } from './types';
 import type { BlockType } from '@/types/chat';
@@ -20,15 +21,17 @@ interface SlashMenuProps {
 }
 
 export function SlashMenu({ visible, filter, onSelect, onDismiss }: SlashMenuProps) {
+  const { t } = useTranslation();
+
   const filtered = useMemo(
     () =>
       BLOCK_OPTIONS.filter(
         (opt) =>
           filter === '' ||
-          opt.label.toLowerCase().includes(filter.toLowerCase()) ||
+          t(opt.labelKey).toLowerCase().includes(filter.toLowerCase()) ||
           opt.type.toLowerCase().includes(filter.toLowerCase()),
       ),
-    [filter],
+    [filter, t],
   );
 
   if (!visible) return null;
@@ -37,7 +40,7 @@ export function SlashMenu({ visible, filter, onSelect, onDismiss }: SlashMenuPro
     <Modal transparent animationType="fade" visible={visible} onRequestClose={onDismiss}>
       <Pressable style={styles.overlay} onPress={onDismiss}>
         <View style={styles.menu}>
-          <Text style={styles.title}>Sisipkan blok</Text>
+          <Text style={styles.title}>{t('editor.addBlock')}</Text>
           <FlatList
             data={filtered}
             keyExtractor={(item) => item.type}
@@ -49,13 +52,13 @@ export function SlashMenu({ visible, filter, onSelect, onDismiss }: SlashMenuPro
               >
                 <Text style={styles.icon}>{item.icon}</Text>
                 <View style={styles.optionText}>
-                  <Text style={styles.label}>{item.label}</Text>
-                  <Text style={styles.description}>{item.description}</Text>
+                  <Text style={styles.label}>{t(item.labelKey)}</Text>
+                  <Text style={styles.description}>{t(item.descriptionKey)}</Text>
                 </View>
               </Pressable>
             )}
             ListEmptyComponent={
-              <Text style={styles.empty}>Tidak ditemukan</Text>
+              <Text style={styles.empty}>{t('common.notFound')}</Text>
             }
             style={styles.list}
           />

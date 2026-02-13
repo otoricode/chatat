@@ -61,7 +61,7 @@ export function PhoneInputScreen({ navigation }: Props) {
           onPress={handleSMSOTP}
           disabled={!isValid}
         >
-          <Text style={styles.buttonText}>Lanjut dengan SMS OTP</Text>
+          <Text style={styles.buttonText}>{t('auth.sendOTP')}</Text>
         </Pressable>
 
         <Pressable
@@ -70,7 +70,7 @@ export function PhoneInputScreen({ navigation }: Props) {
           disabled={!isValid}
         >
           <Text style={[styles.buttonText, styles.buttonSecondaryText]}>
-            Lanjut dengan WhatsApp
+            {t('common.next')}
           </Text>
         </Pressable>
       </View>

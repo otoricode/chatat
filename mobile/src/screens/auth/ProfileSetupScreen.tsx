@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AuthStackParamList } from '@/navigation/types';
 import { useAuthStore } from '@/stores/authStore';
+import { useTranslation } from 'react-i18next';
 import { colors, fontSize, spacing, fontFamily } from '@/theme';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'ProfileSetup'>;
@@ -17,6 +18,7 @@ const AVATAR_EMOJIS = [
 ];
 
 export function ProfileSetupScreen(_props: Props) {
+  const { t } = useTranslation();
   const [name, setName] = useState('');
   const [avatar, setAvatar] = useState('😀');
   const [isLoading, setIsLoading] = useState(false);
@@ -49,8 +51,8 @@ export function ProfileSetupScreen(_props: Props) {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Atur Profil</Text>
-        <Text style={styles.description}>Pilih avatar dan masukkan namamu</Text>
+        <Text style={styles.title}>{t('auth.setupProfile')}</Text>
+        <Text style={styles.description}>{t('auth.namePlaceholder')}</Text>
 
         <View style={styles.avatarPreview}>
           <Text style={styles.avatarLarge}>{avatar}</Text>
@@ -69,12 +71,12 @@ export function ProfileSetupScreen(_props: Props) {
         </View>
 
         <View style={styles.nameSection}>
-          <Text style={styles.label}>Nama</Text>
+          <Text style={styles.label}>{t('auth.nameLabel')}</Text>
           <TextInput
             style={styles.nameInput}
             value={name}
             onChangeText={setName}
-            placeholder="Masukkan nama"
+            placeholder={t('auth.namePlaceholder')}
             placeholderTextColor={colors.textMuted}
             maxLength={50}
           />
@@ -86,7 +88,7 @@ export function ProfileSetupScreen(_props: Props) {
           disabled={!isValid || isLoading}
         >
           <Text style={styles.submitText}>
-            {isLoading ? 'Menyimpan...' : 'Mulai'}
+            {isLoading ? t('common.loading') : t('common.done')}
           </Text>
         </Pressable>
       </ScrollView>

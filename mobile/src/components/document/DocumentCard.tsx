@@ -2,6 +2,7 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { colors, fontSize, fontFamily, spacing } from '@/theme';
+import { useTranslation } from 'react-i18next';
 import { LockStatusBadge } from './LockStatusBadge';
 
 interface DocumentCardProps {
@@ -21,6 +22,7 @@ export function DocumentCard({
   updatedAt,
   onPress,
 }: DocumentCardProps) {
+  const { t } = useTranslation();
   return (
     <Pressable style={styles.card} onPress={onPress}>
       <View style={styles.iconContainer}>
@@ -28,7 +30,7 @@ export function DocumentCard({
       </View>
       <View style={styles.content}>
         <Text style={styles.title} numberOfLines={2}>
-          {title || 'Dokumen Tanpa Judul'}
+          {title || t('document.untitled')}
         </Text>
         <View style={styles.meta}>
           <LockStatusBadge locked={locked} lockedBy={lockedBy} compact />

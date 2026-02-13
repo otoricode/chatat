@@ -12,6 +12,7 @@ import {
   Platform,
 } from 'react-native';
 import { useEntityStore } from '@/stores/entityStore';
+import { useTranslation } from 'react-i18next';
 import { colors, fontSize, fontFamily, spacing } from '@/theme';
 
 type CreateEntitySheetProps = {
@@ -21,6 +22,7 @@ type CreateEntitySheetProps = {
 };
 
 export function CreateEntitySheet({ visible, onDismiss, onCreated }: CreateEntitySheetProps) {
+  const { t } = useTranslation();
   const { createEntity, types: existingTypes } = useEntityStore();
   const [name, setName] = useState('');
   const [type, setType] = useState('');
@@ -39,8 +41,8 @@ export function CreateEntitySheet({ visible, onDismiss, onCreated }: CreateEntit
     }
   }, [visible]);
 
-  const filteredTypes = existingTypes.filter((t) =>
-    t.toLowerCase().includes(type.toLowerCase()),
+  const filteredTypes = existingTypes.filter((tp) =>
+    tp.toLowerCase().includes(type.toLowerCase()),
   );
 
   const handleAddField = useCallback(() => {
@@ -62,11 +64,11 @@ export function CreateEntitySheet({ visible, onDismiss, onCreated }: CreateEntit
 
   const handleSubmit = useCallback(async () => {
     if (!name.trim()) {
-      setError('Nama wajib diisi');
+      setError(t('entity.nameRequired'));
       return;
     }
     if (!type.trim()) {
-      setError('Tipe wajib diisi');
+      setError(t('entity.typeRequired'));
       return;
     }
 
@@ -89,7 +91,7 @@ export function CreateEntitySheet({ visible, onDismiss, onCreated }: CreateEntit
 
       onCreated();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Gagal membuat entity');
+      setError(err instanceof Error ? err.message : t('entity.createFailed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -104,22 +106,22 @@ export function CreateEntitySheet({ visible, onDismiss, onCreated }: CreateEntit
         >
           <Pressable style={styles.sheet} onPress={() => {}}>
             <View style={styles.handle} />
-            <Text style={styles.title}>Buat Entity Baru</Text>
+            <Text style={styles.title}>{t('entity.createNewEntity')}</Text>
 
             <ScrollView style={styles.form} keyboardShouldPersistTaps="handled">
               {/* Name */}
-              <Text style={styles.label}>Nama</Text>
+              <Text style={styles.label}>{t('entity.name')}</Text>
               <TextInput
                 style={styles.input}
                 value={name}
                 onChangeText={setName}
-                placeholder="Contoh: Pak Ahmad"
+                placeholder={t('entity.namePlaceholderExample')}
                 placeholderTextColor={colors.textMuted}
                 autoFocus
               />
 
               {/* Type */}
-              <Text style={styles.label}>Tipe</Text>
+              <Text style={styles.label}>{t('entity.type')}</Text>
               <TextInput
                 style={styles.input}
                 value={type}
@@ -129,7 +131,7 @@ export function CreateEntitySheet({ visible, onDismiss, onCreated }: CreateEntit
                 }}
                 onFocus={() => setShowTypeSuggestions(type.length > 0)}
                 onBlur={() => setTimeout(() => setShowTypeSuggestions(false), 200)}
-                placeholder="Contoh: Orang, Lahan, Aset"
+                placeholder={t('entity.typePlaceholderExample')}
                 placeholderTextColor={colors.textMuted}
               />
               {showTypeSuggestions && filteredTypes.length > 0 && (
@@ -151,9 +153,9 @@ export function CreateEntitySheet({ visible, onDismiss, onCreated }: CreateEntit
 
               {/* Dynamic Fields */}
               <View style={styles.fieldsHeader}>
-                <Text style={styles.label}>Fields</Text>
+                <Text style={styles.label}>{t('entity.fields')}</Text>
                 <Pressable onPress={handleAddField}>
-                  <Text style={styles.addFieldText}>+ Tambah</Text>
+                  <Text style={styles.addFieldText}>+ {t('common.add')}</Text>
                 </Pressable>
               </View>
               {fields.map((field, idx) => (
@@ -184,7 +186,7 @@ export function CreateEntitySheet({ visible, onDismiss, onCreated }: CreateEntit
             {/* Actions */}
             <View style={styles.actions}>
               <Pressable style={styles.cancelBtn} onPress={onDismiss}>
-                <Text style={styles.cancelBtnText}>Batal</Text>
+                <Text style={styles.cancelBtnText}>{t('common.cancel')}</Text>
               </Pressable>
               <Pressable
                 style={[styles.submitBtn, isSubmitting && styles.submitBtnDisabled]}
@@ -192,7 +194,7 @@ export function CreateEntitySheet({ visible, onDismiss, onCreated }: CreateEntit
                 disabled={isSubmitting}
               >
                 <Text style={styles.submitBtnText}>
-                  {isSubmitting ? 'Menyimpan...' : 'Simpan'}
+                  {isSubmitting ? t('common.saving') : t('common.save')}
                 </Text>
               </Pressable>
             </View>

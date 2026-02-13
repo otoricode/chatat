@@ -27,6 +27,7 @@ import { mediaApi } from '@/services/api/media';
 import { isDifferentDay } from '@/lib/timeFormat';
 import { formatLastSeen } from '@/lib/timeFormat';
 import { useTypingIndicator } from '@/hooks/useTypingIndicator';
+import { useTranslation } from 'react-i18next';
 import { wsClient } from '@/services/ws';
 import { colors, fontSize, fontFamily, spacing } from '@/theme';
 import type { Message, MediaResponse } from '@/types/chat';
@@ -35,6 +36,7 @@ type Props = NativeStackScreenProps<ChatStackParamList, 'Chat'>;
 
 export function ChatScreen({ route, navigation }: Props) {
   const { chatId, chatType } = route.params;
+  const { t } = useTranslation();
   const currentUserId = useAuthStore((s) => s.user?.id);
   const { messages, isLoading, hasMore, fetchMessages, fetchMore, addMessage, deleteMessage } =
     useMessageStore();
@@ -104,9 +106,9 @@ export function ChatScreen({ route, navigation }: Props) {
           >
             <Avatar emoji={chat?.icon || '\u{1F465}'} size="sm" />
             <View>
-              <Text style={headerStyles.name}>{chat?.name || 'Grup'}</Text>
+              <Text style={headerStyles.name}>{chat?.name || t('group.groupInfo')}</Text>
               <Text style={[headerStyles.status, typingText ? headerStyles.typingStatus : undefined]}>
-                {typingText || (memberCount > 0 ? `${memberCount} anggota` : '')}
+                {typingText || (memberCount > 0 ? t('group.memberCount', { count: memberCount }) : '')}
               </Text>
             </View>
           </Pressable>
@@ -128,10 +130,10 @@ export function ChatScreen({ route, navigation }: Props) {
               online={chatItem?.isOnline}
             />
             <View>
-              <Text style={headerStyles.name}>{otherUser?.name || 'Chat'}</Text>
+              <Text style={headerStyles.name}>{otherUser?.name || t('chat.title')}</Text>
               <Text style={[headerStyles.status, typingText ? headerStyles.typingStatus : undefined]}>
                 {typingText || (otherUser
-                  ? formatLastSeen(otherUser.lastSeen, chatItem?.isOnline ?? false)
+                  ? formatLastSeen(otherUser.lastSeen, chatItem?.isOnline ?? false, t)
                   : '')}
               </Text>
             </View>
@@ -154,7 +156,7 @@ export function ChatScreen({ route, navigation }: Props) {
         addMessage(chatId, res.data.data);
         setReplyTo(null);
       } catch {
-        Alert.alert('Gagal', 'Pesan gagal dikirim. Coba lagi.');
+        Alert.alert(t('common.failed'), t('chat.sendFailed'));
       }
     },
     [chatId, replyTo, addMessage, sendTyping],
@@ -202,7 +204,7 @@ export function ChatScreen({ route, navigation }: Props) {
 
         addMessage(chatId, res.data.data);
       } catch {
-        Alert.alert('Gagal', 'Media gagal dikirim. Coba lagi.');
+        Alert.alert(t('common.failed'), t('media.sendFailed'));
       } finally {
         setUploadProgress((prev) => {
           const next = { ...prev };
@@ -229,11 +231,11 @@ export function ChatScreen({ route, navigation }: Props) {
       const isSelf = message.senderId === currentUserId;
       const options: Array<{ text: string; onPress?: () => void; style?: 'cancel' | 'destructive' }> = [
         {
-          text: 'Balas',
+          text: t('chat.reply'),
           onPress: () => setReplyTo({ id: message.id, content: message.content }),
         },
         {
-          text: 'Salin',
+          text: t('common.copy'),
           onPress: () => {
             // Clipboard would be imported in production
           },
@@ -242,35 +244,35 @@ export function ChatScreen({ route, navigation }: Props) {
 
       if (isSelf) {
         options.push({
-          text: 'Hapus untuk semua',
+          text: t('chat.deleteForAll'),
           style: 'destructive',
           onPress: async () => {
             try {
               await chatsApi.deleteMessage(chatId, message.id, true);
               deleteMessage(chatId, message.id);
             } catch {
-              Alert.alert('Gagal', 'Pesan gagal dihapus.');
+              Alert.alert(t('common.failed'), t('chat.deleteFailed'));
             }
           },
         });
       }
 
       options.push({
-        text: 'Hapus untuk saya',
+        text: t('chat.deleteForMe'),
         style: 'destructive',
         onPress: async () => {
           try {
             await chatsApi.deleteMessage(chatId, message.id, false);
             deleteMessage(chatId, message.id);
           } catch {
-            Alert.alert('Gagal', 'Pesan gagal dihapus.');
+            Alert.alert(t('common.failed'), t('chat.deleteFailed'));
           }
         },
       });
 
-      options.push({ text: 'Batal', style: 'cancel' });
+      options.push({ text: t('common.cancel'), style: 'cancel' });
 
-      Alert.alert('Opsi Pesan', undefined, options);
+      Alert.alert(t('chat.messageOptions'), undefined, options);
     },
     [chatId, currentUserId, deleteMessage],
   );

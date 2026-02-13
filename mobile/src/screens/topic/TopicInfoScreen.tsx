@@ -18,6 +18,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { topicsApi } from '@/services/api/topics';
 import { useAuthStore } from '@/stores/authStore';
 import { useTopicStore } from '@/stores/topicStore';
+import { useTranslation } from 'react-i18next';
 import { colors, fontSize, fontFamily, spacing } from '@/theme';
 import type { TopicDetail, MemberInfo } from '@/types/chat';
 
@@ -25,6 +26,7 @@ type Props = NativeStackScreenProps<ChatStackParamList, 'TopicInfo'>;
 
 export function TopicInfoScreen({ route, navigation }: Props) {
   const { topicId } = route.params;
+  const { t } = useTranslation();
   const currentUserId = useAuthStore((s) => s.user?.id);
 
   const [detail, setDetail] = useState<TopicDetail | null>(null);
@@ -50,7 +52,7 @@ export function TopicInfoScreen({ route, navigation }: Props) {
       setEditName(res.data.data.topic.name);
       setEditDesc(res.data.data.topic.description);
     } catch {
-      Alert.alert('Error', 'Gagal memuat info topik');
+      Alert.alert(t('common.error'), t('topic.loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -66,7 +68,7 @@ export function TopicInfoScreen({ route, navigation }: Props) {
       setEditing(false);
       loadDetail();
     } catch {
-      Alert.alert('Error', 'Gagal menyimpan perubahan');
+      Alert.alert(t('common.error'), t('topic.saveFailed'));
     } finally {
       setSaving(false);
     }
@@ -75,19 +77,19 @@ export function TopicInfoScreen({ route, navigation }: Props) {
   const handleRemoveMember = useCallback(
     (userId: string, userName: string) => {
       Alert.alert(
-        'Hapus Anggota',
-        `Hapus ${userName} dari topik ini?`,
+        t('topic.removeMember'),
+        t('topic.removeMemberConfirm', { name: userName }),
         [
-          { text: 'Batal', style: 'cancel' },
+          { text: t('common.cancel'), style: 'cancel' },
           {
-            text: 'Hapus',
+            text: t('common.delete'),
             style: 'destructive',
             onPress: async () => {
               try {
                 await topicsApi.removeMember(topicId, userId);
                 loadDetail();
               } catch {
-                Alert.alert('Error', 'Gagal menghapus anggota');
+                Alert.alert(t('common.error'), t('topic.removeMemberFailed'));
               }
             },
           },
@@ -99,12 +101,12 @@ export function TopicInfoScreen({ route, navigation }: Props) {
 
   const handleDelete = () => {
     Alert.alert(
-      'Hapus Topik',
-      'Topik dan semua pesannya akan dihapus. Lanjutkan?',
+      t('topic.deleteTopic'),
+      t('topic.deleteTopicConfirm'),
       [
-        { text: 'Batal', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Hapus',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: async () => {
             try {
@@ -116,7 +118,7 @@ export function TopicInfoScreen({ route, navigation }: Props) {
               // Go back 2 screens (TopicScreen -> TopicList)
               navigation.pop(2);
             } catch {
-              Alert.alert('Error', 'Gagal menghapus topik');
+              Alert.alert(t('common.error'), t('topic.deleteFailed'));
             }
           },
         },
@@ -144,7 +146,7 @@ export function TopicInfoScreen({ route, navigation }: Props) {
       <View style={styles.memberInfo}>
         <Text style={styles.memberName}>
           {item.user.name}
-          {item.user.id === currentUserId ? ' (Anda)' : ''}
+          {item.user.id === currentUserId ? ` ${t('common.you')}` : ''}
         </Text>
         {item.role === 'admin' && (
           <Text style={styles.adminBadge}>Admin</Text>
@@ -155,7 +157,7 @@ export function TopicInfoScreen({ route, navigation }: Props) {
           onPress={() => handleRemoveMember(item.user.id, item.user.name)}
           style={styles.removeButton}
         >
-          <Text style={styles.removeText}>Hapus</Text>
+          <Text style={styles.removeText}>{t('common.remove')}</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -176,14 +178,14 @@ export function TopicInfoScreen({ route, navigation }: Props) {
                 style={styles.editInput}
                 value={editName}
                 onChangeText={setEditName}
-                placeholder="Nama topik"
+                placeholder={t('topic.topicName')}
                 placeholderTextColor={colors.textMuted}
               />
               <TextInput
                 style={[styles.editInput, styles.editTextArea]}
                 value={editDesc}
                 onChangeText={setEditDesc}
-                placeholder="Deskripsi (opsional)"
+                placeholder={t('topic.descriptionOptional')}
                 placeholderTextColor={colors.textMuted}
                 multiline
                 textAlignVertical="top"
@@ -193,7 +195,7 @@ export function TopicInfoScreen({ route, navigation }: Props) {
                   onPress={() => setEditing(false)}
                   style={styles.cancelButton}
                 >
-                  <Text style={styles.cancelText}>Batal</Text>
+                  <Text style={styles.cancelText}>{t('common.cancel')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={handleSave}
@@ -203,7 +205,7 @@ export function TopicInfoScreen({ route, navigation }: Props) {
                   {saving ? (
                     <ActivityIndicator color={colors.white} size="small" />
                   ) : (
-                    <Text style={styles.saveText}>Simpan</Text>
+                    <Text style={styles.saveText}>{t('common.save')}</Text>
                   )}
                 </TouchableOpacity>
               </View>
@@ -216,7 +218,7 @@ export function TopicInfoScreen({ route, navigation }: Props) {
               ) : null}
               {isAdmin && (
                 <TouchableOpacity onPress={() => setEditing(true)}>
-                  <Text style={styles.editLink}>Edit</Text>
+                  <Text style={styles.editLink}>{t('common.edit')}</Text>
                 </TouchableOpacity>
               )}
             </>
@@ -226,7 +228,7 @@ export function TopicInfoScreen({ route, navigation }: Props) {
         {/* Parent chat info */}
         {parent && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Chat Induk</Text>
+            <Text style={styles.sectionTitle}>{t('topic.parentChat')}</Text>
             <View style={styles.parentRow}>
               <Avatar emoji={parent.icon || '\u{1F4AC}'} size="sm" />
               <Text style={styles.parentName}>{parent.name || 'Chat'}</Text>
@@ -237,7 +239,7 @@ export function TopicInfoScreen({ route, navigation }: Props) {
         {/* Members */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            Anggota ({members.length})
+            {t('group.membersCount', { count: members.length })}
           </Text>
           {members.map((m) => (
             <React.Fragment key={m.user.id}>
@@ -250,7 +252,7 @@ export function TopicInfoScreen({ route, navigation }: Props) {
         {isAdmin && (
           <View style={styles.dangerSection}>
             <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
-              <Text style={styles.deleteText}>Hapus Topik</Text>
+              <Text style={styles.deleteText}>{t('topic.deleteTopic')}</Text>
             </TouchableOpacity>
           </View>
         )}
