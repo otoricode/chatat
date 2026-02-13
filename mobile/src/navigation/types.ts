@@ -34,6 +34,7 @@ export type ChatStackParamList = {
   CreateTopic: { chatId: string; chatType: 'personal' | 'group' };
   Topic: { topicId: string };
   TopicInfo: { topicId: string };
+  ImageViewer: { url: string; filename?: string };
   DocumentEditor: {
     documentId?: string;
     contextType?: string;
