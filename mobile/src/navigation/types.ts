@@ -27,7 +27,7 @@ export type MainTabParamList = {
 export type ChatStackParamList = {
   ChatList: undefined;
   Chat: { chatId: string; chatType: 'personal' | 'group' };
-  ChatInfo: { chatId: string };
+  ChatInfo: { chatId: string; chatType: 'personal' | 'group' };
   ContactList: undefined;
   CreateGroup: undefined;
   TopicList: { chatId: string };

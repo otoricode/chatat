@@ -29,7 +29,7 @@ import type { Message } from '@/types/chat';
 type Props = NativeStackScreenProps<ChatStackParamList, 'Chat'>;
 
 export function ChatScreen({ route, navigation }: Props) {
-  const { chatId } = route.params;
+  const { chatId, chatType } = route.params;
   const currentUserId = useAuthStore((s) => s.user?.id);
   const { messages, isLoading, hasMore, fetchMessages, fetchMore, addMessage, deleteMessage } =
     useMessageStore();
@@ -41,6 +41,10 @@ export function ChatScreen({ route, navigation }: Props) {
   // Find other user info from chat store
   const chatItem = useChatStore((s) => s.chats.find((c) => c.chat.id === chatId));
   const otherUser = chatItem?.otherUser;
+  const isGroup = chatType === 'group';
+
+  // For groups: member map (userId -> User) for sender names
+  const [memberMap, setMemberMap] = useState<Record<string, { name: string; avatar: string }>>({});
 
   const chatMessages = messages[chatId] ?? [];
   const chatHasMore = hasMore[chatId] ?? false;
@@ -50,34 +54,73 @@ export function ChatScreen({ route, navigation }: Props) {
     markAsRead(chatId);
   }, [chatId, fetchMessages, markAsRead]);
 
+  // Load group member info
+  useEffect(() => {
+    if (isGroup) {
+      chatsApi.getGroupInfo(chatId).then((res) => {
+        const map: Record<string, { name: string; avatar: string }> = {};
+        for (const m of res.data.data.members) {
+          map[m.user.id] = { name: m.user.name, avatar: m.user.avatar };
+        }
+        setMemberMap(map);
+      }).catch(() => {
+        // Silent fail for member info
+      });
+    }
+  }, [chatId, isGroup]);
+
   // Set header
   useEffect(() => {
-    navigation.setOptions({
-      headerShown: true,
-      headerStyle: { backgroundColor: colors.headerBackground },
-      headerTintColor: colors.textPrimary,
-      headerTitle: () => (
-        <Pressable
-          style={headerStyles.titleContainer}
-          onPress={() => navigation.navigate('ChatInfo', { chatId })}
-        >
-          <Avatar
-            emoji={otherUser?.avatar || '\u{1F464}'}
-            size="sm"
-            online={chatItem?.isOnline}
-          />
-          <View>
-            <Text style={headerStyles.name}>{otherUser?.name || 'Chat'}</Text>
-            <Text style={headerStyles.status}>
-              {otherUser
-                ? formatLastSeen(otherUser.lastSeen, chatItem?.isOnline ?? false)
-                : ''}
-            </Text>
-          </View>
-        </Pressable>
-      ),
-    });
-  }, [navigation, chatId, otherUser, chatItem]);
+    if (isGroup) {
+      const chat = chatItem?.chat;
+      const memberCount = Object.keys(memberMap).length;
+      navigation.setOptions({
+        headerShown: true,
+        headerStyle: { backgroundColor: colors.headerBackground },
+        headerTintColor: colors.textPrimary,
+        headerTitle: () => (
+          <Pressable
+            style={headerStyles.titleContainer}
+            onPress={() => navigation.navigate('ChatInfo', { chatId, chatType: 'group' })}
+          >
+            <Avatar emoji={chat?.icon || '\u{1F465}'} size="sm" />
+            <View>
+              <Text style={headerStyles.name}>{chat?.name || 'Grup'}</Text>
+              <Text style={headerStyles.status}>
+                {memberCount > 0 ? `${memberCount} anggota` : ''}
+              </Text>
+            </View>
+          </Pressable>
+        ),
+      });
+    } else {
+      navigation.setOptions({
+        headerShown: true,
+        headerStyle: { backgroundColor: colors.headerBackground },
+        headerTintColor: colors.textPrimary,
+        headerTitle: () => (
+          <Pressable
+            style={headerStyles.titleContainer}
+            onPress={() => navigation.navigate('ChatInfo', { chatId, chatType: 'personal' })}
+          >
+            <Avatar
+              emoji={otherUser?.avatar || '\u{1F464}'}
+              size="sm"
+              online={chatItem?.isOnline}
+            />
+            <View>
+              <Text style={headerStyles.name}>{otherUser?.name || 'Chat'}</Text>
+              <Text style={headerStyles.status}>
+                {otherUser
+                  ? formatLastSeen(otherUser.lastSeen, chatItem?.isOnline ?? false)
+                  : ''}
+              </Text>
+            </View>
+          </Pressable>
+        ),
+      });
+    }
+  }, [navigation, chatId, otherUser, chatItem, isGroup, memberMap]);
 
   const handleSend = useCallback(
     async (text: string) => {
@@ -159,18 +202,27 @@ export function ChatScreen({ route, navigation }: Props) {
       const prevMessage = chatMessages[index + 1]; // inverted list; next index = older
       const showDate = !prevMessage || isDifferentDay(item.createdAt, prevMessage.createdAt);
 
+      // For group chats: show sender name if different from previous
+      const senderName = isGroup && !isSelf
+        ? memberMap[item.senderId]?.name ?? undefined
+        : undefined;
+      const showSenderName = isGroup && !isSelf && (
+        !prevMessage || prevMessage.senderId !== item.senderId
+      );
+
       return (
         <>
           <MessageBubble
             message={item}
             isSelf={isSelf}
             onLongPress={handleMessageLongPress}
+            senderName={showSenderName ? senderName : undefined}
           />
           {showDate && <DateSeparator dateStr={item.createdAt} />}
         </>
       );
     },
-    [currentUserId, chatMessages, handleMessageLongPress],
+    [currentUserId, chatMessages, handleMessageLongPress, isGroup, memberMap],
   );
 
   const keyExtractor = useCallback((item: Message) => item.id, []);

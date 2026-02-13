@@ -5,9 +5,31 @@ import { colors, fontSize, fontFamily, spacing } from '@/theme';
 import { formatMessageTime } from '@/lib/timeFormat';
 import type { Message, DeliveryStatus } from '@/types/chat';
 
+// Rotating colors for sender names in group chats
+const SENDER_COLORS = [
+  '#B39DDB', // purple
+  '#64B5F6', // blue
+  '#4DB6AC', // teal
+  '#FFB74D', // orange
+  '#F06292', // pink
+  '#4DD0E1', // cyan
+  '#AED581', // green
+  '#FF8A65', // coral
+];
+
+function getSenderColor(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const idx = Math.abs(hash) % SENDER_COLORS.length;
+  return SENDER_COLORS[idx] as string;
+}
+
 type Props = {
   message: Message;
   isSelf: boolean;
+  senderName?: string;
   onLongPress?: (message: Message) => void;
   onSwipeReply?: (message: Message) => void;
 };
@@ -24,7 +46,7 @@ function getStatusIcon(status?: DeliveryStatus): string {
   }
 }
 
-export function MessageBubble({ message, isSelf, onLongPress }: Props) {
+export function MessageBubble({ message, isSelf, senderName, onLongPress }: Props) {
   if (message.isDeleted) {
     return (
       <View style={[styles.container, isSelf ? styles.selfContainer : styles.otherContainer]}>
@@ -53,6 +75,12 @@ export function MessageBubble({ message, isSelf, onLongPress }: Props) {
         ]}
         onLongPress={() => onLongPress?.(message)}
       >
+        {senderName && !isSelf && (
+          <Text style={[styles.senderName, { color: getSenderColor(senderName) }]}>
+            {senderName}
+          </Text>
+        )}
+
         {isForwarded && (
           <Text style={styles.forwardedLabel}>{'\u{27A1}'} Diteruskan</Text>
         )}
@@ -114,6 +142,12 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.textMuted,
     fontStyle: 'italic',
+  },
+  senderName: {
+    fontFamily: fontFamily.ui,
+    fontSize: fontSize.xs,
+    fontWeight: '700',
+    marginBottom: 2,
   },
   forwardedLabel: {
     fontFamily: fontFamily.ui,

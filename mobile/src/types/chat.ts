@@ -52,6 +52,18 @@ export interface ChatDetail {
   members: User[];
 }
 
+export interface MemberInfo {
+  user: User;
+  role: MemberRole;
+  isOnline: boolean;
+  joinedAt: string;
+}
+
+export interface GroupInfo {
+  chat: Chat;
+  members: MemberInfo[];
+}
+
 export interface MessagePage {
   messages: Message[];
   cursor: string;
