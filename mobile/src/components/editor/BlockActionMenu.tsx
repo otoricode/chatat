@@ -1,0 +1,104 @@
+// BlockActionMenu — long press menu for block actions
+import React from 'react';
+import {
+  View,
+  Text,
+  Pressable,
+  StyleSheet,
+  Modal,
+} from 'react-native';
+import { colors, fontFamily, fontSize, spacing } from '@/theme';
+
+interface BlockAction {
+  id: string;
+  icon: string;
+  label: string;
+  destructive?: boolean;
+}
+
+const BLOCK_ACTIONS: BlockAction[] = [
+  { id: 'duplicate', icon: '📋', label: 'Duplikat' },
+  { id: 'moveUp', icon: '⬆', label: 'Pindah Atas' },
+  { id: 'moveDown', icon: '⬇', label: 'Pindah Bawah' },
+  { id: 'changeType', icon: '🔄', label: 'Ubah Tipe' },
+  { id: 'delete', icon: '🗑', label: 'Hapus', destructive: true },
+];
+
+interface BlockActionMenuProps {
+  visible: boolean;
+  onAction: (actionId: string) => void;
+  onDismiss: () => void;
+}
+
+export function BlockActionMenu({ visible, onAction, onDismiss }: BlockActionMenuProps) {
+  if (!visible) return null;
+
+  return (
+    <Modal transparent animationType="fade" visible={visible} onRequestClose={onDismiss}>
+      <Pressable style={styles.overlay} onPress={onDismiss}>
+        <View style={styles.menu}>
+          <Text style={styles.title}>Aksi Blok</Text>
+          {BLOCK_ACTIONS.map((action) => (
+            <Pressable
+              key={action.id}
+              style={({ pressed }) => [styles.option, pressed && styles.optionPressed]}
+              onPress={() => onAction(action.id)}
+            >
+              <Text style={styles.icon}>{action.icon}</Text>
+              <Text
+                style={[styles.label, action.destructive && styles.destructive]}
+              >
+                {action.label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      </Pressable>
+    </Modal>
+  );
+}
+
+const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'flex-end',
+  },
+  menu: {
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    paddingBottom: 32,
+    paddingTop: spacing.lg,
+  },
+  title: {
+    fontFamily: fontFamily.uiSemiBold,
+    fontSize: fontSize.md,
+    color: colors.textPrimary,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm,
+  },
+  option: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+  },
+  optionPressed: {
+    backgroundColor: colors.surface2,
+  },
+  icon: {
+    fontSize: 18,
+    width: 32,
+    textAlign: 'center',
+  },
+  label: {
+    fontFamily: fontFamily.uiMedium,
+    fontSize: fontSize.md,
+    color: colors.textPrimary,
+    marginLeft: spacing.sm,
+  },
+  destructive: {
+    color: colors.red,
+  },
+});
