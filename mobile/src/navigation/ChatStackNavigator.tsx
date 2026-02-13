@@ -15,6 +15,7 @@ import { TopicInfoScreen } from '@/screens/topic/TopicInfoScreen';
 import { ImageViewerScreen } from '@/screens/chat/ImageViewerScreen';
 import { DocumentEditorScreen } from '@/screens/document/DocumentEditorScreen';
 import { SearchScreen } from '@/screens/search/SearchScreen';
+import { BackupScreen } from '@/screens/settings/BackupScreen';
 import { colors } from '@/theme';
 
 const Stack = createNativeStackNavigator<ChatStackParamList>();
@@ -95,6 +96,11 @@ export function ChatStackNavigator() {
         name="Search"
         component={SearchScreen}
         options={{ title: t('search.title'), animation: 'fade' }}
+      />
+      <Stack.Screen
+        name="Backup"
+        component={BackupScreen}
+        options={{ title: t('backup.title') }}
       />
     </Stack.Navigator>
   );
