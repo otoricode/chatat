@@ -1,7 +1,7 @@
 // Main Navigator — Bottom Tabs (Chat + Dokumen)
 // Based on spesifikasi-chatat.md section 7.1
-import React, { useCallback } from 'react';
-import { StyleSheet, View, Text } from 'react-native';
+import React, { useCallback, useEffect } from 'react';
+import { StyleSheet, View, Text, AppState } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useNavigation, CommonActions } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
@@ -10,8 +10,11 @@ import { ChatStackNavigator } from './ChatStackNavigator';
 import { DocumentStackNavigator } from './DocumentStackNavigator';
 import { RealtimeProvider } from '@/components/shared/RealtimeProvider';
 import { InAppNotification } from '@/components/shared/InAppNotification';
+import { NetworkBanner } from '@/components/shared/NetworkBanner';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useNotificationStore } from '@/stores/notificationStore';
+import { useNetworkStore } from '@/stores/networkStore';
+import { useSyncStore } from '@/stores/syncStore';
 import { colors, fontSize } from '@/theme';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -35,6 +38,22 @@ function DocumentTabIcon({ focused }: { focused: boolean }) {
 export function MainNavigator() {
   useNotifications();
   const { t } = useTranslation();
+  const startSync = useSyncStore((s) => s.startSync);
+
+  // Start network listener and initial sync
+  useEffect(() => {
+    useNetworkStore.getState().startListening();
+    startSync();
+
+    // Sync on app foreground
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        startSync();
+      }
+    });
+
+    return () => sub.remove();
+  }, [startSync]);
 
   const { visible, title, body, data, hide } = useNotificationStore();
   const navigation = useNavigation();
@@ -80,6 +99,7 @@ export function MainNavigator() {
 
   return (
     <RealtimeProvider>
+      <NetworkBanner />
       <InAppNotification
         visible={visible}
         title={title}

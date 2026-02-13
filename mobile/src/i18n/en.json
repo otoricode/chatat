@@ -387,5 +387,17 @@
     "image": "Image",
     "sendMedia": "Send Media",
     "loadFailed": "Failed to load"
+  },
+  "network": {
+    "offline": "No internet connection",
+    "connecting": "Connecting...",
+    "syncing": "Syncing...",
+    "syncComplete": "Sync complete",
+    "syncFailed": "Sync failed",
+    "pendingMessages": "{{count}} pending messages",
+    "tapToRetry": "Tap to retry",
+    "lastSynced": "Last synced {{time}}",
+    "availableOffline": "Available offline",
+    "requiresConnection": "Requires connection"
   }
 }

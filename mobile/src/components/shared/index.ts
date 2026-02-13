@@ -15,3 +15,5 @@ export { Header } from './Header';
 export { FAB } from './FAB';
 export { ConfirmDialog } from './ConfirmDialog';
 export { ScreenContainer } from './ScreenContainer';
+export { NetworkBanner } from './NetworkBanner';
+export { SyncIndicator } from './SyncIndicator';
