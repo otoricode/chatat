@@ -155,6 +155,11 @@ func NewRouter(cfg *config.Config, deps *Dependencies) *chi.Mux {
 
 					// History endpoint
 					r.Get("/history", deps.DocumentHandler.GetHistory)
+
+					// Entity linking endpoints
+					r.Get("/entities", deps.EntityHandler.GetDocumentEntities)
+					r.Post("/entities", deps.EntityHandler.LinkToDocument)
+					r.Delete("/entities/{entityId}", deps.EntityHandler.UnlinkFromDocument)
 				})
 			})
 
@@ -164,10 +169,13 @@ func NewRouter(cfg *config.Config, deps *Dependencies) *chi.Mux {
 				r.Get("/", deps.EntityHandler.List)
 				r.Post("/", deps.EntityHandler.Create)
 				r.Get("/search", deps.EntityHandler.Search)
+				r.Get("/types", deps.EntityHandler.ListTypes)
+				r.Post("/from-contact", deps.EntityHandler.CreateFromContact)
 				r.Route("/{id}", func(r chi.Router) {
 					r.Get("/", deps.EntityHandler.GetByID)
 					r.Put("/", deps.EntityHandler.Update)
 					r.Delete("/", deps.EntityHandler.Delete)
+					r.Get("/documents", deps.EntityHandler.ListDocuments)
 				})
 			})
 		})
