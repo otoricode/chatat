@@ -1,6 +1,7 @@
 // Chat Stack Navigator — ChatList → Chat → ChatInfo, Topics, etc.
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 import type { ChatStackParamList } from './types';
 import { ChatListScreen } from '@/screens/chat/ChatListScreen';
 import { ChatScreen } from '@/screens/chat/ChatScreen';
@@ -19,6 +20,8 @@ import { colors } from '@/theme';
 const Stack = createNativeStackNavigator<ChatStackParamList>();
 
 export function ChatStackNavigator() {
+  const { t } = useTranslation();
+
   return (
     <Stack.Navigator
       screenOptions={{
@@ -47,22 +50,22 @@ export function ChatStackNavigator() {
       <Stack.Screen
         name="ContactList"
         component={ContactListScreen}
-        options={{ title: 'Kontak' }}
+        options={{ title: t('contact.contacts') }}
       />
       <Stack.Screen
         name="CreateGroup"
         component={CreateGroupScreen}
-        options={{ title: 'Buat Grup' }}
+        options={{ title: t('group.createGroup') }}
       />
       <Stack.Screen
         name="TopicList"
         component={TopicListScreen}
-        options={{ title: 'Topik' }}
+        options={{ title: t('topic.topics') }}
       />
       <Stack.Screen
         name="CreateTopic"
         component={CreateTopicScreen}
-        options={{ title: 'Buat Topik' }}
+        options={{ title: t('topic.createTopic') }}
       />
       <Stack.Screen
         name="Topic"
@@ -72,7 +75,7 @@ export function ChatStackNavigator() {
       <Stack.Screen
         name="TopicInfo"
         component={TopicInfoScreen}
-        options={{ title: 'Info Topik' }}
+        options={{ title: t('topic.topicInfo') }}
       />
       <Stack.Screen
         name="ImageViewer"
@@ -86,12 +89,12 @@ export function ChatStackNavigator() {
       <Stack.Screen
         name="DocumentEditor"
         component={DocumentEditorScreen}
-        options={{ title: 'Dokumen' }}
+        options={{ title: t('document.title') }}
       />
       <Stack.Screen
         name="Search"
         component={SearchScreen}
-        options={{ title: 'Pencarian', animation: 'fade' }}
+        options={{ title: t('search.title'), animation: 'fade' }}
       />
     </Stack.Navigator>
   );

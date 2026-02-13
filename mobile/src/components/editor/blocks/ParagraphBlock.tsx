@@ -1,6 +1,7 @@
 // ParagraphBlock — basic text block
 import React, { useRef, useEffect } from 'react';
 import { TextInput, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { colors, fontFamily, fontSize, spacing } from '@/theme';
 import type { BlockProps } from '../types';
 
@@ -14,6 +15,7 @@ export const ParagraphBlock = React.memo(function ParagraphBlock({
   onBackspace,
   onSlashTrigger,
 }: BlockProps) {
+  const { t } = useTranslation();
   const inputRef = useRef<TextInput>(null);
 
   useEffect(() => {
@@ -48,7 +50,7 @@ export const ParagraphBlock = React.memo(function ParagraphBlock({
       onKeyPress={handleKeyPress}
       multiline
       editable={!readOnly}
-      placeholder="Ketik sesuatu..."
+      placeholder={t('editor.typeSomething')}
       placeholderTextColor={colors.textMuted}
       blurOnSubmit={false}
     />

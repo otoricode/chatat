@@ -8,6 +8,7 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { colors, fontSize, fontFamily, spacing } from '@/theme';
 import type { MediaResponse } from '@/types/chat';
 
@@ -19,6 +20,7 @@ type Props = {
 };
 
 export function ImageMessage({ media, isSelf, onPress, uploadProgress }: Props) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
@@ -61,7 +63,7 @@ export function ImageMessage({ media, isSelf, onPress, uploadProgress }: Props) 
         ) : (
           <View style={styles.errorContainer}>
             <Text style={styles.errorIcon}>{'\u26A0'}</Text>
-            <Text style={styles.errorText}>Gagal memuat</Text>
+            <Text style={styles.errorText}>{t('media.loadFailed')}</Text>
           </View>
         )}
 

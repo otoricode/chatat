@@ -1,6 +1,7 @@
 // DateSeparator — date divider between messages of different days
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { colors, fontSize, fontFamily, spacing } from '@/theme';
 import { formatDateSeparator } from '@/lib/timeFormat';
 
@@ -9,10 +10,11 @@ type Props = {
 };
 
 export function DateSeparator({ dateStr }: Props) {
+  const { t } = useTranslation();
   return (
     <View style={styles.container}>
       <View style={styles.badge}>
-        <Text style={styles.text}>{formatDateSeparator(dateStr)}</Text>
+        <Text style={styles.text}>{formatDateSeparator(dateStr, t)}</Text>
       </View>
     </View>
   );

@@ -7,21 +7,22 @@ import {
   StyleSheet,
   Modal,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { colors, fontFamily, fontSize, spacing } from '@/theme';
 
 interface BlockAction {
   id: string;
   icon: string;
-  label: string;
+  labelKey: string;
   destructive?: boolean;
 }
 
 const BLOCK_ACTIONS: BlockAction[] = [
-  { id: 'duplicate', icon: '📋', label: 'Duplikat' },
-  { id: 'moveUp', icon: '⬆', label: 'Pindah Atas' },
-  { id: 'moveDown', icon: '⬇', label: 'Pindah Bawah' },
-  { id: 'changeType', icon: '🔄', label: 'Ubah Tipe' },
-  { id: 'delete', icon: '🗑', label: 'Hapus', destructive: true },
+  { id: 'duplicate', icon: '📋', labelKey: 'editor.duplicate' },
+  { id: 'moveUp', icon: '⬆', labelKey: 'editor.moveUp' },
+  { id: 'moveDown', icon: '⬇', labelKey: 'editor.moveDown' },
+  { id: 'changeType', icon: '🔄', labelKey: 'editor.changeType' },
+  { id: 'delete', icon: '🗑', labelKey: 'common.delete', destructive: true },
 ];
 
 interface BlockActionMenuProps {
@@ -31,13 +32,15 @@ interface BlockActionMenuProps {
 }
 
 export function BlockActionMenu({ visible, onAction, onDismiss }: BlockActionMenuProps) {
+  const { t } = useTranslation();
+
   if (!visible) return null;
 
   return (
     <Modal transparent animationType="fade" visible={visible} onRequestClose={onDismiss}>
       <Pressable style={styles.overlay} onPress={onDismiss}>
         <View style={styles.menu}>
-          <Text style={styles.title}>Aksi Blok</Text>
+          <Text style={styles.title}>{t('editor.blockActions')}</Text>
           {BLOCK_ACTIONS.map((action) => (
             <Pressable
               key={action.id}
@@ -48,7 +51,7 @@ export function BlockActionMenu({ visible, onAction, onDismiss }: BlockActionMen
               <Text
                 style={[styles.label, action.destructive && styles.destructive]}
               >
-                {action.label}
+                {t(action.labelKey)}
               </Text>
             </Pressable>
           ))}

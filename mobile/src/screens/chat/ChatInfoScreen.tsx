@@ -19,6 +19,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useChatStore } from '@/stores/chatStore';
 import { chatsApi } from '@/services/api/chats';
 import { formatLastSeen } from '@/lib/timeFormat';
+import { useTranslation } from 'react-i18next';
 import { colors, fontSize, fontFamily, spacing } from '@/theme';
 import type { MemberInfo, GroupInfo } from '@/types/chat';
 
@@ -26,6 +27,7 @@ type Props = NativeStackScreenProps<ChatStackParamList, 'ChatInfo'>;
 
 export function ChatInfoScreen({ route, navigation }: Props) {
   const { chatId, chatType } = route.params;
+  const { t } = useTranslation();
   const currentUserId = useAuthStore((s) => s.user?.id);
   const chatItem = useChatStore((s) => s.chats.find((c) => c.chat.id === chatId));
   const isGroup = chatType === 'group';
@@ -45,7 +47,7 @@ export function ChatInfoScreen({ route, navigation }: Props) {
       const res = await chatsApi.getGroupInfo(chatId);
       setGroupInfo(res.data.data);
     } catch {
-      Alert.alert('Gagal', 'Tidak dapat memuat info grup.');
+      Alert.alert(t('common.failed'), t('group.loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -57,7 +59,7 @@ export function ChatInfoScreen({ route, navigation }: Props) {
 
   useEffect(() => {
     navigation.setOptions({
-      title: isGroup ? 'Info Grup' : 'Info Kontak',
+      title: isGroup ? t('group.groupInfo') : t('chat.contactInfo'),
       headerStyle: { backgroundColor: colors.headerBackground },
       headerTintColor: colors.textPrimary,
     });
@@ -71,7 +73,7 @@ export function ChatInfoScreen({ route, navigation }: Props) {
 
   const handleSaveEdit = async () => {
     if (!editName.trim()) {
-      Alert.alert('Nama grup tidak boleh kosong');
+      Alert.alert(t('group.nameRequired'));
       return;
     }
     try {
@@ -82,7 +84,7 @@ export function ChatInfoScreen({ route, navigation }: Props) {
       setIsEditing(false);
       loadGroupInfo();
     } catch {
-      Alert.alert('Gagal', 'Tidak dapat memperbarui info grup.');
+      Alert.alert(t('common.failed'), t('group.updateFailed'));
     }
   };
 
@@ -90,15 +92,15 @@ export function ChatInfoScreen({ route, navigation }: Props) {
     // Navigate to contact list with selection mode
     // For now, prompt userId
     Alert.prompt?.(
-      'Tambah Anggota',
-      'Masukkan ID pengguna',
+      t('group.addMembers'),
+      t('group.enterUserId'),
       async (userId: string) => {
         if (!userId.trim()) return;
         try {
           await chatsApi.addMember(chatId, userId.trim());
           loadGroupInfo();
         } catch {
-          Alert.alert('Gagal', 'Tidak dapat menambahkan anggota.');
+          Alert.alert(t('common.failed'), t('group.addMemberFailed'));
         }
       },
     );
@@ -106,19 +108,19 @@ export function ChatInfoScreen({ route, navigation }: Props) {
 
   const handleRemoveMember = (member: MemberInfo) => {
     Alert.alert(
-      'Keluarkan Anggota',
-      `Keluarkan ${member.user.name} dari grup?`,
+      t('group.removeMember'),
+      t('group.removeMemberConfirm', { name: member.user.name }),
       [
-        { text: 'Batal', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Keluarkan',
+          text: t('group.removeMember'),
           style: 'destructive',
           onPress: async () => {
             try {
               await chatsApi.removeMember(chatId, member.user.id);
               loadGroupInfo();
             } catch {
-              Alert.alert('Gagal', 'Tidak dapat mengeluarkan anggota.');
+              Alert.alert(t('common.failed'), t('group.removeMemberFailed'));
             }
           },
         },
@@ -128,18 +130,18 @@ export function ChatInfoScreen({ route, navigation }: Props) {
 
   const handlePromoteToAdmin = (member: MemberInfo) => {
     Alert.alert(
-      'Jadikan Admin',
-      `Jadikan ${member.user.name} sebagai admin?`,
+      t('group.promoteAdmin'),
+      t('group.promoteAdminConfirm', { name: member.user.name }),
       [
-        { text: 'Batal', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Ya',
+          text: t('common.yes'),
           onPress: async () => {
             try {
               await chatsApi.promoteToAdmin(chatId, member.user.id);
               loadGroupInfo();
             } catch {
-              Alert.alert('Gagal', 'Tidak dapat menjadikan admin.');
+              Alert.alert(t('common.failed'), t('group.promoteAdminFailed'));
             }
           },
         },
@@ -148,17 +150,17 @@ export function ChatInfoScreen({ route, navigation }: Props) {
   };
 
   const handleLeaveGroup = () => {
-    Alert.alert('Keluar dari Grup', 'Apakah Anda yakin?', [
-      { text: 'Batal', style: 'cancel' },
+    Alert.alert(t('group.leaveGroup'), t('group.areYouSure'), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Keluar',
+        text: t('group.leaveGroup'),
         style: 'destructive',
         onPress: async () => {
           try {
             await chatsApi.leaveGroup(chatId);
             navigation.popToTop();
           } catch {
-            Alert.alert('Gagal', 'Tidak dapat keluar dari grup.');
+            Alert.alert(t('common.failed'), t('group.leaveFailed'));
           }
         },
       },
@@ -167,19 +169,19 @@ export function ChatInfoScreen({ route, navigation }: Props) {
 
   const handleDeleteGroup = () => {
     Alert.alert(
-      'Hapus Grup',
-      'Semua pesan dan data grup akan dihapus permanen.',
+      t('group.deleteGroup'),
+      t('group.allMessagesDeleted'),
       [
-        { text: 'Batal', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Hapus',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: async () => {
             try {
               await chatsApi.deleteGroup(chatId);
               navigation.popToTop();
             } catch {
-              Alert.alert('Gagal', 'Tidak dapat menghapus grup.');
+              Alert.alert(t('common.failed'), t('group.deleteFailed'));
             }
           },
         },
@@ -198,18 +200,18 @@ export function ChatInfoScreen({ route, navigation }: Props) {
 
     if (member.role !== 'admin') {
       options.push({
-        text: 'Jadikan Admin',
+        text: t('group.promoteAdmin'),
         onPress: () => handlePromoteToAdmin(member),
       });
     }
 
     options.push({
-      text: 'Keluarkan dari Grup',
+      text: t('group.removeMember'),
       style: 'destructive',
       onPress: () => handleRemoveMember(member),
     });
 
-    options.push({ text: 'Batal', style: 'cancel' });
+    options.push({ text: t('common.cancel'), style: 'cancel' });
 
     Alert.alert(member.user.name, undefined, options);
   };
@@ -238,10 +240,10 @@ export function ChatInfoScreen({ route, navigation }: Props) {
               size="lg"
               online={chatItem?.isOnline}
             />
-            <Text style={styles.profileName}>{otherUser?.name || 'Pengguna'}</Text>
+            <Text style={styles.profileName}>{otherUser?.name || t('common.user')}</Text>
             <Text style={styles.profileStatus}>
               {otherUser
-                ? formatLastSeen(otherUser.lastSeen, chatItem?.isOnline ?? false)
+                ? formatLastSeen(otherUser.lastSeen, chatItem?.isOnline ?? false, t)
                 : ''}
             </Text>
             <Text style={styles.profilePhone}>{otherUser?.phone || ''}</Text>
@@ -249,7 +251,7 @@ export function ChatInfoScreen({ route, navigation }: Props) {
 
           {otherUser?.status ? (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Status</Text>
+              <Text style={styles.sectionTitle}>{t('common.status')}</Text>
               <Text style={styles.sectionBody}>{otherUser.status}</Text>
             </View>
           ) : null}
@@ -260,7 +262,7 @@ export function ChatInfoScreen({ route, navigation }: Props) {
               onPress={() => navigation.navigate('TopicList', { chatId })}
             >
               <Text style={styles.topicIcon}>📌</Text>
-              <Text style={styles.topicLabel}>Topik Diskusi</Text>
+              <Text style={styles.topicLabel}>{t('chat.discussionTopics')}</Text>
               <Text style={styles.topicArrow}>›</Text>
             </Pressable>
           </View>
@@ -289,10 +291,10 @@ export function ChatInfoScreen({ route, navigation }: Props) {
         <View style={styles.memberInfo}>
           <Text style={styles.memberName}>
             {item.user.name}
-            {isMe ? ' (Anda)' : ''}
+            {isMe ? ` ${t('common.you')}` : ''}
           </Text>
           <Text style={styles.memberRole}>
-            {item.role === 'admin' ? 'Admin' : 'Anggota'}
+            {item.role === 'admin' ? t('group.admin') : t('group.member')}
           </Text>
         </View>
       </Pressable>
@@ -311,7 +313,7 @@ export function ChatInfoScreen({ route, navigation }: Props) {
                 style={styles.editInput}
                 value={editName}
                 onChangeText={setEditName}
-                placeholder="Nama grup"
+                placeholder={t('group.groupNamePlaceholder')}
                 placeholderTextColor={colors.textMuted}
                 maxLength={100}
               />
@@ -319,7 +321,7 @@ export function ChatInfoScreen({ route, navigation }: Props) {
                 style={[styles.editInput, styles.editMultiline]}
                 value={editDescription}
                 onChangeText={setEditDescription}
-                placeholder="Deskripsi (opsional)"
+                placeholder={t('group.descriptionPlaceholder')}
                 placeholderTextColor={colors.textMuted}
                 multiline
                 maxLength={500}
@@ -329,23 +331,23 @@ export function ChatInfoScreen({ route, navigation }: Props) {
                   style={[styles.editBtn, styles.cancelBtn]}
                   onPress={() => setIsEditing(false)}
                 >
-                  <Text style={styles.cancelBtnText}>Batal</Text>
+                  <Text style={styles.cancelBtnText}>{t('common.cancel')}</Text>
                 </Pressable>
                 <Pressable
                   style={[styles.editBtn, styles.saveBtn]}
                   onPress={handleSaveEdit}
                 >
-                  <Text style={styles.saveBtnText}>Simpan</Text>
+                  <Text style={styles.saveBtnText}>{t('common.save')}</Text>
                 </Pressable>
               </View>
             </View>
           ) : (
             <>
-              <Text style={styles.profileName}>{chat?.name || 'Grup'}</Text>
+              <Text style={styles.profileName}>{chat?.name || t('group.groupInfo')}</Text>
               {chat?.description ? (
                 <Text style={styles.profileStatus}>{chat.description}</Text>
               ) : null}
-              <Text style={styles.memberCount}>{members.length} anggota</Text>
+              <Text style={styles.memberCount}>{t('group.memberCount', { count: members.length })}</Text>
 
               {isAdmin && (
                 <Pressable
@@ -356,7 +358,7 @@ export function ChatInfoScreen({ route, navigation }: Props) {
                     setIsEditing(true);
                   }}
                 >
-                  <Text style={styles.editProfileBtnText}>Edit Info Grup</Text>
+                  <Text style={styles.editProfileBtnText}>{t('group.editGroupInfo')}</Text>
                 </Pressable>
               )}
             </>
@@ -370,8 +372,8 @@ export function ChatInfoScreen({ route, navigation }: Props) {
             onPress={() => navigation.navigate('TopicList', { chatId })}
           >
             <Text style={styles.topicIcon}>📌</Text>
-            <Text style={styles.topicLabel}>Topik Diskusi</Text>
-            <Text style={styles.topicArrow}>›</Text>
+              <Text style={styles.topicLabel}>{t('chat.discussionTopics')}</Text>
+              <Text style={styles.topicArrow}>›</Text>
           </Pressable>
         </View>
 
@@ -379,11 +381,11 @@ export function ChatInfoScreen({ route, navigation }: Props) {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>
-              Anggota ({members.length})
+              {t('group.membersCount', { count: members.length })}
             </Text>
             {isAdmin && (
               <Pressable onPress={handleAddMember}>
-                <Text style={styles.addMemberBtn}>+ Tambah</Text>
+                <Text style={styles.addMemberBtn}>+ {t('common.add')}</Text>
               </Pressable>
             )}
           </View>
@@ -399,12 +401,12 @@ export function ChatInfoScreen({ route, navigation }: Props) {
         <View style={styles.section}>
           {!isCreator && (
             <Pressable style={styles.dangerRow} onPress={handleLeaveGroup}>
-              <Text style={styles.dangerText}>Keluar dari Grup</Text>
+              <Text style={styles.dangerText}>{t('group.leaveGroup')}</Text>
             </Pressable>
           )}
           {isCreator && (
             <Pressable style={styles.dangerRow} onPress={handleDeleteGroup}>
-              <Text style={styles.dangerText}>Hapus Grup</Text>
+              <Text style={styles.dangerText}>{t('group.deleteGroup')}</Text>
             </Pressable>
           )}
         </View>

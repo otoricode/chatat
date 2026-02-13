@@ -7,6 +7,7 @@ import {
   Text,
   StyleSheet,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { colors, fontSize, fontFamily, spacing } from '@/theme';
 
 type Props = {
@@ -18,6 +19,7 @@ type Props = {
 };
 
 export function ChatInput({ onSend, onTyping, onAttach, replyTo, onCancelReply }: Props) {
+  const { t } = useTranslation();
   const [text, setText] = useState('');
 
   const handleChangeText = useCallback((value: string) => {
@@ -62,7 +64,7 @@ export function ChatInput({ onSend, onTyping, onAttach, replyTo, onCancelReply }
           style={styles.input}
           value={text}
           onChangeText={handleChangeText}
-          placeholder="Ketik pesan..."
+          placeholder={t('chat.typeMessage')}
           placeholderTextColor={colors.textMuted}
           multiline
           maxLength={4096}

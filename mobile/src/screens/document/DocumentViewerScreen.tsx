@@ -4,18 +4,20 @@ import { View, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { DocumentStackParamList } from '@/navigation/types';
+import { useTranslation } from 'react-i18next';
 import { colors, fontSize, fontFamily } from '@/theme';
 
 type Props = NativeStackScreenProps<DocumentStackParamList, 'DocumentViewer'>;
 
 export function DocumentViewerScreen({ route }: Props) {
   const { documentId } = route.params;
+  const { t } = useTranslation();
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <Text style={styles.lockIcon}>🔒</Text>
-        <Text style={styles.text}>Dokumen Terkunci</Text>
+        <Text style={styles.text}>{t('document.lockedTitle')}</Text>
         <Text style={styles.subtext}>{documentId}</Text>
       </View>
     </SafeAreaView>

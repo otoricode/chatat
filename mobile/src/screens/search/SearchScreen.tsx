@@ -21,6 +21,7 @@ import {
   SectionHeader,
 } from '@/components/shared/SearchResultItems';
 import { useSearch } from '@/hooks/useSearch';
+import { useTranslation } from 'react-i18next';
 import type { SearchTab } from '@/hooks/useSearch';
 import type {
   MessageSearchResult,
@@ -33,6 +34,7 @@ import { colors, spacing } from '@/theme';
 type NavigationProp = NativeStackNavigationProp<ChatStackParamList>;
 
 export function SearchScreen() {
+  const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
   const [query, setQuery] = useState('');
   const [activeTab, setActiveTab] = useState<SearchTab>('all');
@@ -89,8 +91,8 @@ export function SearchScreen() {
       return (
         <EmptyState
           emoji="🔍"
-          title="Cari di Chatat"
-          description="Ketik minimal 2 karakter untuk mencari pesan, dokumen, kontak, atau entity."
+          title={t('search.title')}
+          description={t('search.minQuery')}
         />
       );
     }
@@ -107,11 +109,11 @@ export function SearchScreen() {
       case 'all':
         return renderAllResults();
       case 'messages':
-        return renderList(messages, renderMessageItem, 'pesan');
+        return renderList(messages, renderMessageItem, t('search.messages'));
       case 'documents':
-        return renderList(documents, renderDocItem, 'dokumen');
+        return renderList(documents, renderDocItem, t('search.documents'));
       case 'contacts':
-        return renderList(contacts, renderContactItem, 'kontak');
+        return renderList(contacts, renderContactItem, t('search.contacts'));
       case 'entities':
         return renderList(entities, renderEntityItem, 'entity');
     }
@@ -142,8 +144,8 @@ export function SearchScreen() {
       return (
         <EmptyState
           emoji="😕"
-          title="Tidak ada hasil"
-          description={`Tidak ditemukan ${type} untuk "${query}"`}
+          title={t('search.noResults', { query })}
+          description={t('search.noResultsDesc')}
         />
       );
     }
@@ -166,8 +168,8 @@ export function SearchScreen() {
       return (
         <EmptyState
           emoji="😕"
-          title="Tidak ada hasil"
-          description={`Tidak ditemukan hasil untuk "${query}"`}
+          title={t('search.noResults', { query })}
+          description={t('search.noResultsDesc')}
         />
       );
     }
@@ -213,7 +215,7 @@ export function SearchScreen() {
             case 'msg_header':
               return (
                 <SectionHeader
-                  title="Pesan"
+                  title={t('search.messages')}
                   count={msgs.length}
                   onSeeAll={() => setActiveTab('messages')}
                 />
@@ -223,7 +225,7 @@ export function SearchScreen() {
             case 'doc_header':
               return (
                 <SectionHeader
-                  title="Dokumen"
+                  title={t('search.documents')}
                   count={docs.length}
                   onSeeAll={() => setActiveTab('documents')}
                 />
@@ -233,7 +235,7 @@ export function SearchScreen() {
             case 'ctc_header':
               return (
                 <SectionHeader
-                  title="Kontak"
+                  title={t('search.contacts')}
                   count={ctcs.length}
                   onSeeAll={() => setActiveTab('contacts')}
                 />
@@ -263,7 +265,7 @@ export function SearchScreen() {
         <SearchBar
           value={query}
           onChangeText={setQuery}
-          placeholder="Cari pesan, dokumen, kontak..."
+          placeholder={t('search.placeholder')}
         />
       </View>
       <SearchTabBar activeTab={activeTab} onTabChange={handleSwitchTab} />

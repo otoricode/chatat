@@ -1,6 +1,7 @@
 // ChatListItem — single chat item in the chat list
 import React, { useCallback } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { colors, fontSize, fontFamily, spacing } from '@/theme';
@@ -14,6 +15,7 @@ type Props = {
 };
 
 export function ChatListItem({ item, onPress, onLongPress }: Props) {
+  const { t } = useTranslation();
   const { chat, lastMessage, unreadCount, otherUser, isOnline } = item;
 
   const handlePress = useCallback(() => onPress(item), [item, onPress]);
@@ -29,14 +31,14 @@ export function ChatListItem({ item, onPress, onLongPress }: Props) {
   // Last message preview
   const preview = lastMessage
     ? lastMessage.isDeleted
-      ? '\u{1F6AB} Pesan dihapus'
+      ? `\u{1F6AB} ${t('chat.messageDeleted')}`
       : lastMessage.content.length > 60
         ? lastMessage.content.slice(0, 60) + '...'
         : lastMessage.content
-    : 'Belum ada pesan';
+    : t('chat.noMessages');
 
   // Time
-  const timeText = lastMessage ? formatChatListTime(lastMessage.createdAt) : '';
+  const timeText = lastMessage ? formatChatListTime(lastMessage.createdAt, t) : '';
 
   const isPinned = chat.pinnedAt !== null;
 

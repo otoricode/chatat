@@ -24,12 +24,13 @@ func NewRouter(cfg *config.Config, deps *Dependencies) *chi.Mux {
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "Accept-Language"},
 		ExposedHeaders:   []string{"Link"},
 		AllowCredentials: true,
 		MaxAge:           300,
 	}))
 	r.Use(mw.RateLimit(100.0/60.0, 100)) // 100 req/min
+	r.Use(mw.Language())
 
 	// Health check
 	r.Get("/health", HealthCheck)

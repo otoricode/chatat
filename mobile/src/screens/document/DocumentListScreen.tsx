@@ -17,6 +17,7 @@ import { FAB } from '@/components/shared/FAB';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { LockStatusBadge } from '@/components/document/LockStatusBadge';
 import { documentsApi } from '@/services/api/documents';
+import { useTranslation } from 'react-i18next';
 import { colors, fontFamily, fontSize, spacing } from '@/theme';
 import { formatDistanceToNow } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
@@ -24,6 +25,7 @@ import { id as idLocale } from 'date-fns/locale';
 type Props = NativeStackScreenProps<DocumentStackParamList, 'DocumentList'>;
 
 export function DocumentListScreen({ navigation }: Props) {
+  const { t } = useTranslation();
   const [documents, setDocuments] = useState<DocumentListItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -77,7 +79,7 @@ export function DocumentListScreen({ navigation }: Props) {
         <Text style={styles.docIcon}>{item.icon || '📄'}</Text>
         <View style={styles.docInfo}>
           <Text style={styles.docTitle} numberOfLines={1}>
-            {item.title || 'Tanpa Judul'}
+            {item.title || t('document.draft')}
           </Text>
           <Text style={styles.docMeta}>{timeAgo}</Text>
         </View>
@@ -88,21 +90,21 @@ export function DocumentListScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <Header title="Dokumen" />
+      <Header title={t('document.title')} />
       <View style={styles.tabRow}>
         <Pressable
           style={styles.tabBtn}
           onPress={() => navigation.navigate('EntityList')}
         >
-          <Text style={styles.tabBtnText}>Entity</Text>
+          <Text style={styles.tabBtnText}>{t('entity.entities')}</Text>
         </Pressable>
       </View>
       <View style={styles.content}>
         {documents.length === 0 && !isLoading ? (
           <EmptyState
             emoji="📄"
-            title="Belum ada dokumen"
-            description="Buat dokumen baru untuk mulai berkolaborasi"
+            title={t('document.noDocuments')}
+            description={t('document.createFirst')}
           />
         ) : (
           <FlatList

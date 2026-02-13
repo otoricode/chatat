@@ -16,6 +16,7 @@ import { SearchBar } from '@/components/shared/SearchBar';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { FAB } from '@/components/shared/FAB';
 import { useEntityStore } from '@/stores/entityStore';
+import { useTranslation } from 'react-i18next';
 import { colors, fontSize, fontFamily, spacing } from '@/theme';
 import type { EntityListItem as EntityListItemType } from '@/types/chat';
 import { CreateEntitySheet } from '@/components/entity/CreateEntitySheet';
@@ -23,6 +24,7 @@ import { CreateEntitySheet } from '@/components/entity/CreateEntitySheet';
 type Props = NativeStackScreenProps<DocumentStackParamList, 'EntityList'>;
 
 export function EntityListScreen({ navigation }: Props) {
+  const { t } = useTranslation();
   const { entities, types, isLoading, fetchEntities, fetchTypes } = useEntityStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<string | null>(null);
@@ -91,7 +93,7 @@ export function EntityListScreen({ navigation }: Props) {
         </View>
         {item.documentCount > 0 && (
           <View style={styles.docCount}>
-            <Text style={styles.docCountText}>{item.documentCount} dok</Text>
+            <Text style={styles.docCountText}>{t('entity.docCount', { count: item.documentCount })}</Text>
           </View>
         )}
       </Pressable>
@@ -102,11 +104,11 @@ export function EntityListScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <Text style={styles.title}>Entity</Text>
+        <Text style={styles.title}>{t('entity.entities')}</Text>
       </View>
 
       <SearchBar
-        placeholder="Cari entity..."
+        placeholder={t('common.search')}
         value={searchQuery}
         onChangeText={setSearchQuery}
       />
@@ -122,19 +124,19 @@ export function EntityListScreen({ navigation }: Props) {
           onPress={() => handleTypeFilter(null)}
         >
           <Text style={[styles.chipText, !typeFilter && styles.chipTextActive]}>
-            Semua
+            {t('search.all')}
           </Text>
         </Pressable>
-        {types.map((t) => (
+        {types.map((tp) => (
           <Pressable
-            key={t}
-            style={[styles.chip, typeFilter === t && styles.chipActive]}
-            onPress={() => handleTypeFilter(t)}
+            key={tp}
+            style={[styles.chip, typeFilter === tp && styles.chipActive]}
+            onPress={() => handleTypeFilter(tp)}
           >
             <Text
-              style={[styles.chipText, typeFilter === t && styles.chipTextActive]}
+              style={[styles.chipText, typeFilter === tp && styles.chipTextActive]}
             >
-              {t}
+              {tp}
             </Text>
           </Pressable>
         ))}
@@ -156,8 +158,8 @@ export function EntityListScreen({ navigation }: Props) {
           !isLoading ? (
             <EmptyState
               emoji="🏷"
-              title="Belum ada entity"
-              description="Buat entity untuk menandai dan mengelola data di dokumen."
+            title={t('entity.noEntities')}
+            description={t('entity.noEntitiesDesc')}
             />
           ) : null
         }

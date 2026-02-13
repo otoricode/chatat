@@ -1,6 +1,8 @@
 // Document history timeline component
 import React from 'react';
 import { View, Text, StyleSheet, FlatList } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { colors, fontSize, fontFamily, spacing } from '@/theme';
 import type { DocumentHistory } from '@/types/chat';
 
@@ -22,7 +24,7 @@ const ACTION_ICONS: Record<string, string> = {
   duplicated: '📋',
 };
 
-function formatDate(dateStr: string): string {
+function formatDate(dateStr: string, t: TFunction): string {
   const date = new Date(dateStr);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
@@ -30,10 +32,10 @@ function formatDate(dateStr: string): string {
   const diffHr = Math.floor(diffMin / 60);
   const diffDay = Math.floor(diffHr / 24);
 
-  if (diffMin < 1) return 'Baru saja';
-  if (diffMin < 60) return `${diffMin} menit lalu`;
-  if (diffHr < 24) return `${diffHr} jam lalu`;
-  if (diffDay < 7) return `${diffDay} hari lalu`;
+  if (diffMin < 1) return t('time.justNow');
+  if (diffMin < 60) return t('time.minutesAgo', { count: diffMin });
+  if (diffHr < 24) return t('time.hoursAgo', { count: diffHr });
+  if (diffDay < 7) return t('time.daysAgo', { count: diffDay });
 
   return date.toLocaleDateString('id-ID', {
     day: 'numeric',
@@ -43,10 +45,12 @@ function formatDate(dateStr: string): string {
 }
 
 export function DocumentHistoryList({ history }: DocumentHistoryListProps) {
+  const { t } = useTranslation();
+
   if (history.length === 0) {
     return (
       <View style={styles.empty}>
-        <Text style={styles.emptyText}>Belum ada aktivitas</Text>
+        <Text style={styles.emptyText}>{t('document.noActivity')}</Text>
       </View>
     );
   }
@@ -71,7 +75,7 @@ export function DocumentHistoryList({ history }: DocumentHistoryListProps) {
           {/* Content */}
           <View style={styles.content}>
             <Text style={styles.details}>{item.details}</Text>
-            <Text style={styles.time}>{formatDate(item.createdAt)}</Text>
+            <Text style={styles.time}>{formatDate(item.createdAt, t)}</Text>
           </View>
         </View>
       )}

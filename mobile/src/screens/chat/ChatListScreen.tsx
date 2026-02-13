@@ -14,6 +14,7 @@ import { Header } from '@/components/shared/Header';
 import { FAB } from '@/components/shared/FAB';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { ChatListItem } from '@/components/chat/ChatListItem';
+import { useTranslation } from 'react-i18next';
 import { useChatStore } from '@/stores/chatStore';
 import { colors, spacing } from '@/theme';
 import type { ChatListItem as ChatListItemType } from '@/types/chat';
@@ -21,6 +22,7 @@ import type { ChatListItem as ChatListItemType } from '@/types/chat';
 type Props = NativeStackScreenProps<ChatStackParamList, 'ChatList'>;
 
 export function ChatListScreen({ navigation }: Props) {
+  const { t } = useTranslation();
   const { chats, isLoading, fetchChats, pinChat, unpinChat, markAsRead } = useChatStore();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -57,17 +59,17 @@ export function ChatListScreen({ navigation }: Props) {
       const isPinned = item.chat.pinnedAt !== null;
       const options = [
         {
-          text: isPinned ? 'Lepas Pin' : 'Pin Chat',
+          text: isPinned ? t('chat.unpinChat') : t('chat.pinChat'),
           onPress: () => (isPinned ? unpinChat(item.chat.id) : pinChat(item.chat.id)),
         },
         {
-          text: 'Tandai Dibaca',
+          text: t('chat.markAsRead'),
           onPress: () => markAsRead(item.chat.id),
         },
-        { text: 'Batal', style: 'cancel' as const },
+        { text: t('common.cancel'), style: 'cancel' as const },
       ];
 
-      Alert.alert('Opsi Chat', undefined, options);
+      Alert.alert(t('chat.title'), undefined, options);
     },
     [pinChat, unpinChat, markAsRead],
   );
@@ -83,13 +85,13 @@ export function ChatListScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <Header title="Chat" onSearchPress={handleSearchPress} />
+      <Header title={t('chat.title')} onSearchPress={handleSearchPress} />
       {chats.length === 0 && !isLoading ? (
         <View style={styles.content}>
           <EmptyState
             emoji="\u{1F4AC}"
-            title="Belum ada chat"
-            description="Mulai percakapan baru dengan kontak kamu"
+            title={t('chat.noChats')}
+            description={t('chat.noChatsDesc')}
           />
         </View>
       ) : (

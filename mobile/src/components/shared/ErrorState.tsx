@@ -1,6 +1,7 @@
 // ErrorState — error message with retry button
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/Button';
 import { colors, fontSize, spacing, fontFamily } from '@/theme';
 
@@ -10,15 +11,17 @@ type ErrorStateProps = {
 };
 
 export function ErrorState({
-  message = 'Terjadi kesalahan',
+  message,
   onRetry,
 }: ErrorStateProps) {
+  const { t } = useTranslation();
+
   return (
     <View style={styles.container}>
       <Text style={styles.emoji}>⚠️</Text>
-      <Text style={styles.message}>{message}</Text>
+      <Text style={styles.message}>{message || t('common.error')}</Text>
       {onRetry && (
-        <Button title="Coba Lagi" variant="secondary" onPress={onRetry} />
+        <Button title={t('common.retry')} variant="secondary" onPress={onRetry} />
       )}
     </View>
   );

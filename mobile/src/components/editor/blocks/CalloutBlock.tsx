@@ -1,6 +1,7 @@
 // CalloutBlock — emoji + colored background + text
 import React, { useRef, useEffect } from 'react';
 import { View, TextInput, Text, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { colors, fontFamily, fontSize, spacing } from '@/theme';
 import type { BlockProps } from '../types';
 
@@ -19,6 +20,7 @@ export const CalloutBlock = React.memo(function CalloutBlock({
   onChange,
   onFocus,
 }: BlockProps) {
+  const { t } = useTranslation();
   const inputRef = useRef<TextInput>(null);
   const bgColor = CALLOUT_COLORS[block.color ?? 'default'] ?? CALLOUT_COLORS.default;
 
@@ -39,7 +41,7 @@ export const CalloutBlock = React.memo(function CalloutBlock({
         onFocus={onFocus}
         multiline
         editable={!readOnly}
-        placeholder="Catatan penting..."
+        placeholder={t('editor.calloutPlaceholder')}
         placeholderTextColor={colors.textMuted}
         blurOnSubmit={false}
       />

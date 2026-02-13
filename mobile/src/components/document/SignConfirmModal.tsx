@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { colors, fontSize, fontFamily, spacing } from '@/theme';
+import { useTranslation } from 'react-i18next';
 
 interface SignConfirmModalProps {
   visible: boolean;
@@ -25,6 +26,7 @@ export function SignConfirmModal({
   onClose,
 }: SignConfirmModalProps) {
   const [name, setName] = useState('');
+  const { t } = useTranslation();
 
   const handleSign = () => {
     onSign(name.trim());
@@ -41,14 +43,14 @@ export function SignConfirmModal({
       <View style={styles.overlay}>
         <View style={styles.modal}>
           <Text style={styles.icon}>✍️</Text>
-          <Text style={styles.title}>Tanda Tangan Dokumen</Text>
+          <Text style={styles.title}>{t('document.sign')}</Text>
           <Text style={styles.desc}>
-            Dengan menandatangani, Anda menyetujui isi dokumen ini.
+            {t('document.signConfirmation')}
           </Text>
 
           <TextInput
             style={styles.input}
-            placeholder="Nama lengkap (opsional)"
+            placeholder={t('auth.namePlaceholder')}
             placeholderTextColor={colors.textMuted}
             value={name}
             onChangeText={setName}
@@ -57,7 +59,7 @@ export function SignConfirmModal({
 
           <View style={styles.actions}>
             <Pressable style={styles.cancelBtn} onPress={onClose}>
-              <Text style={styles.cancelText}>Batal</Text>
+              <Text style={styles.cancelText}>{t('common.cancel')}</Text>
             </Pressable>
             <Pressable
               style={[styles.signBtn, loading && styles.disabledBtn]}
@@ -67,7 +69,7 @@ export function SignConfirmModal({
               {loading ? (
                 <ActivityIndicator size="small" color={colors.background} />
               ) : (
-                <Text style={styles.signText}>Tandatangani</Text>
+                <Text style={styles.signText}>{t('document.sign')}</Text>
               )}
             </Pressable>
           </View>

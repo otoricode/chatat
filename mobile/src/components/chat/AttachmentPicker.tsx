@@ -1,6 +1,7 @@
 // AttachmentPicker — bottom sheet for selecting media from camera, gallery, or files
 import React from 'react';
 import { View, Text, Pressable, StyleSheet, Modal } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import { colors, fontSize, fontFamily, spacing } from '@/theme';
@@ -22,12 +23,14 @@ type Props = {
 };
 
 const OPTIONS = [
-  { key: 'camera', icon: '\u{1F4F7}', label: 'Kamera' },
-  { key: 'gallery', icon: '\u{1F5BC}', label: 'Galeri' },
-  { key: 'file', icon: '\u{1F4CE}', label: 'File' },
+  { key: 'camera', icon: '\u{1F4F7}', labelKey: 'media.camera' },
+  { key: 'gallery', icon: '\u{1F5BC}', labelKey: 'media.gallery' },
+  { key: 'file', icon: '\u{1F4CE}', labelKey: 'media.file' },
 ];
 
 export function AttachmentPicker({ visible, onClose, onPick }: Props) {
+  const { t } = useTranslation();
+
   const handleCamera = async () => {
     const permission = await ImagePicker.requestCameraPermissionsAsync();
     if (!permission.granted) return;
@@ -131,7 +134,7 @@ export function AttachmentPicker({ visible, onClose, onPick }: Props) {
       <Pressable style={styles.overlay} onPress={onClose}>
         <View style={styles.sheet}>
           <View style={styles.handle} />
-          <Text style={styles.title}>Kirim Media</Text>
+          <Text style={styles.title}>{t('media.sendMedia')}</Text>
           <View style={styles.options}>
             {OPTIONS.map((opt) => (
               <Pressable
@@ -142,12 +145,12 @@ export function AttachmentPicker({ visible, onClose, onPick }: Props) {
                 <View style={styles.iconCircle}>
                   <Text style={styles.icon}>{opt.icon}</Text>
                 </View>
-                <Text style={styles.label}>{opt.label}</Text>
+                <Text style={styles.label}>{t(opt.labelKey)}</Text>
               </Pressable>
             ))}
           </View>
           <Pressable style={styles.cancelButton} onPress={onClose}>
-            <Text style={styles.cancelText}>Batal</Text>
+            <Text style={styles.cancelText}>{t('common.cancel')}</Text>
           </Pressable>
         </View>
       </Pressable>

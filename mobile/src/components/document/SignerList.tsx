@@ -2,6 +2,7 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet, FlatList } from 'react-native';
 import { colors, fontSize, fontFamily, spacing } from '@/theme';
+import { useTranslation } from 'react-i18next';
 import type { DocumentSigner } from '@/types/chat';
 
 interface SignerListProps {
@@ -11,10 +12,11 @@ interface SignerListProps {
 }
 
 export function SignerList({ signers, isOwner, onRemove }: SignerListProps) {
+  const { t } = useTranslation();
   if (signers.length === 0) {
     return (
       <View style={styles.empty}>
-        <Text style={styles.emptyText}>Belum ada penandatangan</Text>
+        <Text style={styles.emptyText}>{t('document.pendingSignatures')}</Text>
       </View>
     );
   }
@@ -35,13 +37,13 @@ export function SignerList({ signers, isOwner, onRemove }: SignerListProps) {
               {item.signerName || 'Penandatangan'}
             </Text>
             <Text style={[styles.status, item.signedAt ? styles.signed : styles.pending]}>
-              {item.signedAt ? 'Sudah ditandatangani' : 'Belum ditandatangani'}
+              {item.signedAt ? t('document.signed') : t('document.pendingSignatures')}
             </Text>
           </View>
           {item.signedAt && <Text style={styles.checkIcon}>✅</Text>}
           {!item.signedAt && isOwner && onRemove && (
             <Pressable onPress={() => onRemove(item.userId)} style={styles.removeBtn}>
-              <Text style={styles.removeText}>Hapus</Text>
+              <Text style={styles.removeText}>{t('common.remove')}</Text>
             </Pressable>
           )}
         </View>

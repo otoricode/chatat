@@ -14,6 +14,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { DocumentStackParamList } from '@/navigation/types';
 import { entitiesApi } from '@/services/api/entities';
 import { useEntityStore } from '@/stores/entityStore';
+import { useTranslation } from 'react-i18next';
 import { colors, fontSize, fontFamily, spacing } from '@/theme';
 import type { Entity, Document } from '@/types/chat';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
@@ -22,6 +23,7 @@ type Props = NativeStackScreenProps<DocumentStackParamList, 'EntityDetail'>;
 
 export function EntityDetailScreen({ route, navigation }: Props) {
   const { entityId } = route.params;
+  const { t } = useTranslation();
   const { deleteEntity } = useEntityStore();
   const [entity, setEntity] = useState<Entity | null>(null);
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -47,7 +49,7 @@ export function EntityDetailScreen({ route, navigation }: Props) {
       setEditType(entityData.type);
       setEditFields(entityData.fields ?? {});
     } catch {
-      Alert.alert('Gagal memuat entity');
+      Alert.alert(t('entity.loadFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -62,7 +64,7 @@ export function EntityDetailScreen({ route, navigation }: Props) {
       await deleteEntity(entityId);
       navigation.goBack();
     } catch {
-      Alert.alert('Gagal menghapus entity');
+      Alert.alert(t('entity.deleteFailed'));
     }
   }, [deleteEntity, entityId, navigation]);
 
@@ -77,7 +79,7 @@ export function EntityDetailScreen({ route, navigation }: Props) {
       setEntity(updated);
       setIsEditing(false);
     } catch {
-      Alert.alert('Gagal menyimpan perubahan');
+      Alert.alert(t('common.saveFailed'));
     }
   }, [entityId, editName, editType, editFields]);
 
@@ -96,7 +98,7 @@ export function EntityDetailScreen({ route, navigation }: Props) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.centered}>
-          <Text style={styles.loadingText}>Memuat...</Text>
+          <Text style={styles.loadingText}>{t('common.loading')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -115,13 +117,13 @@ export function EntityDetailScreen({ route, navigation }: Props) {
               <EditableInput
                 value={editName}
                 onChangeText={setEditName}
-                placeholder="Nama entity"
+                placeholder={t('entity.entityNamePlaceholder')}
                 style={styles.editNameInput}
               />
               <EditableInput
                 value={editType}
                 onChangeText={setEditType}
-                placeholder="Tipe"
+                placeholder={t('entity.typePlaceholder')}
                 style={styles.editTypeInput}
               />
             </View>
@@ -140,19 +142,19 @@ export function EntityDetailScreen({ route, navigation }: Props) {
           {isEditing ? (
             <>
               <Pressable style={styles.actionBtn} onPress={handleSave}>
-                <Text style={styles.actionBtnText}>Simpan</Text>
+                <Text style={styles.actionBtnText}>{t('common.save')}</Text>
               </Pressable>
               <Pressable style={styles.actionBtn} onPress={() => setIsEditing(false)}>
-                <Text style={[styles.actionBtnText, { color: colors.textMuted }]}>Batal</Text>
+                <Text style={[styles.actionBtnText, { color: colors.textMuted }]}>{t('common.cancel')}</Text>
               </Pressable>
             </>
           ) : (
             <>
               <Pressable style={styles.actionBtn} onPress={() => setIsEditing(true)}>
-                <Text style={styles.actionBtnText}>Edit</Text>
+                <Text style={styles.actionBtnText}>{t('common.edit')}</Text>
               </Pressable>
               <Pressable style={styles.actionBtn} onPress={() => setShowDelete(true)}>
-                <Text style={[styles.actionBtnText, { color: colors.red }]}>Hapus</Text>
+                <Text style={[styles.actionBtnText, { color: colors.red }]}>{t('common.delete')}</Text>
               </Pressable>
             </>
           )}
@@ -160,7 +162,7 @@ export function EntityDetailScreen({ route, navigation }: Props) {
 
         {/* Fields */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Fields</Text>
+          <Text style={styles.sectionTitle}>{t('entity.fields')}</Text>
           {isEditing ? (
             <>
               {Object.entries(editFields).map(([key, value], idx) => (
@@ -174,7 +176,7 @@ export function EntityDetailScreen({ route, navigation }: Props) {
                         return Object.fromEntries(entries);
                       });
                     }}
-                    placeholder="Key"
+                    placeholder={t('entity.fieldKey')}
                     style={styles.fieldKeyInput}
                   />
                   <EditableInput
@@ -182,7 +184,7 @@ export function EntityDetailScreen({ route, navigation }: Props) {
                     onChangeText={(newVal) => {
                       setEditFields((prev) => ({ ...prev, [key]: newVal }));
                     }}
-                    placeholder="Value"
+                    placeholder={t('entity.fieldValue')}
                     style={styles.fieldValueInput}
                   />
                   <Pressable
@@ -199,13 +201,13 @@ export function EntityDetailScreen({ route, navigation }: Props) {
                 </View>
               ))}
               <Pressable style={styles.addFieldBtn} onPress={handleAddField}>
-                <Text style={styles.addFieldText}>+ Tambah Field</Text>
+                <Text style={styles.addFieldText}>+ {t('entity.addField')}</Text>
               </Pressable>
             </>
           ) : (
             <>
               {Object.keys(entity.fields ?? {}).length === 0 ? (
-                <Text style={styles.emptyText}>Belum ada field</Text>
+                <Text style={styles.emptyText}>{t('entity.noFields')}</Text>
               ) : (
                 Object.entries(entity.fields).map(([key, value]) => (
                   <View key={key} style={styles.fieldDisplay}>
@@ -221,10 +223,10 @@ export function EntityDetailScreen({ route, navigation }: Props) {
         {/* Linked Documents */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            Dokumen Terkait ({documents.length})
+            {t('entity.linkedDocsCount', { count: documents.length })}
           </Text>
           {documents.length === 0 ? (
-            <Text style={styles.emptyText}>Belum ada dokumen terkait</Text>
+            <Text style={styles.emptyText}>{t('entity.noLinkedDocs')}</Text>
           ) : (
             documents.map((doc) => (
               <Pressable
@@ -234,7 +236,7 @@ export function EntityDetailScreen({ route, navigation }: Props) {
               >
                 <Text style={styles.docIcon}>{doc.icon || '📄'}</Text>
                 <Text style={styles.docTitle} numberOfLines={1}>
-                  {doc.title || 'Tanpa Judul'}
+                  {doc.title || t('document.untitled')}
                 </Text>
               </Pressable>
             ))
@@ -243,17 +245,17 @@ export function EntityDetailScreen({ route, navigation }: Props) {
 
         {entity.contactUserId && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Dibuat dari Kontak</Text>
-            <Text style={styles.contactInfo}>Terhubung dengan kontak pengguna</Text>
+            <Text style={styles.sectionTitle}>{t('entity.fromContact')}</Text>
+            <Text style={styles.contactInfo}>{t('entity.linkedToContact')}</Text>
           </View>
         )}
       </ScrollView>
 
       <ConfirmDialog
         visible={showDelete}
-        title="Hapus Entity"
-        message={`Yakin ingin menghapus "${entity.name}"? Entity akan dilepas dari semua dokumen terkait.`}
-        confirmText="Hapus"
+        title={t('entity.deleteEntity')}
+        message={t('entity.deleteEntityConfirm')}
+        confirmText={t('common.delete')}
         variant="danger"
         onConfirm={handleDelete}
         onCancel={() => setShowDelete(false)}

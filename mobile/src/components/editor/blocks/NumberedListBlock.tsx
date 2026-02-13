@@ -1,6 +1,7 @@
 // NumberedListBlock — ordered list item
 import React, { useRef, useEffect } from 'react';
 import { View, TextInput, Text, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { colors, fontFamily, fontSize, spacing } from '@/theme';
 import type { BlockProps } from '../types';
 
@@ -19,6 +20,7 @@ export const NumberedListBlock = React.memo(function NumberedListBlock({
   onSlashTrigger,
   index,
 }: NumberedListBlockProps) {
+  const { t } = useTranslation();
   const inputRef = useRef<TextInput>(null);
 
   useEffect(() => {
@@ -54,7 +56,7 @@ export const NumberedListBlock = React.memo(function NumberedListBlock({
         onKeyPress={handleKeyPress}
         multiline
         editable={!readOnly}
-        placeholder="Item daftar"
+        placeholder={t('editor.listItem')}
         placeholderTextColor={colors.textMuted}
         blurOnSubmit={false}
       />

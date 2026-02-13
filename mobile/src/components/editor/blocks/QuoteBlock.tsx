@@ -1,6 +1,7 @@
 // QuoteBlock — left-bordered quote
 import React, { useRef, useEffect } from 'react';
 import { View, TextInput, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { colors, fontFamily, fontSize, spacing } from '@/theme';
 import type { BlockProps } from '../types';
 
@@ -14,6 +15,7 @@ export const QuoteBlock = React.memo(function QuoteBlock({
   onBackspace,
   onSlashTrigger,
 }: BlockProps) {
+  const { t } = useTranslation();
   const inputRef = useRef<TextInput>(null);
 
   useEffect(() => {
@@ -49,7 +51,7 @@ export const QuoteBlock = React.memo(function QuoteBlock({
         onKeyPress={handleKeyPress}
         multiline
         editable={!readOnly}
-        placeholder="Kutipan..."
+        placeholder={t('editor.quotePlaceholder')}
         placeholderTextColor={colors.textMuted}
         blurOnSubmit={false}
       />

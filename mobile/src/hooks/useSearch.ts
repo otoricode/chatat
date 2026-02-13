@@ -1,5 +1,6 @@
 // useSearch — debounced search hook
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { searchApi } from '@/services/api/search';
 import type {
   MessageSearchResult,
@@ -25,6 +26,7 @@ const emptyResults: SearchAllResults = {
 };
 
 export function useSearch(query: string, tab: SearchTab, debounceMs = 300) {
+  const { t } = useTranslation();
   const [allResults, setAllResults] = useState<SearchAllResults>(emptyResults);
   const [messages, setMessages] = useState<MessageSearchResult[]>([]);
   const [documents, setDocuments] = useState<DocumentSearchResult[]>([]);
@@ -34,7 +36,7 @@ export function useSearch(query: string, tab: SearchTab, debounceMs = 300) {
   const [error, setError] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const search = useCallback(async (q: string, t: SearchTab) => {
+  const search = useCallback(async (q: string, activeTab: SearchTab) => {
     if (q.length < 2) {
       setAllResults(emptyResults);
       setMessages([]);
@@ -49,7 +51,7 @@ export function useSearch(query: string, tab: SearchTab, debounceMs = 300) {
     setError(null);
 
     try {
-      switch (t) {
+      switch (activeTab) {
         case 'all': {
           const res = await searchApi.searchAll(q, 5);
           setAllResults(res.data.data);
@@ -77,11 +79,11 @@ export function useSearch(query: string, tab: SearchTab, debounceMs = 300) {
         }
       }
     } catch {
-      setError('Gagal memuat hasil pencarian');
+      setError(t('search.loadFailed'));
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (timerRef.current) {

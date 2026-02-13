@@ -16,6 +16,7 @@ import type { ChatStackParamList } from '@/navigation/types';
 import { colors, fontSize, fontFamily, spacing } from '@/theme';
 import { chatsApi } from '@/services/api/chats';
 import { topicsApi } from '@/services/api/topics';
+import { useTranslation } from 'react-i18next';
 import type { MemberInfo } from '@/types/chat';
 
 type Props = NativeStackScreenProps<ChatStackParamList, 'CreateTopic'>;
@@ -27,6 +28,7 @@ const EMOJI_OPTIONS = [
 
 export function CreateTopicScreen({ route, navigation }: Props) {
   const { chatId, chatType } = route.params;
+  const { t } = useTranslation();
   const isPersonal = chatType === 'personal';
 
   const [step, setStep] = useState(isPersonal ? 2 : 1);
@@ -51,7 +53,7 @@ export function CreateTopicScreen({ route, navigation }: Props) {
       const groupMembers = res.data.data.members ?? [];
       setMembers(groupMembers);
     } catch {
-      Alert.alert('Error', 'Gagal memuat anggota grup');
+      Alert.alert(t('common.error'), t('group.loadFailed'));
     } finally {
       setLoadingMembers(false);
     }
@@ -71,7 +73,7 @@ export function CreateTopicScreen({ route, navigation }: Props) {
 
   const handleCreate = async () => {
     if (!name.trim()) {
-      Alert.alert('Error', 'Nama topik wajib diisi');
+      Alert.alert(t('common.error'), t('topic.nameRequired'));
       return;
     }
 
@@ -86,7 +88,7 @@ export function CreateTopicScreen({ route, navigation }: Props) {
       });
       navigation.goBack();
     } catch {
-      Alert.alert('Error', 'Gagal membuat topik');
+      Alert.alert(t('common.error'), t('topic.createFailed'));
     } finally {
       setLoading(false);
     }
@@ -97,9 +99,9 @@ export function CreateTopicScreen({ route, navigation }: Props) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.title}>Pilih Anggota Topik</Text>
+          <Text style={styles.title}>{t('topic.selectMembers')}</Text>
           <TouchableOpacity onPress={selectAll}>
-            <Text style={styles.selectAll}>Pilih Semua</Text>
+            <Text style={styles.selectAll}>{t('common.selectAll')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -142,7 +144,7 @@ export function CreateTopicScreen({ route, navigation }: Props) {
             disabled={selectedIds.length === 0}
           >
             <Text style={styles.nextButtonText}>
-              Lanjut ({selectedIds.length} dipilih)
+              {t('topic.continueSelected', { count: selectedIds.length })}
             </Text>
           </TouchableOpacity>
         </View>
@@ -155,7 +157,7 @@ export function CreateTopicScreen({ route, navigation }: Props) {
     <SafeAreaView style={styles.container}>
       <View style={styles.detailsContainer}>
         {/* Icon picker */}
-        <Text style={styles.label}>Ikon Topik</Text>
+        <Text style={styles.label}>{t('topic.topicIcon')}</Text>
         <View style={styles.emojiGrid}>
           {EMOJI_OPTIONS.map((emoji) => (
             <TouchableOpacity
@@ -169,24 +171,24 @@ export function CreateTopicScreen({ route, navigation }: Props) {
         </View>
 
         {/* Name */}
-        <Text style={styles.label}>Nama Topik</Text>
+        <Text style={styles.label}>{t('topic.topicName')}</Text>
         <TextInput
           style={styles.input}
           value={name}
           onChangeText={setName}
-          placeholder="Contoh: Pembagian Lahan"
+          placeholder={t('topic.topicNamePlaceholder')}
           placeholderTextColor={colors.textMuted}
           maxLength={100}
           autoFocus
         />
 
         {/* Description */}
-        <Text style={styles.label}>Deskripsi (opsional)</Text>
+        <Text style={styles.label}>{t('topic.descriptionOptional')}</Text>
         <TextInput
           style={[styles.input, styles.textArea]}
           value={description}
           onChangeText={setDescription}
-          placeholder="Deskripsi topik..."
+          placeholder={t('topic.descriptionPlaceholder')}
           placeholderTextColor={colors.textMuted}
           multiline
           numberOfLines={3}
@@ -195,7 +197,7 @@ export function CreateTopicScreen({ route, navigation }: Props) {
 
         {isPersonal && (
           <Text style={styles.autoMemberNote}>
-            Kedua peserta chat akan otomatis menjadi anggota topik ini.
+            {t('topic.autoMemberNote')}
           </Text>
         )}
       </View>
@@ -206,7 +208,7 @@ export function CreateTopicScreen({ route, navigation }: Props) {
             style={styles.backButton}
             onPress={() => setStep(1)}
           >
-            <Text style={styles.backButtonText}>Kembali</Text>
+            <Text style={styles.backButtonText}>{t('common.back')}</Text>
           </TouchableOpacity>
         )}
         <TouchableOpacity
@@ -220,7 +222,7 @@ export function CreateTopicScreen({ route, navigation }: Props) {
           {loading ? (
             <ActivityIndicator color={colors.white} size="small" />
           ) : (
-            <Text style={styles.createButtonText}>Buat Topik</Text>
+            <Text style={styles.createButtonText}>{t('topic.createTopic')}</Text>
           )}
         </TouchableOpacity>
       </View>

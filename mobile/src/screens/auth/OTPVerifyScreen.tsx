@@ -66,7 +66,7 @@ export function OTPVerifyScreen({ route, navigation }: Props) {
       <View style={styles.content}>
         <Text style={styles.title}>{t('auth.enterOTP')}</Text>
         <Text style={styles.description}>
-          Masukkan kode {OTP_LENGTH} digit yang dikirim ke {maskedPhone}
+          {t('auth.otpSent', { phone: maskedPhone })}
         </Text>
 
         <Pressable onPress={() => inputRef.current?.focus()} style={styles.otpContainer}>
@@ -90,16 +90,16 @@ export function OTPVerifyScreen({ route, navigation }: Props) {
           autoFocus
         />
 
-        {isLoading && <Text style={styles.loadingText}>Memverifikasi...</Text>}
+        {isLoading && <Text style={styles.loadingText}>{t('common.loading')}</Text>}
 
         <View style={styles.resendRow}>
           {canResend ? (
             <Pressable onPress={handleResend}>
-              <Text style={styles.resendActive}>Kirim Ulang</Text>
+              <Text style={styles.resendActive}>{t('auth.resendOTP')}</Text>
             </Pressable>
           ) : (
             <Text style={styles.resendDisabled}>
-              Kirim ulang dalam {countdown} detik
+              {t('auth.resendIn', { seconds: countdown })}
             </Text>
           )}
         </View>

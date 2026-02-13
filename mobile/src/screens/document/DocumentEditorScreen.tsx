@@ -20,6 +20,7 @@ import { LockStatusBadge } from '@/components/document/LockStatusBadge';
 import { LockActionSheet } from '@/components/document/LockActionSheet';
 import { SignConfirmModal } from '@/components/document/SignConfirmModal';
 import { documentsApi } from '@/services/api/documents';
+import { useTranslation } from 'react-i18next';
 import { useCollaborativeEditing } from '@/hooks/useCollaborativeEditing';
 import { EntityTagBar } from '@/components/entity/EntityTagBar';
 
@@ -29,6 +30,7 @@ export function DocumentEditorScreen({ route, navigation }: Props) {
   const documentId = route.params?.documentId;
   const contextType = route.params?.contextType;
   const contextId = route.params?.contextId;
+  const { t } = useTranslation();
 
   const title = useEditorStore((s) => s.title);
   const icon = useEditorStore((s) => s.icon);
@@ -92,7 +94,7 @@ export function DocumentEditorScreen({ route, navigation }: Props) {
       } else {
         const chatId = contextType === 'chat' ? contextId : undefined;
         const topicId = contextType === 'topic' ? contextId : undefined;
-        await createDocument('Dokumen Baru', chatId, topicId);
+        await createDocument(t('document.newDocument'), chatId, topicId);
       }
       setInitialized(true);
     };
@@ -127,7 +129,7 @@ export function DocumentEditorScreen({ route, navigation }: Props) {
       setLockedBy('manual');
       setShowLockSheet(false);
     } catch {
-      Alert.alert('Gagal', 'Tidak dapat mengunci dokumen');
+      Alert.alert(t('common.failed'), t('document.lockFailed'));
     }
     setLockLoading(false);
   }, [loadDocument]);
@@ -142,7 +144,7 @@ export function DocumentEditorScreen({ route, navigation }: Props) {
       setLockedBy('signatures');
       setShowLockSheet(false);
     } catch {
-      Alert.alert('Gagal', 'Tambahkan penandatangan terlebih dahulu');
+      Alert.alert(t('common.failed'), t('document.addSignersFirst'));
     }
     setLockLoading(false);
   }, [loadDocument]);
@@ -157,7 +159,7 @@ export function DocumentEditorScreen({ route, navigation }: Props) {
       setLockedBy(null);
       setShowLockSheet(false);
     } catch {
-      Alert.alert('Gagal', 'Tidak dapat membuka kunci dokumen');
+      Alert.alert(t('common.failed'), t('document.unlockFailed'));
     }
     setLockLoading(false);
   }, [loadDocument]);
@@ -171,7 +173,7 @@ export function DocumentEditorScreen({ route, navigation }: Props) {
       await loadDocument(docId);
       setShowSignModal(false);
     } catch {
-      Alert.alert('Gagal', 'Tidak dapat menandatangani dokumen');
+      Alert.alert(t('common.failed'), t('document.signFailed'));
     }
     setLockLoading(false);
   }, [loadDocument]);
@@ -216,7 +218,7 @@ export function DocumentEditorScreen({ route, navigation }: Props) {
         </Pressable>
         {isLocked && lockedBy === 'signatures' && (
           <Pressable onPress={() => setShowSignModal(true)} style={styles.signBtn}>
-            <Text style={styles.signBtnText}>Tandatangani</Text>
+            <Text style={styles.signBtnText}>{t('document.sign')}</Text>
           </Pressable>
         )}
       </View>
@@ -230,7 +232,7 @@ export function DocumentEditorScreen({ route, navigation }: Props) {
           style={styles.titleInput}
           value={title}
           onChangeText={updateTitle}
-          placeholder="Judul dokumen"
+          placeholder={t('document.titlePlaceholder')}
           placeholderTextColor={colors.textMuted}
           editable={!isLocked}
           multiline

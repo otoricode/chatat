@@ -1,20 +1,21 @@
 // SearchTabBar — horizontal tab selector for search
 import React from 'react';
 import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { colors, fontFamily, fontSize, spacing } from '@/theme';
 import type { SearchTab } from '@/hooks/useSearch';
 
 type Tab = {
   key: SearchTab;
-  label: string;
+  labelKey: string;
 };
 
 const TABS: Tab[] = [
-  { key: 'all', label: 'Semua' },
-  { key: 'messages', label: 'Pesan' },
-  { key: 'documents', label: 'Dokumen' },
-  { key: 'contacts', label: 'Kontak' },
-  { key: 'entities', label: 'Entity' },
+  { key: 'all', labelKey: 'search.all' },
+  { key: 'messages', labelKey: 'search.messages' },
+  { key: 'documents', labelKey: 'search.documents' },
+  { key: 'contacts', labelKey: 'search.contacts' },
+  { key: 'entities', labelKey: 'entity.entities' },
 ];
 
 type SearchTabBarProps = {
@@ -23,6 +24,7 @@ type SearchTabBarProps = {
 };
 
 export function SearchTabBar({ activeTab, onTabChange }: SearchTabBarProps) {
+  const { t } = useTranslation();
   return (
     <View style={styles.wrapper}>
       <ScrollView
@@ -39,7 +41,7 @@ export function SearchTabBar({ activeTab, onTabChange }: SearchTabBarProps) {
               style={[styles.tab, isActive && styles.tabActive]}
             >
               <Text style={[styles.label, isActive && styles.labelActive]}>
-                {tab.label}
+                {t(tab.labelKey)}
               </Text>
             </Pressable>
           );

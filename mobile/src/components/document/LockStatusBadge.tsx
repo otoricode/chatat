@@ -2,6 +2,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { colors, fontSize, fontFamily, spacing } from '@/theme';
+import { useTranslation } from 'react-i18next';
 
 export type LockStatus = 'draft' | 'locked_manual' | 'pending_signatures' | 'locked_signed';
 
@@ -19,27 +20,27 @@ export function getLockStatus(locked: boolean, lockedBy?: string | null, require
   return 'locked_manual';
 }
 
-const STATUS_CONFIG: Record<LockStatus, { label: string; icon: string; color: string; bg: string }> = {
+const STATUS_CONFIG: Record<LockStatus, { labelKey: string; icon: string; color: string; bg: string }> = {
   draft: {
-    label: 'Draf',
+    labelKey: 'document.draft',
     icon: '📝',
     color: colors.textMuted,
     bg: 'transparent',
   },
   locked_manual: {
-    label: 'Terkunci',
+    labelKey: 'document.locked',
     icon: '🔒',
     color: colors.yellow,
     bg: 'rgba(251, 191, 36, 0.15)',
   },
   pending_signatures: {
-    label: 'Menunggu Tanda Tangan',
+    labelKey: 'document.pendingSignatures',
     icon: '✍️',
     color: colors.blue,
     bg: 'rgba(96, 165, 250, 0.15)',
   },
   locked_signed: {
-    label: 'Ditandatangani',
+    labelKey: 'document.signed',
     icon: '✅',
     color: colors.green,
     bg: 'rgba(110, 231, 183, 0.15)',
@@ -47,6 +48,7 @@ const STATUS_CONFIG: Record<LockStatus, { label: string; icon: string; color: st
 };
 
 export function LockStatusBadge({ locked, lockedBy, requireSigs, compact }: LockStatusBadgeProps) {
+  const { t } = useTranslation();
   const status = getLockStatus(locked, lockedBy, requireSigs);
 
   if (status === 'draft' && compact) return null;
@@ -60,7 +62,7 @@ export function LockStatusBadge({ locked, lockedBy, requireSigs, compact }: Lock
   return (
     <View style={[styles.badge, { backgroundColor: config.bg }]}>
       <Text style={styles.icon}>{config.icon}</Text>
-      <Text style={[styles.label, { color: config.color }]}>{config.label}</Text>
+      <Text style={[styles.label, { color: config.color }]}>{t(config.labelKey)}</Text>
     </View>
   );
 }

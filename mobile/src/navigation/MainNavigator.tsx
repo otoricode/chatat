@@ -4,6 +4,7 @@ import React, { useCallback } from 'react';
 import { StyleSheet, View, Text } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useNavigation, CommonActions } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import type { MainTabParamList } from './types';
 import { ChatStackNavigator } from './ChatStackNavigator';
 import { DocumentStackNavigator } from './DocumentStackNavigator';
@@ -33,6 +34,7 @@ function DocumentTabIcon({ focused }: { focused: boolean }) {
 
 export function MainNavigator() {
   useNotifications();
+  const { t } = useTranslation();
 
   const { visible, title, body, data, hide } = useNotificationStore();
   const navigation = useNavigation();
@@ -98,7 +100,7 @@ export function MainNavigator() {
         name="ChatTab"
         component={ChatStackNavigator}
         options={{
-          tabBarLabel: 'Chat',
+          tabBarLabel: t('chat.title'),
           tabBarIcon: ChatTabIcon,
         }}
       />
@@ -106,7 +108,7 @@ export function MainNavigator() {
         name="DocumentTab"
         component={DocumentStackNavigator}
         options={{
-          tabBarLabel: 'Dokumen',
+          tabBarLabel: t('document.title'),
           tabBarIcon: DocumentTabIcon,
         }}
       />

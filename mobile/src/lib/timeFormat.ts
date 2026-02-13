@@ -1,14 +1,18 @@
 // Time formatting utilities for chat
 // Formats timestamps for chat list and message bubbles
+import type { TFunction } from 'i18next';
+
+const DAY_KEYS = ['time.sun', 'time.mon', 'time.tue', 'time.wed', 'time.thu', 'time.fri', 'time.sat'] as const;
+const MONTH_KEYS = ['time.jan', 'time.feb', 'time.mar', 'time.apr', 'time.may', 'time.jun', 'time.jul', 'time.aug', 'time.sep', 'time.oct', 'time.nov', 'time.dec'] as const;
 
 /**
  * Format a timestamp for the chat list.
  * - Today: "HH:MM"
- * - Yesterday: "Kemarin"
- * - This week: day name (Sen, Sel, Rab, ...)
+ * - Yesterday: translated
+ * - This week: translated day name
  * - Older: "DD/MM/YY"
  */
-export function formatChatListTime(dateStr: string): string {
+export function formatChatListTime(dateStr: string, t: TFunction): string {
   const date = new Date(dateStr);
   const now = new Date();
 
@@ -20,11 +24,11 @@ export function formatChatListTime(dateStr: string): string {
   }
 
   if (diffDays === 1 || isYesterday(date, now)) {
-    return 'Kemarin';
+    return t('time.yesterday');
   }
 
   if (diffDays < 7) {
-    return getDayName(date);
+    return t(DAY_KEYS[date.getDay()] ?? 'time.sun');
   }
 
   return formatDate(date);
@@ -39,45 +43,43 @@ export function formatMessageTime(dateStr: string): string {
 }
 
 /**
- * Format a date separator: "Hari Ini", "Kemarin", or "DD MMM YYYY"
+ * Format a date separator: translated "Today", "Yesterday", or "DD MMM YYYY"
  */
-export function formatDateSeparator(dateStr: string): string {
+export function formatDateSeparator(dateStr: string, t: TFunction): string {
   const date = new Date(dateStr);
   const now = new Date();
 
   if (isToday(date, now)) {
-    return 'Hari Ini';
+    return t('time.today');
   }
 
   if (isYesterday(date, now)) {
-    return 'Kemarin';
+    return t('time.yesterday');
   }
 
-  const months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-    'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des',
-  ];
+  const monthKey = MONTH_KEYS[date.getMonth()] ?? 'time.jan';
 
-  return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+  return `${date.getDate()} ${t(monthKey)} ${date.getFullYear()}`;
 }
 
 /**
- * Format last seen: "terakhir dilihat pukul HH:MM" or "online"
+ * Format last seen with translated strings
  */
-export function formatLastSeen(dateStr: string, isOnline: boolean): string {
+export function formatLastSeen(dateStr: string, isOnline: boolean, t: TFunction): string {
   if (isOnline) return 'online';
   const date = new Date(dateStr);
   const now = new Date();
+  const time = formatTime(date);
 
   if (isToday(date, now)) {
-    return `terakhir dilihat pukul ${formatTime(date)}`;
+    return t('time.lastSeenAt', { time });
   }
 
   if (isYesterday(date, now)) {
-    return `terakhir dilihat kemarin pukul ${formatTime(date)}`;
+    return t('time.lastSeenYesterdayAt', { time });
   }
 
-  return `terakhir dilihat ${formatDate(date)} pukul ${formatTime(date)}`;
+  return t('time.lastSeenDateAt', { date: formatDate(date), time });
 }
 
 function formatTime(date: Date): string {
@@ -91,11 +93,6 @@ function formatDate(date: Date): string {
   const m = String(date.getMonth() + 1).padStart(2, '0');
   const y = String(date.getFullYear()).slice(2);
   return `${d}/${m}/${y}`;
-}
-
-function getDayName(date: Date): string {
-  const days = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
-  return days[date.getDay()] ?? 'Min';
 }
 
 function isToday(date: Date, now: Date): boolean {

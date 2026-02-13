@@ -15,6 +15,7 @@ type User struct {
 	Name      string    `json:"name"`
 	Avatar    string    `json:"avatar"`
 	Status    string    `json:"status"`
+	Language  string    `json:"language"`
 	LastSeen  time.Time `json:"lastSeen"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
@@ -29,7 +30,8 @@ type CreateUserInput struct {
 
 // UpdateUserInput holds optional fields for updating a user.
 type UpdateUserInput struct {
-	Name   *string `json:"name"`
-	Avatar *string `json:"avatar"`
-	Status *string `json:"status"`
+	Name     *string `json:"name"`
+	Avatar   *string `json:"avatar"`
+	Status   *string `json:"status"`
+	Language *string `json:"language"`
 }
