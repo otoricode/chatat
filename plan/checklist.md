@@ -169,13 +169,13 @@ Setiap kali menyelesaikan satu phase, jalankan checklist ini:
 - [x] Backup scheduling (manual / daily auto)
 
 ## Phase 21 — Settings & Preferences
-- [ ] Settings screen layout
-- [ ] Profile edit (nama, avatar, status)
-- [ ] Language switch (ID/EN/AR)
-- [ ] Notification preferences
-- [ ] Storage & data management
-- [ ] About + version info
-- [ ] Logout flow
+- [x] Settings screen layout
+- [x] Profile edit (nama, avatar, status)
+- [x] Language switch (ID/EN/AR)
+- [x] Notification preferences
+- [x] Storage & data management
+- [x] About + version info
+- [x] Logout flow
 
 ## Phase 22 — Security & Privacy
 - [ ] E2E encryption (Signal Protocol atau alternatif)
