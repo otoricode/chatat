@@ -97,6 +97,18 @@ type addTagRequest struct {
 	Tag string `json:"tag"`
 }
 
+type lockDocumentRequest struct {
+	Mode string `json:"mode"`
+}
+
+type signDocumentRequest struct {
+	Name string `json:"name"`
+}
+
+type addSignerRequest struct {
+	UserID string `json:"userId"`
+}
+
 // -- Document endpoints --
 
 // Create handles POST /api/v1/documents
@@ -304,12 +316,170 @@ func (h *DocumentHandler) Duplicate(w http.ResponseWriter, r *http.Request) {
 
 // Lock handles POST /api/v1/documents/{id}/lock
 func (h *DocumentHandler) Lock(w http.ResponseWriter, r *http.Request) {
-	response.Error(w, apperror.BadRequest("fitur lock akan diimplementasikan di phase 14"))
+	userID, err := GetUserID(r)
+	if err != nil {
+		response.Error(w, apperror.Unauthorized("autentikasi diperlukan"))
+		return
+	}
+
+	docID, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		response.Error(w, apperror.BadRequest("format document ID tidak valid"))
+		return
+	}
+
+	var req lockDocumentRequest
+	if err := DecodeJSON(r, &req); err != nil {
+		response.Error(w, apperror.BadRequest("body request tidak valid"))
+		return
+	}
+
+	mode := model.LockedByType(req.Mode)
+	if mode != model.LockedByManual && mode != model.LockedBySignatures {
+		response.Error(w, apperror.BadRequest("mode harus 'manual' atau 'signatures'"))
+		return
+	}
+
+	if err := h.documentService.LockDocument(r.Context(), docID, userID, mode); err != nil {
+		handleError(w, err)
+		return
+	}
+
+	response.OK(w, map[string]bool{"locked": true})
+}
+
+// Unlock handles POST /api/v1/documents/{id}/unlock
+func (h *DocumentHandler) Unlock(w http.ResponseWriter, r *http.Request) {
+	userID, err := GetUserID(r)
+	if err != nil {
+		response.Error(w, apperror.Unauthorized("autentikasi diperlukan"))
+		return
+	}
+
+	docID, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		response.Error(w, apperror.BadRequest("format document ID tidak valid"))
+		return
+	}
+
+	if err := h.documentService.UnlockDocument(r.Context(), docID, userID); err != nil {
+		handleError(w, err)
+		return
+	}
+
+	response.OK(w, map[string]bool{"unlocked": true})
 }
 
 // Sign handles POST /api/v1/documents/{id}/sign
 func (h *DocumentHandler) Sign(w http.ResponseWriter, r *http.Request) {
-	response.Error(w, apperror.BadRequest("fitur sign akan diimplementasikan di phase 14"))
+	userID, err := GetUserID(r)
+	if err != nil {
+		response.Error(w, apperror.Unauthorized("autentikasi diperlukan"))
+		return
+	}
+
+	docID, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		response.Error(w, apperror.BadRequest("format document ID tidak valid"))
+		return
+	}
+
+	var req signDocumentRequest
+	if err := DecodeJSON(r, &req); err != nil {
+		response.Error(w, apperror.BadRequest("body request tidak valid"))
+		return
+	}
+
+	doc, err := h.documentService.SignDocument(r.Context(), docID, userID, req.Name)
+	if err != nil {
+		handleError(w, err)
+		return
+	}
+
+	response.OK(w, doc)
+}
+
+// AddSigner handles POST /api/v1/documents/{id}/signers
+func (h *DocumentHandler) AddSigner(w http.ResponseWriter, r *http.Request) {
+	ownerID, err := GetUserID(r)
+	if err != nil {
+		response.Error(w, apperror.Unauthorized("autentikasi diperlukan"))
+		return
+	}
+
+	docID, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		response.Error(w, apperror.BadRequest("format document ID tidak valid"))
+		return
+	}
+
+	var req addSignerRequest
+	if err := DecodeJSON(r, &req); err != nil {
+		response.Error(w, apperror.BadRequest("body request tidak valid"))
+		return
+	}
+
+	signerID, err := uuid.Parse(req.UserID)
+	if err != nil {
+		response.Error(w, apperror.BadRequest("format userId tidak valid"))
+		return
+	}
+
+	if err := h.documentService.AddSigner(r.Context(), docID, ownerID, signerID); err != nil {
+		handleError(w, err)
+		return
+	}
+
+	response.Created(w, map[string]bool{"added": true})
+}
+
+// RemoveSigner handles DELETE /api/v1/documents/{id}/signers/{userID}
+func (h *DocumentHandler) RemoveSigner(w http.ResponseWriter, r *http.Request) {
+	ownerID, err := GetUserID(r)
+	if err != nil {
+		response.Error(w, apperror.Unauthorized("autentikasi diperlukan"))
+		return
+	}
+
+	docID, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		response.Error(w, apperror.BadRequest("format document ID tidak valid"))
+		return
+	}
+
+	signerID, err := uuid.Parse(chi.URLParam(r, "userID"))
+	if err != nil {
+		response.Error(w, apperror.BadRequest("format user ID tidak valid"))
+		return
+	}
+
+	if err := h.documentService.RemoveSigner(r.Context(), docID, ownerID, signerID); err != nil {
+		handleError(w, err)
+		return
+	}
+
+	response.OK(w, map[string]bool{"removed": true})
+}
+
+// ListSigners handles GET /api/v1/documents/{id}/signers
+func (h *DocumentHandler) ListSigners(w http.ResponseWriter, r *http.Request) {
+	docID, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		response.Error(w, apperror.BadRequest("format document ID tidak valid"))
+		return
+	}
+
+	signers, err := h.documentService.ListSigners(r.Context(), docID)
+	if err != nil {
+		handleError(w, err)
+		return
+	}
+
+	if signers == nil {
+		signers = []*model.DocumentSigner{}
+	}
+
+	response.OK(w, signers)
 }
 
 // -- Block endpoints --
