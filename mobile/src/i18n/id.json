@@ -387,5 +387,17 @@
     "image": "Gambar",
     "sendMedia": "Kirim Media",
     "loadFailed": "Gagal memuat"
+  },
+  "network": {
+    "offline": "Tidak ada koneksi internet",
+    "connecting": "Menghubungkan...",
+    "syncing": "Menyinkronkan...",
+    "syncComplete": "Sinkronisasi selesai",
+    "syncFailed": "Gagal sinkronisasi",
+    "pendingMessages": "{{count}} pesan tertunda",
+    "tapToRetry": "Ketuk untuk mencoba lagi",
+    "lastSynced": "Terakhir disinkronkan {{time}}",
+    "availableOffline": "Tersedia offline",
+    "requiresConnection": "Memerlukan koneksi"
   }
 }
