@@ -116,13 +116,13 @@ Setiap kali menyelesaikan satu phase, jalankan checklist ini:
 - [x] Template selection (8 templates)
 
 ## Phase 14 — Document Collaboration & Locking
-- [ ] Real-time document sync via WebSocket
-- [ ] Conflict resolution (OT atau CRDT)
-- [ ] Manual lock by owner
-- [ ] Signature-based lock (multi-signer)
-- [ ] Signature flow UI (request, sign, lock)
-- [ ] Lock status badges (Draft, Menunggu Tanda Tangan, Terkunci)
-- [ ] Document inline card di chat + tab Dokumen
+- [x] Real-time document sync via WebSocket
+- [x] Conflict resolution (OT atau CRDT)
+- [x] Manual lock by owner
+- [x] Signature-based lock (multi-signer)
+- [x] Signature flow UI (request, sign, lock)
+- [x] Lock status badges (Draft, Menunggu Tanda Tangan, Terkunci)
+- [x] Document inline card di chat + tab Dokumen
 
 ## Phase 15 — Entity System
 - [ ] Backend: Entity CRUD (free-form tags)

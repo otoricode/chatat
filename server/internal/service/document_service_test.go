@@ -340,7 +340,9 @@ func (m *docTestUserRepo) FindByID(_ context.Context, id uuid.UUID) (*model.User
 	}
 	return u, nil
 }
-func (m *docTestUserRepo) FindByPhone(_ context.Context, _ string) (*model.User, error) { return nil, nil }
+func (m *docTestUserRepo) FindByPhone(_ context.Context, _ string) (*model.User, error) {
+	return nil, nil
+}
 func (m *docTestUserRepo) FindByPhones(_ context.Context, _ []string) ([]*model.User, error) {
 	return nil, nil
 }

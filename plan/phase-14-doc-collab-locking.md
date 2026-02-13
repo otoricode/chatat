@@ -59,20 +59,20 @@
    - Fade out after 5s idle
 
 ### Acceptance Criteria:
-- [ ] Users join/leave document channel
-- [ ] Block edits broadcast to other viewers in real-time
-- [ ] Last-write-wins conflict resolution per block
-- [ ] Cursor presence: colored cursors with names
-- [ ] Smooth: no lag on typing (debounce sends 300ms)
-- [ ] Reconnect: resync on WebSocket reconnect
+- [x] Users join/leave document channel
+- [x] Block edits broadcast to other viewers in real-time
+- [x] Last-write-wins conflict resolution per block
+- [x] Cursor presence: colored cursors with names
+- [x] Smooth: no lag on typing (debounce sends 300ms)
+- [x] Reconnect: resync on WebSocket reconnect
 
 ### Testing:
-- [ ] Unit test: document channel join/leave
-- [ ] Unit test: broadcast event to all except sender
-- [ ] Unit test: version conflict detection
-- [ ] Integration test: 2 users editing different blocks
-- [ ] Integration test: 2 users editing same block (conflict)
-- [ ] Integration test: reconnect + resync
+- [x] Unit test: document channel join/leave
+- [x] Unit test: broadcast event to all except sender
+- [x] Unit test: version conflict detection
+- [x] Integration test: 2 users editing different blocks
+- [x] Integration test: 2 users editing same block (conflict)
+- [x] Integration test: reconnect + resync
 
 ---
 
@@ -153,24 +153,24 @@
    ```
 
 ### Acceptance Criteria:
-- [ ] Manual lock: owner can lock/unlock
-- [ ] Locked document: all edits rejected (400 Bad Request)
-- [ ] Signature flow: add signers → request → sign → auto-lock
-- [ ] PIN verification for signing
-- [ ] Signature hash stored (SHA-256)
-- [ ] Lock status correctly computed
-- [ ] Only owner can manage signers
-- [ ] WebSocket broadcasts lock state changes
+- [x] Manual lock: owner can lock/unlock
+- [x] Locked document: all edits rejected (400 Bad Request)
+- [x] Signature flow: add signers → request → sign → auto-lock
+- [x] PIN verification for signing
+- [x] Signature hash stored (SHA-256)
+- [x] Lock status correctly computed
+- [x] Only owner can manage signers
+- [x] WebSocket broadcasts lock state changes
 
 ### Testing:
-- [ ] Unit test: manual lock/unlock
-- [ ] Unit test: locked document rejects edits
-- [ ] Unit test: add/remove signers
-- [ ] Unit test: sign with valid PIN
-- [ ] Unit test: sign with invalid PIN → rejected
-- [ ] Unit test: all signed → auto-lock
-- [ ] Unit test: signature lock cannot be unlocked
-- [ ] Integration test: full signing flow
+- [x] Unit test: manual lock/unlock
+- [x] Unit test: locked document rejects edits
+- [x] Unit test: add/remove signers
+- [x] Unit test: sign with valid PIN
+- [x] Unit test: sign with invalid PIN → rejected
+- [x] Unit test: all signed → auto-lock
+- [x] Unit test: signature lock cannot be unlocked
+- [x] Integration test: full signing flow
 
 ---
 
@@ -221,21 +221,21 @@
    - Signed: "Ditandatangani" badge + "Lihat TTD" button
 
 ### Acceptance Criteria:
-- [ ] Lock status badge shown on all documents
-- [ ] Owner can lock/unlock via action sheet
-- [ ] Signer selector from chat/group members
-- [ ] PIN confirmation for signing
-- [ ] Sign success animation
-- [ ] Editor becomes read-only when locked
-- [ ] Real-time lock status updates
+- [x] Lock status badge shown on all documents
+- [x] Owner can lock/unlock via action sheet
+- [x] Signer selector from chat/group members
+- [x] PIN confirmation for signing
+- [x] Sign success animation
+- [x] Editor becomes read-only when locked
+- [x] Real-time lock status updates
 
 ### Testing:
-- [ ] Component test: LockStatusBadge all states
-- [ ] Component test: lock action sheet
-- [ ] Component test: signer list
-- [ ] Component test: sign confirmation modal
-- [ ] Integration test: lock → editor read-only
-- [ ] Integration test: full signing flow UI
+- [x] Component test: LockStatusBadge all states
+- [x] Component test: lock action sheet
+- [x] Component test: signer list
+- [x] Component test: sign confirmation modal
+- [x] Integration test: lock → editor read-only
+- [x] Integration test: full signing flow UI
 
 ---
 
@@ -318,20 +318,20 @@
    - Auto-sends inline card to chat
 
 ### Acceptance Criteria:
-- [ ] Document card renders in chat message bubble
-- [ ] Tap card → opens document editor
-- [ ] Lock status badge on card
-- [ ] Signature progress bar when applicable
-- [ ] Dokumen tab in chat/group screens
-- [ ] Create document from chat → inline card sent
-- [ ] Document list shows all docs in context
+- [x] Document card renders in chat message bubble
+- [x] Tap card → opens document editor
+- [x] Lock status badge on card
+- [x] Signature progress bar when applicable
+- [x] Dokumen tab in chat/group screens
+- [x] Create document from chat → inline card sent
+- [x] Document list shows all docs in context
 
 ### Testing:
-- [ ] Component test: DocumentCardMessage renders
-- [ ] Component test: DocumentsTab empty + with data
-- [ ] Component test: signature progress bar
-- [ ] Integration test: create doc → card appears in chat
-- [ ] Integration test: tap card → opens editor
+- [x] Component test: DocumentCardMessage renders
+- [x] Component test: DocumentsTab empty + with data
+- [x] Component test: signature progress bar
+- [x] Integration test: create doc → card appears in chat
+- [x] Integration test: tap card → opens editor
 
 ---
 
@@ -387,37 +387,37 @@
    ```
 
 ### Acceptance Criteria:
-- [ ] All document actions logged
-- [ ] History endpoint paginated
-- [ ] History UI shows timeline
-- [ ] Actions in Indonesian
-- [ ] Avatar + name + timestamp
+- [x] All document actions logged
+- [x] History endpoint paginated
+- [x] History UI shows timeline
+- [x] Actions in Indonesian
+- [x] Avatar + name + timestamp
 
 ### Testing:
-- [ ] Unit test: history logging for each action type
-- [ ] Component test: history list renders
-- [ ] Integration test: edit → history entry created
+- [x] Unit test: history logging for each action type
+- [x] Component test: history list renders
+- [x] Integration test: edit → history entry created
 
 ---
 
 ## Phase 14 Review
 
 ### Testing Checklist:
-- [ ] Real-time sync: multi-user editing
-- [ ] Conflict resolution: last-write-wins per block
-- [ ] Manual lock: lock, unlock, reject edits
-- [ ] Signature flow: add signers → request → sign → auto-lock
-- [ ] PIN verification
-- [ ] Lock status badge: all 4 states
-- [ ] Inline card in chat
-- [ ] Dokumen tab: list + create
-- [ ] History: all actions logged + UI
+- [x] Real-time sync: multi-user editing
+- [x] Conflict resolution: last-write-wins per block
+- [x] Manual lock: lock, unlock, reject edits
+- [x] Signature flow: add signers → request → sign → auto-lock
+- [x] PIN verification
+- [x] Lock status badge: all 4 states
+- [x] Inline card in chat
+- [x] Dokumen tab: list + create
+- [x] History: all actions logged + UI
 
 ### Review Checklist:
-- [ ] Locking sesuai `spesifikasi-chatat.md` section 5.5, 5.6
-- [ ] Signature flow sesuai spec 5.9
-- [ ] Lock status badges sesuai spec 5.10
-- [ ] Inline card sesuai spec 5.12
-- [ ] Indonesian labels throughout
-- [ ] Dark theme consistent
-- [ ] Commit: `feat(collab): implement document collaboration and locking`
+- [x] Locking sesuai `spesifikasi-chatat.md` section 5.5, 5.6
+- [x] Signature flow sesuai spec 5.9
+- [x] Lock status badges sesuai spec 5.10
+- [x] Inline card sesuai spec 5.12
+- [x] Indonesian labels throughout
+- [x] Dark theme consistent
+- [x] Commit: `feat(collab): implement document collaboration and locking`
