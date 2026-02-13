@@ -38,6 +38,10 @@ export function ChatListScreen({ navigation }: Props) {
     navigation.navigate('ContactList');
   };
 
+  const handleSearchPress = () => {
+    navigation.navigate('Search');
+  };
+
   const handleChatPress = useCallback(
     (item: ChatListItemType) => {
       navigation.navigate('Chat', {
@@ -79,7 +83,7 @@ export function ChatListScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <Header title="Chat" />
+      <Header title="Chat" onSearchPress={handleSearchPress} />
       {chats.length === 0 && !isLoading ? (
         <View style={styles.content}>
           <EmptyState
