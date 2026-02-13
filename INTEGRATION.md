@@ -147,3 +147,84 @@ Header `X-Hub-Signature-256` berisi HMAC SHA256 signature untuk verifikasi keama
 | Webhook tidak diterima | Pastikan `WHATSAPP_WEBHOOK` URL bisa diakses dari container |
 | Signature verification gagal | Pastikan `WHATSAPP_WEBHOOK_SECRET` = `WA_WEBHOOK_SECRET` |
 | Reverse OTP tidak terverifikasi | Cek log server untuk melihat apakah webhook diterima |
+
+---
+
+# Integrasi Firebase Cloud Messaging (FCM)
+
+Chatat menggunakan Firebase Cloud Messaging untuk mengirim push notification ke perangkat mobile (Android & iOS).
+
+## Arsitektur
+
+```
+Mobile App              Chatat Server              FCM
+  |                          |                      |
+  | -- register token -----> |                      |
+  |   POST /notifications/   |                      |
+  |        devices           |                      |
+  |                          |                      |
+  |                          | -- send notif ------> |
+  |  <---- push notif -------|---------------------- |
+  |                          |                      |
+```
+
+## Konfigurasi
+
+### 1. Buat Firebase Project
+
+1. Buka [Firebase Console](https://console.firebase.google.com/)
+2. Klik "Add project" atau pilih project yang sudah ada
+3. Aktifkan Cloud Messaging di menu **Project Settings > Cloud Messaging**
+
+### 2. Generate Service Account Key
+
+1. Di Firebase Console, buka **Project Settings > Service accounts**
+2. Klik **Generate new private key**
+3. Simpan file JSON yang didownload (contoh: `firebase-credentials.json`)
+4. **JANGAN** commit file ini ke repository
+
+### 3. Environment Variables
+
+Tambahkan ke file `.env` server:
+
+```env
+# Firebase Cloud Messaging (Push Notifications)
+FCM_CREDENTIALS_FILE=/path/to/firebase-credentials.json
+```
+
+Jika `FCM_CREDENTIALS_FILE` tidak diset atau kosong, server akan menggunakan **LogPushSender** yang hanya mencetak notifikasi ke log (untuk development).
+
+### 4. Mobile Setup (Expo)
+
+1. Buat project di [Expo Dashboard](https://expo.dev/)
+2. Pastikan `projectId` di `app.json` sudah sesuai
+3. Untuk Android: Upload Server Key dari Firebase ke Expo Dashboard
+4. Untuk iOS: Upload APNs key ke Expo Dashboard
+
+## Jenis Notifikasi
+
+| Type | Trigger | Data |
+|---|---|---|
+| `message` | Pesan baru di chat personal | `chatId` |
+| `group_message` | Pesan baru di chat group | `chatId` |
+| `topic_message` | Pesan baru di topik | `topicId` |
+| `signature_request` | Permintaan tanda tangan dokumen | `documentId` |
+| `document_locked` | Dokumen dikunci | `documentId` |
+| `group_invite` | Diundang ke grup | `chatId` |
+
+## Mode Development
+
+Tanpa `FCM_CREDENTIALS_FILE`, server menggunakan `LogPushSender`:
+
+```
+[PUSH] notification sent (log mode) token=ExponentPushToken... type=message title=Ahmad body=Ahmad: Halo
+```
+
+## Troubleshooting
+
+| Masalah | Solusi |
+|---|---|
+| Push tidak terkirim | Cek apakah `FCM_CREDENTIALS_FILE` diset dan file ada |
+| Token invalid | Token expired atau device unregistered, akan otomatis di-log |
+| Permission denied di mobile | Pastikan user memberikan izin notifikasi |
+| Token tidak terdaftar | Pastikan `POST /notifications/devices` dipanggil setelah login |
