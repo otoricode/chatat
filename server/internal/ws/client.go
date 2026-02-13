@@ -14,6 +14,10 @@ const (
 	pongWait       = 60 * time.Second
 	pingPeriod     = (pongWait * 9) / 10
 	maxMessageSize = 4096
+
+	// WebSocket rate limiting: max messages per window
+	wsRateLimitMessages = 30
+	wsRateLimitWindow   = 60 * time.Second
 )
 
 // MessageHandler is a callback invoked when the client receives a typed message.
@@ -26,6 +30,10 @@ type Client struct {
 	Send           chan []byte
 	Hub            *Hub
 	MessageHandler MessageHandler
+
+	// Rate limiting state (per-client, not shared)
+	msgCount       int
+	msgWindowStart time.Time
 }
 
 // NewClient creates a new client.
@@ -61,6 +69,18 @@ func (c *Client) ReadPump() {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseNormalClosure) {
 				log.Warn().Err(err).Str("user_id", c.UserID.String()).Msg("websocket unexpected close")
 			}
+			break
+		}
+
+		// Rate limiting: sliding window counter
+		now := time.Now()
+		if now.Sub(c.msgWindowStart) > wsRateLimitWindow {
+			c.msgCount = 0
+			c.msgWindowStart = now
+		}
+		c.msgCount++
+		if c.msgCount > wsRateLimitMessages {
+			log.Warn().Str("user_id", c.UserID.String()).Msg("websocket rate limit exceeded, disconnecting")
 			break
 		}
 
