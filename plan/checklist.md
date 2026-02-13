@@ -100,11 +100,11 @@ Setiap kali menyelesaikan satu phase, jalankan checklist ini:
 - [x] Frontend: File download + share
 
 ## Phase 12 — Document Data Layer
-- [ ] Backend: Document CRUD API
-- [ ] Backend: Block CRUD (add, update, delete, reorder)
-- [ ] Backend: Document context (chatId/groupId/topicId/standalone)
-- [ ] Backend: Collaborator management (owner, editor, viewer)
-- [ ] Backend: Document history log
+- [x] Backend: Document CRUD API
+- [x] Backend: Block CRUD (add, update, delete, reorder)
+- [x] Backend: Document context (chatId/groupId/topicId/standalone)
+- [x] Backend: Collaborator management (owner, editor, viewer)
+- [x] Backend: Document history log
 
 ## Phase 13 — Block Editor
 - [ ] 13 block types fully implemented

@@ -86,22 +86,22 @@
    - CASCADE: blocks, collaborators, signers, tags, entities
 
 ### Acceptance Criteria:
-- [ ] Document created in chat, topic, or standalone context
-- [ ] Template applied if selected
-- [ ] Access control enforced (owner, editor, viewer)
-- [ ] Context members have access
-- [ ] Locked documents immutable
-- [ ] Inline card message sent on creation
-- [ ] History logged
+- [x] Document created in chat, topic, or standalone context
+- [x] Template applied if selected
+- [x] Access control enforced (owner, editor, viewer)
+- [x] Context members have access
+- [x] Locked documents immutable
+- [x] Inline card message sent on creation
+- [x] History logged
 
 ### Testing:
-- [ ] Unit test: create document (all contexts)
-- [ ] Unit test: create from template
-- [ ] Unit test: access control (owner/editor/viewer)
-- [ ] Unit test: context member access
-- [ ] Unit test: locked document immutable
-- [ ] Unit test: delete (allowed/locked)
-- [ ] Unit test: history logging
+- [x] Unit test: create document (all contexts)
+- [x] Unit test: create from template
+- [x] Unit test: access control (owner/editor/viewer)
+- [x] Unit test: context member access
+- [x] Unit test: locked document immutable
+- [x] Unit test: delete (allowed/locked)
+- [x] Unit test: history logging
 
 ---
 
@@ -157,22 +157,22 @@
 4. Log all changes to document_history
 
 ### Acceptance Criteria:
-- [ ] All 13 block types supported
-- [ ] Position-based ordering (sort_order)
-- [ ] Move block: reorder correctly
-- [ ] Batch operations: atomic
-- [ ] Locked document: reject all writes
-- [ ] Toggle children: nested blocks
-- [ ] History logged for edits
+- [x] All 13 block types supported
+- [x] Position-based ordering (sort_order)
+- [x] Move block: reorder correctly
+- [x] Batch operations: atomic
+- [x] Locked document: reject all writes
+- [x] Toggle children: nested blocks
+- [x] History logged for edits
 
 ### Testing:
-- [ ] Unit test: add each block type
-- [ ] Unit test: update block
-- [ ] Unit test: delete block (with children)
-- [ ] Unit test: move block (reorder)
-- [ ] Unit test: batch operations
-- [ ] Unit test: locked document rejection
-- [ ] Unit test: invalid block type
+- [x] Unit test: add each block type
+- [x] Unit test: update block
+- [x] Unit test: delete block (with children)
+- [x] Unit test: move block (reorder)
+- [x] Unit test: batch operations
+- [x] Unit test: locked document rejection
+- [x] Unit test: invalid block type
 
 ---
 
@@ -215,17 +215,17 @@
 4. Templates stored as JSON in-memory (embedded)
 
 ### Acceptance Criteria:
-- [ ] Add/remove/update collaborator roles
-- [ ] Only owner can manage collaborators
-- [ ] 8 templates available
-- [ ] Template creates correct blocks
-- [ ] Template tables have correct columns
+- [x] Add/remove/update collaborator roles
+- [x] Only owner can manage collaborators
+- [x] 8 templates available
+- [x] Template creates correct blocks
+- [x] Template tables have correct columns
 
 ### Testing:
-- [ ] Unit test: add/remove/update collaborator
-- [ ] Unit test: non-owner cannot manage collaborators
-- [ ] Unit test: each template produces correct blocks
-- [ ] Unit test: template table column types
+- [x] Unit test: add/remove/update collaborator
+- [x] Unit test: non-owner cannot manage collaborators
+- [x] Unit test: each template produces correct blocks
+- [x] Unit test: template table column types
 
 ---
 
@@ -261,40 +261,40 @@
    - `GET /api/v1/documents/:docId/history` → get edit history
 
 ### Acceptance Criteria:
-- [ ] All CRUD endpoints functioning
-- [ ] Document filters: status, tag, entity, search
-- [ ] Block operations: add, update, delete, reorder, batch
-- [ ] Collaborator management endpoints
-- [ ] Tag management endpoints
-- [ ] History endpoint
-- [ ] Authorization enforced on all endpoints
+- [x] All CRUD endpoints functioning
+- [x] Document filters: status, tag, entity, search
+- [x] Block operations: add, update, delete, reorder, batch
+- [x] Collaborator management endpoints
+- [x] Tag management endpoints
+- [x] History endpoint
+- [x] Authorization enforced on all endpoints
 
 ### Testing:
-- [ ] Integration test: create document → add blocks → read
-- [ ] Integration test: collaborator management
-- [ ] Integration test: document in chat context
-- [ ] Integration test: filters and search
+- [x] Integration test: create document → add blocks → read
+- [x] Integration test: collaborator management
+- [x] Integration test: document in chat context
+- [x] Integration test: filters and search
 
 ---
 
 ## Phase 12 Review
 
 ### Testing Checklist:
-- [ ] Document CRUD: create, read, update, delete
-- [ ] Block operations: all 13 types
-- [ ] Templates: all 8 produce correct output
-- [ ] Collaborators: add, remove, role update
-- [ ] Tags: add, remove, filter
-- [ ] Access control: owner/editor/viewer enforced
-- [ ] Context access: chat/topic member access
-- [ ] Locked: immutable
-- [ ] History: all actions logged
-- [ ] `go test ./...` pass
+- [x] Document CRUD: create, read, update, delete
+- [x] Block operations: all 13 types
+- [x] Templates: all 8 produce correct output
+- [x] Collaborators: add, remove, role update
+- [x] Tags: add, remove, filter
+- [x] Access control: owner/editor/viewer enforced
+- [x] Context access: chat/topic member access
+- [x] Locked: immutable
+- [x] History: all actions logged
+- [x] `go test ./...` pass
 
 ### Review Checklist:
-- [ ] Documents sesuai `spesifikasi-chatat.md` section 5
-- [ ] Block types sesuai spec 5.3
-- [ ] Templates sesuai spec 5.11
-- [ ] Collaborator roles sesuai spec 5.7
-- [ ] Data structures sesuai spec 8.2.4, 8.2.5
-- [ ] Commit: `feat(doc): implement document data layer and API`
+- [x] Documents sesuai `spesifikasi-chatat.md` section 5
+- [x] Block types sesuai spec 5.3
+- [x] Templates sesuai spec 5.11
+- [x] Collaborator roles sesuai spec 5.7
+- [x] Data structures sesuai spec 8.2.4, 8.2.5
+- [x] Commit: `feat(doc): implement document data layer and API`
