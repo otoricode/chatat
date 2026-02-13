@@ -20,6 +20,7 @@ import { LockStatusBadge } from '@/components/document/LockStatusBadge';
 import { LockActionSheet } from '@/components/document/LockActionSheet';
 import { SignConfirmModal } from '@/components/document/SignConfirmModal';
 import { documentsApi } from '@/services/api/documents';
+import { useCollaborativeEditing } from '@/hooks/useCollaborativeEditing';
 
 type Props = NativeStackScreenProps<DocumentStackParamList, 'DocumentEditor'>;
 
@@ -45,6 +46,43 @@ export function DocumentEditorScreen({ route, navigation }: Props) {
   const [showSignModal, setShowSignModal] = useState(false);
   const [lockLoading, setLockLoading] = useState(false);
   const [lockedBy, setLockedBy] = useState<string | null>(null);
+
+  // CRDT collaborative editing
+  const editorDocId = useEditorStore((s) => s.documentId);
+  const { sendContentUpdate, sendCheckedUpdate, sendDeleteEvent } =
+    useCollaborativeEditing(editorDocId);
+
+  // Expose CRDT send functions to the editor store for block changes
+  useEffect(() => {
+    if (!editorDocId) return;
+
+    // Subscribe to block changes and forward to CRDT
+    const unsub = useEditorStore.subscribe((state, prevState) => {
+      if (state.blocks === prevState.blocks) return;
+
+      // Find changed blocks and send CRDT updates
+      for (const block of state.blocks) {
+        const prev = prevState.blocks.find((b) => b.id === block.id);
+        if (!prev) continue; // new block, handled by save
+        if (prev.content !== block.content) {
+          sendContentUpdate(block.id, block.content);
+        }
+        if (prev.checked !== block.checked) {
+          sendCheckedUpdate(block.id, block.checked ?? false);
+        }
+      }
+
+      // Check for deleted blocks
+      for (const prev of prevState.blocks) {
+        const stillExists = state.blocks.find((b) => b.id === prev.id);
+        if (!stillExists) {
+          sendDeleteEvent(prev.id);
+        }
+      }
+    });
+
+    return unsub;
+  }, [editorDocId, sendContentUpdate, sendCheckedUpdate, sendDeleteEvent]);
 
   useEffect(() => {
     const init = async () => {
