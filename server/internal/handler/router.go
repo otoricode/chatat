@@ -94,6 +94,7 @@ func NewRouter(cfg *config.Config, deps *Dependencies) *chi.Mux {
 					r.Put("/members/{memberID}/admin", deps.ChatHandler.PromoteToAdmin)
 					r.Get("/topics", deps.TopicHandler.ListByChat)
 					r.Get("/documents", deps.DocumentHandler.ListByChat)
+					r.Get("/search", deps.SearchHandler.SearchInChat)
 				})
 			})
 
@@ -182,6 +183,14 @@ func NewRouter(cfg *config.Config, deps *Dependencies) *chi.Mux {
 			r.Route("/notifications", func(r chi.Router) {
 				r.Post("/devices", deps.NotificationHandler.RegisterDevice)
 				r.Delete("/devices", deps.NotificationHandler.UnregisterDevice)
+			})
+
+			r.Route("/search", func(r chi.Router) {
+				r.Get("/", deps.SearchHandler.SearchAll)
+				r.Get("/messages", deps.SearchHandler.SearchMessages)
+				r.Get("/documents", deps.SearchHandler.SearchDocuments)
+				r.Get("/contacts", deps.SearchHandler.SearchContacts)
+				r.Get("/entities", deps.SearchHandler.SearchEntities)
 			})
 		})
 	})
