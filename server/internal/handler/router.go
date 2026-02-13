@@ -129,7 +129,13 @@ func NewRouter(cfg *config.Config, deps *Dependencies) *chi.Mux {
 					r.Delete("/", deps.DocumentHandler.Delete)
 					r.Post("/duplicate", deps.DocumentHandler.Duplicate)
 					r.Post("/lock", deps.DocumentHandler.Lock)
+					r.Post("/unlock", deps.DocumentHandler.Unlock)
 					r.Post("/sign", deps.DocumentHandler.Sign)
+
+					// Signer endpoints
+					r.Get("/signers", deps.DocumentHandler.ListSigners)
+					r.Post("/signers", deps.DocumentHandler.AddSigner)
+					r.Delete("/signers/{userID}", deps.DocumentHandler.RemoveSigner)
 
 					// Block endpoints
 					r.Post("/blocks", deps.DocumentHandler.AddBlock)

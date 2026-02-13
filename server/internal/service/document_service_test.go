@@ -149,11 +149,53 @@ func (m *mockDocumentRepo) UpdateCollaboratorRole(_ context.Context, docID, user
 	return apperror.NotFound("collaborator", userID.String())
 }
 
-func (m *mockDocumentRepo) AddSigner(_ context.Context, _, _ uuid.UUID) error { return nil }
-func (m *mockDocumentRepo) RecordSignature(_ context.Context, _, _ uuid.UUID, _ string) error {
+func (m *mockDocumentRepo) AddSigner(_ context.Context, docID, userID uuid.UUID) error {
+	m.signers[docID] = append(m.signers[docID], &model.DocumentSigner{
+		DocumentID: docID,
+		UserID:     userID,
+	})
 	return nil
 }
-func (m *mockDocumentRepo) Lock(_ context.Context, _ uuid.UUID, _ model.LockedByType) error {
+func (m *mockDocumentRepo) RemoveSigner(_ context.Context, docID, userID uuid.UUID) error {
+	signers := m.signers[docID]
+	for i, s := range signers {
+		if s.UserID == userID {
+			m.signers[docID] = append(signers[:i], signers[i+1:]...)
+			return nil
+		}
+	}
+	return apperror.NotFound("signer", userID.String())
+}
+func (m *mockDocumentRepo) RecordSignature(_ context.Context, docID, userID uuid.UUID, name string) error {
+	for _, s := range m.signers[docID] {
+		if s.UserID == userID {
+			now := time.Now()
+			s.SignedAt = &now
+			s.SignerName = name
+			return nil
+		}
+	}
+	return apperror.NotFound("signer", userID.String())
+}
+func (m *mockDocumentRepo) Lock(_ context.Context, docID uuid.UUID, lockedBy model.LockedByType) error {
+	doc, ok := m.docs[docID]
+	if !ok {
+		return apperror.NotFound("document", docID.String())
+	}
+	doc.Locked = true
+	now := time.Now()
+	doc.LockedAt = &now
+	doc.LockedBy = &lockedBy
+	return nil
+}
+func (m *mockDocumentRepo) Unlock(_ context.Context, docID uuid.UUID) error {
+	doc, ok := m.docs[docID]
+	if !ok {
+		return apperror.NotFound("document", docID.String())
+	}
+	doc.Locked = false
+	doc.LockedAt = nil
+	doc.LockedBy = nil
 	return nil
 }
 
@@ -646,5 +688,168 @@ func TestDocumentService_ListByContext(t *testing.T) {
 		items, err := svc.ListByContext(ctx, "chat", chatID)
 		require.NoError(t, err)
 		assert.True(t, len(items) > 0)
+	})
+}
+
+func TestDocumentService_LockUnlock(t *testing.T) {
+	docRepo := newMockDocumentRepo()
+	blockRepo := newMockBlockRepo()
+	historyRepo := &mockDocHistoryRepo{}
+	userRepo := &docTestUserRepo{users: make(map[uuid.UUID]*model.User)}
+	templateSvc := NewTemplateService()
+	svc := NewDocumentService(docRepo, blockRepo, historyRepo, userRepo, templateSvc)
+	ctx := context.Background()
+	ownerID := uuid.New()
+
+	t.Run("owner can lock manually", func(t *testing.T) {
+		doc, _ := svc.Create(ctx, CreateDocumentInput{Title: "LockMe", OwnerID: ownerID})
+		err := svc.LockDocument(ctx, doc.Document.ID, ownerID, model.LockedByManual)
+		require.NoError(t, err)
+
+		fetched, _ := docRepo.FindByID(ctx, doc.Document.ID)
+		assert.True(t, fetched.Locked)
+		assert.NotNil(t, fetched.LockedBy)
+		assert.Equal(t, model.LockedByManual, *fetched.LockedBy)
+	})
+
+	t.Run("non-owner cannot lock", func(t *testing.T) {
+		doc, _ := svc.Create(ctx, CreateDocumentInput{Title: "NoLock", OwnerID: ownerID})
+		err := svc.LockDocument(ctx, doc.Document.ID, uuid.New(), model.LockedByManual)
+		require.Error(t, err)
+		appErr, ok := err.(*apperror.AppError)
+		require.True(t, ok)
+		assert.Equal(t, "FORBIDDEN", appErr.Code)
+	})
+
+	t.Run("cannot lock already locked doc", func(t *testing.T) {
+		doc, _ := svc.Create(ctx, CreateDocumentInput{Title: "AlreadyLocked", OwnerID: ownerID})
+		_ = svc.LockDocument(ctx, doc.Document.ID, ownerID, model.LockedByManual)
+		err := svc.LockDocument(ctx, doc.Document.ID, ownerID, model.LockedByManual)
+		require.Error(t, err)
+		appErr, ok := err.(*apperror.AppError)
+		require.True(t, ok)
+		assert.Equal(t, "BAD_REQUEST", appErr.Code)
+	})
+
+	t.Run("owner can unlock manual lock", func(t *testing.T) {
+		doc, _ := svc.Create(ctx, CreateDocumentInput{Title: "UnlockMe", OwnerID: ownerID})
+		_ = svc.LockDocument(ctx, doc.Document.ID, ownerID, model.LockedByManual)
+		err := svc.UnlockDocument(ctx, doc.Document.ID, ownerID)
+		require.NoError(t, err)
+
+		fetched, _ := docRepo.FindByID(ctx, doc.Document.ID)
+		assert.False(t, fetched.Locked)
+	})
+
+	t.Run("cannot unlock doc that is not locked", func(t *testing.T) {
+		doc, _ := svc.Create(ctx, CreateDocumentInput{Title: "NotLocked", OwnerID: ownerID})
+		err := svc.UnlockDocument(ctx, doc.Document.ID, ownerID)
+		require.Error(t, err)
+		appErr, ok := err.(*apperror.AppError)
+		require.True(t, ok)
+		assert.Equal(t, "BAD_REQUEST", appErr.Code)
+	})
+
+	t.Run("lock with signatures requires signers", func(t *testing.T) {
+		doc, _ := svc.Create(ctx, CreateDocumentInput{Title: "NoSigners", OwnerID: ownerID})
+		err := svc.LockDocument(ctx, doc.Document.ID, ownerID, model.LockedBySignatures)
+		require.Error(t, err)
+		appErr, ok := err.(*apperror.AppError)
+		require.True(t, ok)
+		assert.Equal(t, "BAD_REQUEST", appErr.Code)
+	})
+}
+
+func TestDocumentService_Signers(t *testing.T) {
+	docRepo := newMockDocumentRepo()
+	blockRepo := newMockBlockRepo()
+	historyRepo := &mockDocHistoryRepo{}
+	ownerID := uuid.New()
+	signerID := uuid.New()
+	userRepo := &docTestUserRepo{users: map[uuid.UUID]*model.User{
+		ownerID:  {ID: ownerID, Name: "Owner"},
+		signerID: {ID: signerID, Name: "Signer"},
+	}}
+	templateSvc := NewTemplateService()
+	svc := NewDocumentService(docRepo, blockRepo, historyRepo, userRepo, templateSvc)
+	ctx := context.Background()
+
+	t.Run("owner can add signer", func(t *testing.T) {
+		doc, _ := svc.Create(ctx, CreateDocumentInput{Title: "SignDoc", OwnerID: ownerID})
+		err := svc.AddSigner(ctx, doc.Document.ID, ownerID, signerID)
+		require.NoError(t, err)
+
+		signers, _ := svc.ListSigners(ctx, doc.Document.ID)
+		assert.Equal(t, 1, len(signers))
+	})
+
+	t.Run("non-owner cannot add signer", func(t *testing.T) {
+		doc, _ := svc.Create(ctx, CreateDocumentInput{Title: "SignDoc2", OwnerID: ownerID})
+		err := svc.AddSigner(ctx, doc.Document.ID, uuid.New(), signerID)
+		require.Error(t, err)
+	})
+
+	t.Run("owner can remove signer", func(t *testing.T) {
+		doc, _ := svc.Create(ctx, CreateDocumentInput{Title: "SignDoc3", OwnerID: ownerID})
+		_ = svc.AddSigner(ctx, doc.Document.ID, ownerID, signerID)
+		err := svc.RemoveSigner(ctx, doc.Document.ID, ownerID, signerID)
+		require.NoError(t, err)
+	})
+
+	t.Run("cannot add signer to locked doc", func(t *testing.T) {
+		doc, _ := svc.Create(ctx, CreateDocumentInput{Title: "LockedSign", OwnerID: ownerID})
+		_ = svc.AddSigner(ctx, doc.Document.ID, ownerID, signerID)
+		_ = svc.LockDocument(ctx, doc.Document.ID, ownerID, model.LockedBySignatures)
+
+		newSigner := uuid.New()
+		err := svc.AddSigner(ctx, doc.Document.ID, ownerID, newSigner)
+		require.Error(t, err)
+		appErr, ok := err.(*apperror.AppError)
+		require.True(t, ok)
+		assert.Equal(t, "FORBIDDEN", appErr.Code)
+	})
+
+	t.Run("signer can sign document", func(t *testing.T) {
+		doc, _ := svc.Create(ctx, CreateDocumentInput{Title: "ToSign", OwnerID: ownerID})
+		_ = svc.AddSigner(ctx, doc.Document.ID, ownerID, signerID)
+		_ = svc.LockDocument(ctx, doc.Document.ID, ownerID, model.LockedBySignatures)
+
+		result, err := svc.SignDocument(ctx, doc.Document.ID, signerID, "Test Signer")
+		require.NoError(t, err)
+		assert.NotNil(t, result)
+	})
+
+	t.Run("non-signer cannot sign", func(t *testing.T) {
+		doc, _ := svc.Create(ctx, CreateDocumentInput{Title: "CantSign", OwnerID: ownerID})
+		_ = svc.AddSigner(ctx, doc.Document.ID, ownerID, signerID)
+		_ = svc.LockDocument(ctx, doc.Document.ID, ownerID, model.LockedBySignatures)
+
+		_, err := svc.SignDocument(ctx, doc.Document.ID, uuid.New(), "Nobody")
+		require.Error(t, err)
+		appErr, ok := err.(*apperror.AppError)
+		require.True(t, ok)
+		assert.Equal(t, "FORBIDDEN", appErr.Code)
+	})
+
+	t.Run("cannot sign unlocked doc", func(t *testing.T) {
+		doc, _ := svc.Create(ctx, CreateDocumentInput{Title: "NotSigMode", OwnerID: ownerID})
+		_, err := svc.SignDocument(ctx, doc.Document.ID, signerID, "Test")
+		require.Error(t, err)
+		appErr, ok := err.(*apperror.AppError)
+		require.True(t, ok)
+		assert.Equal(t, "BAD_REQUEST", appErr.Code)
+	})
+
+	t.Run("cannot sign twice", func(t *testing.T) {
+		doc, _ := svc.Create(ctx, CreateDocumentInput{Title: "SignTwice", OwnerID: ownerID})
+		_ = svc.AddSigner(ctx, doc.Document.ID, ownerID, signerID)
+		_ = svc.LockDocument(ctx, doc.Document.ID, ownerID, model.LockedBySignatures)
+
+		_, _ = svc.SignDocument(ctx, doc.Document.ID, signerID, "First")
+		_, err := svc.SignDocument(ctx, doc.Document.ID, signerID, "Second")
+		require.Error(t, err)
+		appErr, ok := err.(*apperror.AppError)
+		require.True(t, ok)
+		assert.Equal(t, "BAD_REQUEST", appErr.Code)
 	})
 }

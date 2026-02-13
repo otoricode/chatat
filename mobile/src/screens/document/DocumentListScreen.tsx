@@ -15,6 +15,7 @@ import type { DocumentListItem } from '@/types/chat';
 import { Header } from '@/components/shared/Header';
 import { FAB } from '@/components/shared/FAB';
 import { EmptyState } from '@/components/shared/EmptyState';
+import { LockStatusBadge } from '@/components/document/LockStatusBadge';
 import { documentsApi } from '@/services/api/documents';
 import { colors, fontFamily, fontSize, spacing } from '@/theme';
 import { formatDistanceToNow } from 'date-fns';
@@ -80,7 +81,7 @@ export function DocumentListScreen({ navigation }: Props) {
           </Text>
           <Text style={styles.docMeta}>{timeAgo}</Text>
         </View>
-        {item.locked && <Text style={styles.lockIcon}>🔒</Text>}
+        {item.locked && <LockStatusBadge locked={item.locked} compact />}
       </Pressable>
     );
   };
@@ -156,9 +157,5 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     color: colors.textMuted,
     marginTop: 2,
-  },
-  lockIcon: {
-    fontSize: 14,
-    marginLeft: spacing.sm,
   },
 });

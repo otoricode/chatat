@@ -8,6 +8,7 @@ import type {
   DocumentListItem,
   DocumentTemplate,
   DocumentHistory,
+  DocumentSigner,
 } from '@/types/chat';
 
 export interface CreateDocumentInput {
@@ -95,10 +96,23 @@ export const documentsApi = {
   getTemplates: () =>
     apiClient.get<{ data: DocumentTemplate[] }>('/templates'),
 
-  // Lock & Sign (Phase 14)
-  lock: (id: string) =>
-    apiClient.post(`/documents/${id}/lock`),
+  // Lock & Sign
+  lock: (id: string, mode: 'manual' | 'signatures') =>
+    apiClient.post(`/documents/${id}/lock`, { mode }),
 
-  sign: (id: string) =>
-    apiClient.post(`/documents/${id}/sign`),
+  unlock: (id: string) =>
+    apiClient.post(`/documents/${id}/unlock`),
+
+  sign: (id: string, name?: string) =>
+    apiClient.post(`/documents/${id}/sign`, { name }),
+
+  // Signers
+  listSigners: (docId: string) =>
+    apiClient.get<{ data: DocumentSigner[] }>(`/documents/${docId}/signers`),
+
+  addSigner: (docId: string, userId: string) =>
+    apiClient.post(`/documents/${docId}/signers`, { userId }),
+
+  removeSigner: (docId: string, userId: string) =>
+    apiClient.delete(`/documents/${docId}/signers/${userId}`),
 };

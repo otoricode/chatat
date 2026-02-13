@@ -27,6 +27,12 @@ type DocumentService interface {
 	AddTag(ctx context.Context, docID uuid.UUID, tag string) error
 	RemoveTag(ctx context.Context, docID uuid.UUID, tag string) error
 	GetHistory(ctx context.Context, docID uuid.UUID) ([]*model.DocumentHistory, error)
+	LockDocument(ctx context.Context, docID, userID uuid.UUID, mode model.LockedByType) error
+	UnlockDocument(ctx context.Context, docID, userID uuid.UUID) error
+	AddSigner(ctx context.Context, docID, ownerID, signerID uuid.UUID) error
+	RemoveSigner(ctx context.Context, docID, ownerID, signerID uuid.UUID) error
+	SignDocument(ctx context.Context, docID, userID uuid.UUID, name string) (*model.Document, error)
+	ListSigners(ctx context.Context, docID uuid.UUID) ([]*model.DocumentSigner, error)
 }
 
 // CreateDocumentInput holds data for creating a new document.
@@ -425,6 +431,177 @@ func (s *documentService) RemoveTag(ctx context.Context, docID uuid.UUID, tag st
 
 func (s *documentService) GetHistory(ctx context.Context, docID uuid.UUID) ([]*model.DocumentHistory, error) {
 	return s.historyRepo.ListByDocument(ctx, docID)
+}
+
+func (s *documentService) LockDocument(ctx context.Context, docID, userID uuid.UUID, mode model.LockedByType) error {
+	doc, err := s.docRepo.FindByID(ctx, docID)
+	if err != nil {
+		return err
+	}
+
+	if doc.OwnerID != userID {
+		return apperror.Forbidden("hanya pemilik yang dapat mengunci dokumen")
+	}
+
+	if doc.Locked {
+		return apperror.BadRequest("dokumen sudah terkunci")
+	}
+
+	if mode == model.LockedBySignatures {
+		// Check that there are signers configured
+		signers, _ := s.docRepo.ListSigners(ctx, docID)
+		if len(signers) == 0 {
+			return apperror.BadRequest("tambahkan penandatangan sebelum mengunci dengan tanda tangan")
+		}
+	}
+
+	if err := s.docRepo.Lock(ctx, docID, mode); err != nil {
+		return err
+	}
+
+	action := "locked_manual"
+	details := "Dokumen dikunci secara manual"
+	if mode == model.LockedBySignatures {
+		action = "locked_signatures"
+		details = "Dokumen dikunci, menunggu tanda tangan"
+	}
+
+	_ = s.historyRepo.Create(ctx, docID, userID, action, details)
+	return nil
+}
+
+func (s *documentService) UnlockDocument(ctx context.Context, docID, userID uuid.UUID) error {
+	doc, err := s.docRepo.FindByID(ctx, docID)
+	if err != nil {
+		return err
+	}
+
+	if doc.OwnerID != userID {
+		return apperror.Forbidden("hanya pemilik yang dapat membuka kunci dokumen")
+	}
+
+	if !doc.Locked {
+		return apperror.BadRequest("dokumen tidak terkunci")
+	}
+
+	if doc.LockedBy != nil && *doc.LockedBy == model.LockedBySignatures {
+		// Check if any signatures have been recorded
+		signers, _ := s.docRepo.ListSigners(ctx, docID)
+		for _, signer := range signers {
+			if signer.SignedAt != nil {
+				return apperror.Forbidden("dokumen yang sudah ditandatangani tidak dapat dibuka kuncinya")
+			}
+		}
+	}
+
+	if err := s.docRepo.Unlock(ctx, docID); err != nil {
+		return err
+	}
+
+	_ = s.historyRepo.Create(ctx, docID, userID, "unlocked", "Kunci dokumen dibuka")
+	return nil
+}
+
+func (s *documentService) AddSigner(ctx context.Context, docID, ownerID, signerID uuid.UUID) error {
+	doc, err := s.docRepo.FindByID(ctx, docID)
+	if err != nil {
+		return err
+	}
+
+	if doc.OwnerID != ownerID {
+		return apperror.Forbidden("hanya pemilik yang dapat mengelola penandatangan")
+	}
+
+	if doc.Locked {
+		return apperror.Forbidden("tidak dapat menambah penandatangan pada dokumen yang terkunci")
+	}
+
+	if err := s.docRepo.AddSigner(ctx, docID, signerID); err != nil {
+		return err
+	}
+
+	_ = s.historyRepo.Create(ctx, docID, ownerID, "signer_added", "Penandatangan ditambahkan")
+	return nil
+}
+
+func (s *documentService) RemoveSigner(ctx context.Context, docID, ownerID, signerID uuid.UUID) error {
+	doc, err := s.docRepo.FindByID(ctx, docID)
+	if err != nil {
+		return err
+	}
+
+	if doc.OwnerID != ownerID {
+		return apperror.Forbidden("hanya pemilik yang dapat mengelola penandatangan")
+	}
+
+	if doc.Locked {
+		return apperror.Forbidden("tidak dapat menghapus penandatangan dari dokumen yang terkunci")
+	}
+
+	if err := s.docRepo.RemoveSigner(ctx, docID, signerID); err != nil {
+		return err
+	}
+
+	_ = s.historyRepo.Create(ctx, docID, ownerID, "signer_removed", "Penandatangan dihapus")
+	return nil
+}
+
+func (s *documentService) SignDocument(ctx context.Context, docID, userID uuid.UUID, name string) (*model.Document, error) {
+	doc, err := s.docRepo.FindByID(ctx, docID)
+	if err != nil {
+		return nil, err
+	}
+
+	if !doc.Locked || doc.LockedBy == nil || *doc.LockedBy != model.LockedBySignatures {
+		return nil, apperror.BadRequest("dokumen tidak dalam mode tanda tangan")
+	}
+
+	// Verify user is a signer
+	signers, err := s.docRepo.ListSigners(ctx, docID)
+	if err != nil {
+		return nil, err
+	}
+
+	isSigner := false
+	for _, signer := range signers {
+		if signer.UserID == userID {
+			if signer.SignedAt != nil {
+				return nil, apperror.BadRequest("anda sudah menandatangani dokumen ini")
+			}
+			isSigner = true
+			break
+		}
+	}
+
+	if !isSigner {
+		return nil, apperror.Forbidden("anda bukan penandatangan dokumen ini")
+	}
+
+	if name == "" {
+		// Get user name as default
+		user, userErr := s.userRepo.FindByID(ctx, userID)
+		if userErr == nil && user != nil {
+			name = user.Name
+		}
+	}
+
+	if err := s.docRepo.RecordSignature(ctx, docID, userID, name); err != nil {
+		return nil, err
+	}
+
+	_ = s.historyRepo.Create(ctx, docID, userID, "signed", fmt.Sprintf("Ditandatangani oleh %s", name))
+
+	// Re-fetch the document to return updated state
+	updatedDoc, err := s.docRepo.FindByID(ctx, docID)
+	if err != nil {
+		return nil, err
+	}
+
+	return updatedDoc, nil
+}
+
+func (s *documentService) ListSigners(ctx context.Context, docID uuid.UUID) ([]*model.DocumentSigner, error) {
+	return s.docRepo.ListSigners(ctx, docID)
 }
 
 // Helper methods

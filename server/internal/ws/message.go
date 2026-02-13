@@ -18,5 +18,8 @@ const (
 	WSTypeReadReceipt   = "read_receipt"
 	WSTypeDocUpdate     = "doc_update"
 	WSTypeDocLock       = "doc_lock"
+	WSTypeDocJoin       = "doc_join"
+	WSTypeDocLeave      = "doc_leave"
+	WSTypeDocPresence   = "doc_presence"
 	WSTypeNotification  = "notification"
 )

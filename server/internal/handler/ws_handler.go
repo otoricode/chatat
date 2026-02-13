@@ -138,6 +138,14 @@ func (h *WSHandler) handleClientMessage(client *ws.Client, msg ws.WSMessage) {
 		h.handleMessageAck(client, msg.Payload)
 	case ws.WSTypeReadReceipt:
 		h.handleReadReceipt(client, msg.Payload)
+	case ws.WSTypeDocJoin:
+		h.handleDocJoin(client, msg.Payload)
+	case ws.WSTypeDocLeave:
+		h.handleDocLeave(client, msg.Payload)
+	case ws.WSTypeDocUpdate:
+		h.handleDocUpdate(client, msg.Payload)
+	case ws.WSTypeDocLock:
+		h.handleDocLockEvent(client, msg.Payload)
 	default:
 		log.Debug().
 			Str("user_id", client.UserID.String()).
@@ -307,6 +315,126 @@ func (h *WSHandler) broadcastMessageStatus(chatID, messageID, userID, status str
 
 	roomID := "chat:" + chatID
 	h.hub.SendToRoom(roomID, data, uuid.Nil)
+}
+
+// --- Document Collaboration ---
+
+type docJoinPayload struct {
+	DocumentID string `json:"documentId"`
+}
+
+type docPresenceBroadcast struct {
+	DocumentID string `json:"documentId"`
+	UserID     string `json:"userId"`
+	Action     string `json:"action"`
+}
+
+func (h *WSHandler) handleDocJoin(client *ws.Client, payload json.RawMessage) {
+	var p docJoinPayload
+	if err := json.Unmarshal(payload, &p); err != nil {
+		return
+	}
+
+	roomID := "doc:" + p.DocumentID
+	h.hub.JoinRoom(client, roomID)
+
+	// Broadcast presence to others in the document
+	broadcast := docPresenceBroadcast{
+		DocumentID: p.DocumentID,
+		UserID:     client.UserID.String(),
+		Action:     "joined",
+	}
+
+	bPayload, _ := json.Marshal(broadcast)
+	wsMsg := ws.WSMessage{
+		Type:    ws.WSTypeDocPresence,
+		Payload: bPayload,
+	}
+	data, _ := json.Marshal(wsMsg)
+	h.hub.SendToRoom(roomID, data, client.UserID)
+
+	log.Debug().
+		Str("user_id", client.UserID.String()).
+		Str("document_id", p.DocumentID).
+		Msg("user joined document room")
+}
+
+func (h *WSHandler) handleDocLeave(client *ws.Client, payload json.RawMessage) {
+	var p docJoinPayload
+	if err := json.Unmarshal(payload, &p); err != nil {
+		return
+	}
+
+	roomID := "doc:" + p.DocumentID
+	h.hub.LeaveRoom(client, roomID)
+
+	// Broadcast departure
+	broadcast := docPresenceBroadcast{
+		DocumentID: p.DocumentID,
+		UserID:     client.UserID.String(),
+		Action:     "left",
+	}
+
+	bPayload, _ := json.Marshal(broadcast)
+	wsMsg := ws.WSMessage{
+		Type:    ws.WSTypeDocPresence,
+		Payload: bPayload,
+	}
+	data, _ := json.Marshal(wsMsg)
+	h.hub.SendToRoom(roomID, data, client.UserID)
+
+	log.Debug().
+		Str("user_id", client.UserID.String()).
+		Str("document_id", p.DocumentID).
+		Msg("user left document room")
+}
+
+type docUpdatePayload struct {
+	DocumentID string          `json:"documentId"`
+	BlockID    string          `json:"blockId"`
+	Action     string          `json:"action"`
+	Data       json.RawMessage `json:"data"`
+}
+
+func (h *WSHandler) handleDocUpdate(client *ws.Client, payload json.RawMessage) {
+	var p docUpdatePayload
+	if err := json.Unmarshal(payload, &p); err != nil {
+		return
+	}
+
+	// Rebroadcast to all other clients in the document room
+	wsMsg := ws.WSMessage{
+		Type:    ws.WSTypeDocUpdate,
+		Payload: payload,
+	}
+	data, _ := json.Marshal(wsMsg)
+
+	roomID := "doc:" + p.DocumentID
+	h.hub.SendToRoom(roomID, data, client.UserID)
+}
+
+type docLockPayload struct {
+	DocumentID string `json:"documentId"`
+	Locked     bool   `json:"locked"`
+	LockedBy   string `json:"lockedBy"`
+	UserID     string `json:"userId"`
+}
+
+func (h *WSHandler) handleDocLockEvent(client *ws.Client, payload json.RawMessage) {
+	var p docLockPayload
+	if err := json.Unmarshal(payload, &p); err != nil {
+		return
+	}
+
+	// Broadcast lock state change to all clients in the document room
+	wsMsg := ws.WSMessage{
+		Type:    ws.WSTypeDocLock,
+		Payload: payload,
+	}
+	data, _ := json.Marshal(wsMsg)
+
+	roomID := "doc:" + p.DocumentID
+	h.hub.SendToRoom(roomID, data, client.UserID)
 }
 
 func (h *WSHandler) validateToken(tokenString string) (uuid.UUID, error) {

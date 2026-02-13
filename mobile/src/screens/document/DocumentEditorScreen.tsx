@@ -1,5 +1,5 @@
 // Document editor screen — Notion-style block editor
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   Pressable,
   StyleSheet,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -15,6 +16,10 @@ import { colors, fontSize, fontFamily, spacing } from '@/theme';
 import { useEditorStore } from '@/stores/editorStore';
 import { BlockEditor } from '@/components/editor';
 import { SaveIndicator } from '@/components/editor/SaveIndicator';
+import { LockStatusBadge } from '@/components/document/LockStatusBadge';
+import { LockActionSheet } from '@/components/document/LockActionSheet';
+import { SignConfirmModal } from '@/components/document/SignConfirmModal';
+import { documentsApi } from '@/services/api/documents';
 
 type Props = NativeStackScreenProps<DocumentStackParamList, 'DocumentEditor'>;
 
@@ -36,6 +41,10 @@ export function DocumentEditorScreen({ route, navigation }: Props) {
   const reset = useEditorStore((s) => s.reset);
 
   const [initialized, setInitialized] = useState(false);
+  const [showLockSheet, setShowLockSheet] = useState(false);
+  const [showSignModal, setShowSignModal] = useState(false);
+  const [lockLoading, setLockLoading] = useState(false);
+  const [lockedBy, setLockedBy] = useState<string | null>(null);
 
   useEffect(() => {
     const init = async () => {
@@ -55,9 +64,78 @@ export function DocumentEditorScreen({ route, navigation }: Props) {
     };
   }, [documentId, contextType, contextId, loadDocument, createDocument, reset]);
 
+  // Fetch lock info when document loads
+  useEffect(() => {
+    if (documentId && initialized) {
+      documentsApi.getById(documentId).then((res) => {
+        const doc = res.data.data;
+        setLockedBy(doc.document.lockedBy ?? null);
+      }).catch(() => {});
+    }
+  }, [documentId, initialized, isLocked]);
+
   const handleBack = () => {
     navigation.goBack();
   };
+
+  const handleLockManual = useCallback(async () => {
+    const docId = useEditorStore.getState().documentId;
+    if (!docId) return;
+    setLockLoading(true);
+    try {
+      await documentsApi.lock(docId, 'manual');
+      await loadDocument(docId);
+      setLockedBy('manual');
+      setShowLockSheet(false);
+    } catch {
+      Alert.alert('Gagal', 'Tidak dapat mengunci dokumen');
+    }
+    setLockLoading(false);
+  }, [loadDocument]);
+
+  const handleLockSignatures = useCallback(async () => {
+    const docId = useEditorStore.getState().documentId;
+    if (!docId) return;
+    setLockLoading(true);
+    try {
+      await documentsApi.lock(docId, 'signatures');
+      await loadDocument(docId);
+      setLockedBy('signatures');
+      setShowLockSheet(false);
+    } catch {
+      Alert.alert('Gagal', 'Tambahkan penandatangan terlebih dahulu');
+    }
+    setLockLoading(false);
+  }, [loadDocument]);
+
+  const handleUnlock = useCallback(async () => {
+    const docId = useEditorStore.getState().documentId;
+    if (!docId) return;
+    setLockLoading(true);
+    try {
+      await documentsApi.unlock(docId);
+      await loadDocument(docId);
+      setLockedBy(null);
+      setShowLockSheet(false);
+    } catch {
+      Alert.alert('Gagal', 'Tidak dapat membuka kunci dokumen');
+    }
+    setLockLoading(false);
+  }, [loadDocument]);
+
+  const handleSign = useCallback(async (name: string) => {
+    const docId = useEditorStore.getState().documentId;
+    if (!docId) return;
+    setLockLoading(true);
+    try {
+      await documentsApi.sign(docId, name);
+      await loadDocument(docId);
+      setShowSignModal(false);
+    } catch {
+      Alert.alert('Gagal', 'Tidak dapat menandatangani dokumen');
+    }
+    setLockLoading(false);
+  }, [loadDocument]);
 
   if (isLoading && !initialized) {
     return (
@@ -94,8 +172,13 @@ export function DocumentEditorScreen({ route, navigation }: Props) {
         <View style={styles.headerCenter}>
           <SaveIndicator />
         </View>
-        {isLocked && (
-          <Text style={styles.lockBadge}>🔒</Text>
+        <Pressable onPress={() => setShowLockSheet(true)}>
+          <LockStatusBadge locked={isLocked} lockedBy={lockedBy} compact />
+        </Pressable>
+        {isLocked && lockedBy === 'signatures' && (
+          <Pressable onPress={() => setShowSignModal(true)} style={styles.signBtn}>
+            <Text style={styles.signBtnText}>Tandatangani</Text>
+          </Pressable>
         )}
       </View>
 
@@ -118,6 +201,26 @@ export function DocumentEditorScreen({ route, navigation }: Props) {
 
       {/* Editor */}
       <BlockEditor readOnly={isLocked} />
+
+      {/* Lock Action Sheet */}
+      <LockActionSheet
+        visible={showLockSheet}
+        locked={isLocked}
+        lockedBy={lockedBy}
+        loading={lockLoading}
+        onLockManual={handleLockManual}
+        onLockSignatures={handleLockSignatures}
+        onUnlock={handleUnlock}
+        onClose={() => setShowLockSheet(false)}
+      />
+
+      {/* Sign Confirmation */}
+      <SignConfirmModal
+        visible={showSignModal}
+        loading={lockLoading}
+        onSign={handleSign}
+        onClose={() => setShowSignModal(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -151,9 +254,17 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
   },
-  lockBadge: {
-    fontSize: 18,
-    marginRight: spacing.sm,
+  signBtn: {
+    backgroundColor: colors.green,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: 6,
+    marginLeft: spacing.sm,
+  },
+  signBtnText: {
+    fontFamily: fontFamily.uiSemiBold,
+    fontSize: fontSize.xs,
+    color: colors.background,
   },
   titleArea: {
     flexDirection: 'row',

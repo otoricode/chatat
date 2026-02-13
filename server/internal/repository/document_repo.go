@@ -30,8 +30,10 @@ type DocumentRepository interface {
 	RemoveCollaborator(ctx context.Context, docID, userID uuid.UUID) error
 	UpdateCollaboratorRole(ctx context.Context, docID, userID uuid.UUID, role model.CollaboratorRole) error
 	AddSigner(ctx context.Context, docID, userID uuid.UUID) error
+	RemoveSigner(ctx context.Context, docID, userID uuid.UUID) error
 	RecordSignature(ctx context.Context, docID, userID uuid.UUID, name string) error
 	Lock(ctx context.Context, docID uuid.UUID, lockedBy model.LockedByType) error
+	Unlock(ctx context.Context, docID uuid.UUID) error
 	AddTag(ctx context.Context, docID uuid.UUID, tag string) error
 	RemoveTag(ctx context.Context, docID uuid.UUID, tag string) error
 	Update(ctx context.Context, id uuid.UUID, input model.UpdateDocumentInput) (*model.Document, error)
@@ -358,6 +360,39 @@ func (r *pgDocumentRepository) Lock(ctx context.Context, docID uuid.UUID, locked
 
 	if result.RowsAffected() == 0 {
 		return apperror.NotFound("document", docID.String())
+	}
+
+	return nil
+}
+
+func (r *pgDocumentRepository) Unlock(ctx context.Context, docID uuid.UUID) error {
+	result, err := r.db.Exec(ctx,
+		`UPDATE documents SET locked = false, locked_at = NULL, locked_by = NULL, updated_at = NOW()
+		 WHERE id = $1`,
+		docID,
+	)
+	if err != nil {
+		return fmt.Errorf("unlock document: %w", err)
+	}
+
+	if result.RowsAffected() == 0 {
+		return apperror.NotFound("document", docID.String())
+	}
+
+	return nil
+}
+
+func (r *pgDocumentRepository) RemoveSigner(ctx context.Context, docID, userID uuid.UUID) error {
+	result, err := r.db.Exec(ctx,
+		`DELETE FROM document_signers WHERE document_id = $1 AND user_id = $2`,
+		docID, userID,
+	)
+	if err != nil {
+		return fmt.Errorf("remove signer: %w", err)
+	}
+
+	if result.RowsAffected() == 0 {
+		return apperror.NotFound("signer", userID.String())
 	}
 
 	return nil
