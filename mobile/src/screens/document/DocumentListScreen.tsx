@@ -89,6 +89,14 @@ export function DocumentListScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <Header title="Dokumen" />
+      <View style={styles.tabRow}>
+        <Pressable
+          style={styles.tabBtn}
+          onPress={() => navigation.navigate('EntityList')}
+        >
+          <Text style={styles.tabBtnText}>Entity</Text>
+        </Pressable>
+      </View>
       <View style={styles.content}>
         {documents.length === 0 && !isLoading ? (
           <EmptyState
@@ -124,6 +132,24 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  tabRow: {
+    flexDirection: 'row',
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm,
+  },
+  tabBtn: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: 16,
+    backgroundColor: colors.surface2,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  tabBtnText: {
+    fontSize: fontSize.sm,
+    fontFamily: fontFamily.uiSemiBold,
+    color: colors.purple,
   },
   listContent: {
     paddingHorizontal: spacing.lg,

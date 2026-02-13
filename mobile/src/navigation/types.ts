@@ -51,4 +51,6 @@ export type DocumentStackParamList = {
     contextId?: string;
   };
   DocumentViewer: { documentId: string };
+  EntityList: undefined;
+  EntityDetail: { entityId: string };
 };
