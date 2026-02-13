@@ -34,6 +34,7 @@ type WSHandler struct {
 	topicRepo       repository.TopicRepository
 	messageStatRepo repository.MessageStatusRepository
 	redis           *redis.Client
+	crdtManager     *ws.DocumentCRDTManager
 }
 
 // NewWSHandler creates a new WebSocket handler.
@@ -45,6 +46,7 @@ func NewWSHandler(hub *ws.Hub, jwtSecret string, chatRepo repository.ChatReposit
 		topicRepo:       topicRepo,
 		messageStatRepo: messageStatRepo,
 		redis:           redisClient,
+		crdtManager:     ws.NewDocumentCRDTManager(),
 	}
 }
 
@@ -383,26 +385,94 @@ func (h *WSHandler) handleDocLeave(client *ws.Client, payload json.RawMessage) {
 	data, _ := json.Marshal(wsMsg)
 	h.hub.SendToRoom(roomID, data, client.UserID)
 
+	// Clean up CRDT state if no more clients in the document room
+	members := h.hub.GetRoomMembers(roomID)
+	if len(members) == 0 {
+		docID, err := uuid.Parse(p.DocumentID)
+		if err == nil {
+			h.crdtManager.Remove(docID)
+			log.Debug().
+				Str("document_id", p.DocumentID).
+				Msg("CRDT state cleaned up for empty document room")
+		}
+	}
+
 	log.Debug().
 		Str("user_id", client.UserID.String()).
 		Str("document_id", p.DocumentID).
 		Msg("user left document room")
 }
 
-type docUpdatePayload struct {
-	DocumentID string          `json:"documentId"`
-	BlockID    string          `json:"blockId"`
-	Action     string          `json:"action"`
-	Data       json.RawMessage `json:"data"`
+// docCRDTUpdatePayload is the CRDT-aware update payload from clients.
+type docCRDTUpdatePayload struct {
+	DocumentID string `json:"documentId"`
+	BlockID    string `json:"blockId"`
+	Field      string `json:"field"`
+	Value      string `json:"value"`
+	Timestamp  int64  `json:"timestamp"`
+	NodeID     string `json:"nodeId"`
+	Action     string `json:"action"` // "update" or "delete"
 }
 
 func (h *WSHandler) handleDocUpdate(client *ws.Client, payload json.RawMessage) {
-	var p docUpdatePayload
+	var p docCRDTUpdatePayload
 	if err := json.Unmarshal(payload, &p); err != nil {
 		return
 	}
 
-	// Rebroadcast to all other clients in the document room
+	docID, err := uuid.Parse(p.DocumentID)
+	if err != nil {
+		return
+	}
+
+	blockID, err := uuid.Parse(p.BlockID)
+	if err != nil {
+		return
+	}
+
+	nodeID, err := uuid.Parse(p.NodeID)
+	if err != nil {
+		// Fallback: use client user ID as node ID
+		nodeID = client.UserID
+	}
+
+	crdt := h.crdtManager.GetOrCreate(docID)
+
+	var accepted bool
+	switch p.Action {
+	case "delete":
+		accepted = crdt.ApplyDelete(ws.CRDTDeleteEvent{
+			DocumentID: docID,
+			BlockID:    blockID,
+			Timestamp:  p.Timestamp,
+			NodeID:     nodeID,
+		})
+	default: // "update" or empty
+		if p.Timestamp == 0 {
+			p.Timestamp = crdt.Tick()
+		} else {
+			crdt.ReceiveTick(p.Timestamp)
+		}
+		accepted = crdt.ApplyUpdate(ws.CRDTUpdateEvent{
+			DocumentID: docID,
+			BlockID:    blockID,
+			Field:      p.Field,
+			Value:      p.Value,
+			Timestamp:  p.Timestamp,
+			NodeID:     nodeID,
+		})
+	}
+
+	if !accepted {
+		log.Debug().
+			Str("document_id", p.DocumentID).
+			Str("block_id", p.BlockID).
+			Str("action", p.Action).
+			Msg("CRDT update rejected (stale)")
+		return
+	}
+
+	// Broadcast accepted update to all other clients in the document room
 	wsMsg := ws.WSMessage{
 		Type:    ws.WSTypeDocUpdate,
 		Payload: payload,
