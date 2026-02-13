@@ -402,5 +402,27 @@
     "lastSynced": "Last synced {{time}}",
     "availableOffline": "Available offline",
     "requiresConnection": "Requires connection"
+  },
+  "backup": {
+    "title": "Data Backup",
+    "lastBackup": "Last Backup",
+    "date": "Date",
+    "size": "Size",
+    "status": "Status",
+    "statusCompleted": "Completed",
+    "statusFailed": "Failed",
+    "noBackupYet": "No backup yet",
+    "backupNow": "Backup Now",
+    "restoreFromBackup": "Restore from Backup",
+    "restore": "Restore",
+    "history": "Backup History",
+    "noHistory": "No backup history",
+    "backingUp": "Backing up data...",
+    "restoring": "Restoring data...",
+    "confirmBackupTitle": "Backup Data",
+    "confirmBackupMessage": "Your data will be backed up to cloud. Continue?",
+    "confirmRestoreTitle": "Restore Data",
+    "confirmRestoreMessage": "Current data will be merged with the backup. Continue?",
+    "platformHint": "Data is backed up to {{platform}}"
   }
 }

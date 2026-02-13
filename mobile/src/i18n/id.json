@@ -402,5 +402,27 @@
     "lastSynced": "Terakhir disinkronkan {{time}}",
     "availableOffline": "Tersedia offline",
     "requiresConnection": "Memerlukan koneksi"
+  },
+  "backup": {
+    "title": "Cadangan Data",
+    "lastBackup": "Cadangan Terakhir",
+    "date": "Tanggal",
+    "size": "Ukuran",
+    "status": "Status",
+    "statusCompleted": "Berhasil",
+    "statusFailed": "Gagal",
+    "noBackupYet": "Belum ada cadangan",
+    "backupNow": "Cadangkan Sekarang",
+    "restoreFromBackup": "Pulihkan dari Cadangan",
+    "restore": "Pulihkan",
+    "history": "Riwayat Cadangan",
+    "noHistory": "Tidak ada riwayat cadangan",
+    "backingUp": "Mencadangkan data...",
+    "restoring": "Memulihkan data...",
+    "confirmBackupTitle": "Cadangkan Data",
+    "confirmBackupMessage": "Data Anda akan dicadangkan ke cloud. Lanjutkan?",
+    "confirmRestoreTitle": "Pulihkan Data",
+    "confirmRestoreMessage": "Data saat ini akan digabungkan dengan cadangan. Lanjutkan?",
+    "platformHint": "Data dicadangkan ke {{platform}}"
   }
 }

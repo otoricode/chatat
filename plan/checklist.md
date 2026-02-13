@@ -162,11 +162,11 @@ Setiap kali menyelesaikan satu phase, jalankan checklist ini:
 - [x] Chat history retained on device
 
 ## Phase 20 — Cloud Backup
-- [ ] Google Drive backup (Android)
-- [ ] iCloud backup (iOS)
-- [ ] Backup flow UI (settings → backup → progress)
-- [ ] Restore flow (fresh install → restore from cloud)
-- [ ] Backup scheduling (manual / daily auto)
+- [x] Google Drive backup (Android)
+- [x] iCloud backup (iOS)
+- [x] Backup flow UI (settings → backup → progress)
+- [x] Restore flow (fresh install → restore from cloud)
+- [x] Backup scheduling (manual / daily auto)
 
 ## Phase 21 — Settings & Preferences
 - [ ] Settings screen layout
@@ -262,7 +262,7 @@ Setiap kali menyelesaikan satu phase, jalankan checklist ini:
 | 17    | `[x]`  | 2025-06-14    | 2025-06-14      |
 | 18    | `[x]`  | 2025-06-14    | 2025-06-14      |
 | 19    | `[x]`  | 2025-06-14    | 2025-06-14      |
-| 20    | `[ ]`  |               |                 |
+| 20    | `[x]`  | 2025-07-14    | 2025-07-14      |
 | 21    | `[ ]`  |               |                 |
 | 22    | `[ ]`  |               |                 |
 | 23    | `[ ]`  |               |                 |
