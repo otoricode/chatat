@@ -84,12 +84,12 @@ Setiap kali menyelesaikan satu phase, jalankan checklist ini:
 - [x] Auto-reconnect + offline queue
 
 ## Phase 10 — Topic System
-- [ ] Backend: Topic CRUD (parent: personal/group)
-- [ ] Backend: Topic membership (from parent members)
-- [ ] Backend: Topic messages (same as chat messages)
-- [ ] Frontend: Create topic dari chat/group
-- [ ] Frontend: Topic list di tab Topik grup
-- [ ] Frontend: Topic screen (Tab Diskusi + Tab Dokumen)
+- [x] Backend: Topic CRUD (parent: personal/group)
+- [x] Backend: Topic membership (from parent members)
+- [x] Backend: Topic messages (same as chat messages)
+- [x] Frontend: Create topic dari chat/group
+- [x] Frontend: Topic list di tab Topik grup
+- [x] Frontend: Topic screen (Tab Diskusi + Tab Dokumen)
 
 ## Phase 11 — Media System
 - [ ] Backend: File upload API (image, file)
