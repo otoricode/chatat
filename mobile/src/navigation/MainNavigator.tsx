@@ -114,6 +114,7 @@ export function MainNavigator() {
         tabBarActiveTintColor: colors.green,
         tabBarInactiveTintColor: colors.textMuted,
         tabBarLabelStyle: styles.tabLabel,
+        lazy: true,
       }}
     >
       <Tab.Screen

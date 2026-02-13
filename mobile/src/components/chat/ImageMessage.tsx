@@ -1,13 +1,13 @@
-// ImageMessage — image bubble in chat with thumbnail and progress
+// ImageMessage — image bubble in chat with cached image and progress
 import React, { useState } from 'react';
 import {
   View,
-  Image,
   Text,
   Pressable,
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useTranslation } from 'react-i18next';
 import { colors, fontSize, fontFamily, spacing } from '@/theme';
 import type { MediaResponse } from '@/types/chat';
@@ -21,7 +21,6 @@ type Props = {
 
 export function ImageMessage({ media, isSelf, onPress, uploadProgress }: Props) {
   const { t } = useTranslation();
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
   const imageUrl = media.thumbnailURL || media.url;
@@ -52,13 +51,10 @@ export function ImageMessage({ media, isSelf, onPress, uploadProgress }: Props) 
           <Image
             source={{ uri: imageUrl }}
             style={styles.image}
-            resizeMode="cover"
-            onLoadStart={() => setLoading(true)}
-            onLoadEnd={() => setLoading(false)}
-            onError={() => {
-              setError(true);
-              setLoading(false);
-            }}
+            contentFit="cover"
+            cachePolicy="disk"
+            transition={200}
+            onError={() => setError(true)}
           />
         ) : (
           <View style={styles.errorContainer}>
@@ -67,12 +63,10 @@ export function ImageMessage({ media, isSelf, onPress, uploadProgress }: Props) 
           </View>
         )}
 
-        {(loading || isUploading) && (
+        {isUploading && (
           <View style={styles.loadingOverlay}>
             <ActivityIndicator color={colors.white} />
-            {isUploading && (
-              <Text style={styles.progressText}>{uploadProgress}%</Text>
-            )}
+            <Text style={styles.progressText}>{uploadProgress}%</Text>
           </View>
         )}
       </View>

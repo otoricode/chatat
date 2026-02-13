@@ -3,26 +3,31 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import type { ChatStackParamList } from './types';
+import { createLazyScreen } from '@/components/shared/LazyScreen';
+
+// Eagerly loaded: critical path screens
 import { ChatListScreen } from '@/screens/chat/ChatListScreen';
 import { ChatScreen } from '@/screens/chat/ChatScreen';
-import { ChatInfoScreen } from '@/screens/chat/ChatInfoScreen';
-import { ContactListScreen } from '@/screens/contact/ContactListScreen';
-import { CreateGroupScreen } from '@/screens/group/CreateGroupScreen';
-import { TopicListScreen } from '@/screens/topic/TopicListScreen';
-import { CreateTopicScreen } from '@/screens/topic/CreateTopicScreen';
-import { TopicScreen } from '@/screens/topic/TopicScreen';
-import { TopicInfoScreen } from '@/screens/topic/TopicInfoScreen';
-import { ImageViewerScreen } from '@/screens/chat/ImageViewerScreen';
-import { DocumentEditorScreen } from '@/screens/document/DocumentEditorScreen';
-import { SearchScreen } from '@/screens/search/SearchScreen';
-import { BackupScreen } from '@/screens/settings/BackupScreen';
-import { SettingsScreen } from '@/screens/settings/SettingsScreen';
-import { EditProfileScreen } from '@/screens/settings/EditProfileScreen';
-import { LanguageScreen } from '@/screens/settings/LanguageScreen';
-import { NotificationSettingsScreen } from '@/screens/settings/NotificationSettingsScreen';
-import { StorageScreen } from '@/screens/settings/StorageScreen';
-import { AboutScreen } from '@/screens/settings/AboutScreen';
-import { PrivacySettingsScreen } from '@/screens/settings/PrivacySettingsScreen';
+
+// Lazily loaded: secondary screens
+const ChatInfoScreen = createLazyScreen(() => import('@/screens/chat/ChatInfoScreen'), 'ChatInfoScreen');
+const ContactListScreen = createLazyScreen(() => import('@/screens/contact/ContactListScreen'), 'ContactListScreen');
+const CreateGroupScreen = createLazyScreen(() => import('@/screens/group/CreateGroupScreen'), 'CreateGroupScreen');
+const TopicListScreen = createLazyScreen(() => import('@/screens/topic/TopicListScreen'), 'TopicListScreen');
+const CreateTopicScreen = createLazyScreen(() => import('@/screens/topic/CreateTopicScreen'), 'CreateTopicScreen');
+const TopicScreen = createLazyScreen(() => import('@/screens/topic/TopicScreen'), 'TopicScreen');
+const TopicInfoScreen = createLazyScreen(() => import('@/screens/topic/TopicInfoScreen'), 'TopicInfoScreen');
+const ImageViewerScreen = createLazyScreen(() => import('@/screens/chat/ImageViewerScreen'), 'ImageViewerScreen');
+const DocumentEditorScreen = createLazyScreen(() => import('@/screens/document/DocumentEditorScreen'), 'DocumentEditorScreen');
+const SearchScreen = createLazyScreen(() => import('@/screens/search/SearchScreen'), 'SearchScreen');
+const BackupScreen = createLazyScreen(() => import('@/screens/settings/BackupScreen'), 'BackupScreen');
+const SettingsScreen = createLazyScreen(() => import('@/screens/settings/SettingsScreen'), 'SettingsScreen');
+const EditProfileScreen = createLazyScreen(() => import('@/screens/settings/EditProfileScreen'), 'EditProfileScreen');
+const LanguageScreen = createLazyScreen(() => import('@/screens/settings/LanguageScreen'), 'LanguageScreen');
+const NotificationSettingsScreen = createLazyScreen(() => import('@/screens/settings/NotificationSettingsScreen'), 'NotificationSettingsScreen');
+const StorageScreen = createLazyScreen(() => import('@/screens/settings/StorageScreen'), 'StorageScreen');
+const AboutScreen = createLazyScreen(() => import('@/screens/settings/AboutScreen'), 'AboutScreen');
+const PrivacySettingsScreen = createLazyScreen(() => import('@/screens/settings/PrivacySettingsScreen'), 'PrivacySettingsScreen');
 import { colors } from '@/theme';
 
 const Stack = createNativeStackNavigator<ChatStackParamList>();
