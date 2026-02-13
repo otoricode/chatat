@@ -49,7 +49,7 @@ export function ChatScreen({ route, navigation }: Props) {
   const [activeTab, setActiveTab] = useState<ChatTab>('chat');
   const [replyTo, setReplyTo] = useState<{ id: string; content: string } | null>(null);
   const [showAttachment, setShowAttachment] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
+  const [, setUploadProgress] = useState<Record<string, number>>({});
   const flatListRef = useRef<FlatList<Message>>(null);
 
   // Find other user info from chat store
@@ -347,6 +347,10 @@ export function ChatScreen({ route, navigation }: Props) {
             renderItem={renderItem}
             keyExtractor={keyExtractor}
             inverted
+            removeClippedSubviews
+            maxToRenderPerBatch={15}
+            windowSize={10}
+            initialNumToRender={20}
             onEndReached={handleEndReached}
             onEndReachedThreshold={0.3}
             contentContainerStyle={styles.messageList}

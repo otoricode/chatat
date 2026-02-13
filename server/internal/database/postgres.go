@@ -19,7 +19,9 @@ func NewPool(ctx context.Context, databaseURL string) (*pgxpool.Pool, error) {
 
 	config.MaxConns = 25
 	config.MinConns = 5
-	config.MaxConnIdleTime = 5 * time.Minute
+	config.MaxConnLifetime = time.Hour
+	config.MaxConnIdleTime = 30 * time.Minute
+	config.HealthCheckPeriod = time.Minute
 
 	pool, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {

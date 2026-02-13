@@ -14,7 +14,7 @@ type Props = {
   onLongPress: (item: ChatListItemType) => void;
 };
 
-export function ChatListItem({ item, onPress, onLongPress }: Props) {
+function ChatListItemInner({ item, onPress, onLongPress }: Props) {
   const { t } = useTranslation();
   const { chat, lastMessage, unreadCount, otherUser, isOnline } = item;
 
@@ -126,4 +126,17 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     marginRight: spacing.sm,
   },
+});
+
+export const ChatListItem = React.memo(ChatListItemInner, (prev, next) => {
+  const prevChat = prev.item;
+  const nextChat = next.item;
+  return (
+    prevChat.chat.id === nextChat.chat.id &&
+    prevChat.unreadCount === nextChat.unreadCount &&
+    prevChat.isOnline === nextChat.isOnline &&
+    prevChat.chat.pinnedAt === nextChat.chat.pinnedAt &&
+    prevChat.lastMessage?.id === nextChat.lastMessage?.id &&
+    prevChat.lastMessage?.content === nextChat.lastMessage?.content
+  );
 });

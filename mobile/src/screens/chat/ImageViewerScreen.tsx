@@ -2,7 +2,6 @@
 import React, { useCallback, useState } from 'react';
 import {
   View,
-  Image,
   Text,
   Pressable,
   StyleSheet,
@@ -12,10 +11,11 @@ import {
   ScrollView,
   Share,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { ChatStackParamList } from '@/navigation/types';
-import { colors, fontSize, fontFamily, spacing } from '@/theme';
+import { colors, spacing } from '@/theme';
 import { useTranslation } from 'react-i18next';
 
 type Props = NativeStackScreenProps<ChatStackParamList, 'ImageViewer'>;
@@ -67,8 +67,9 @@ export function ImageViewerScreen({ route, navigation }: Props) {
           <Image
             source={{ uri: url }}
             style={styles.image}
-            resizeMode="contain"
-            onLoadStart={() => setLoading(true)}
+            contentFit="contain"
+            cachePolicy="disk"
+            transition={200}
             onLoadEnd={() => setLoading(false)}
           />
         </ScrollView>

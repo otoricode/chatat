@@ -9,7 +9,7 @@ type Props = {
   dateStr: string;
 };
 
-export function DateSeparator({ dateStr }: Props) {
+function DateSeparatorInner({ dateStr }: Props) {
   const { t } = useTranslation();
   return (
     <View style={styles.container}>
@@ -37,3 +37,5 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
   },
 });
+
+export const DateSeparator = React.memo(DateSeparatorInner);

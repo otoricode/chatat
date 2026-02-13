@@ -3,11 +3,16 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import type { DocumentStackParamList } from './types';
+import { createLazyScreen } from '@/components/shared/LazyScreen';
+
+// Eagerly loaded: critical path screen
 import { DocumentListScreen } from '@/screens/document/DocumentListScreen';
-import { DocumentEditorScreen } from '@/screens/document/DocumentEditorScreen';
-import { DocumentViewerScreen } from '@/screens/document/DocumentViewerScreen';
-import { EntityListScreen } from '@/screens/entity/EntityListScreen';
-import { EntityDetailScreen } from '@/screens/entity/EntityDetailScreen';
+
+// Lazily loaded: secondary screens
+const DocumentEditorScreen = createLazyScreen(() => import('@/screens/document/DocumentEditorScreen'), 'DocumentEditorScreen');
+const DocumentViewerScreen = createLazyScreen(() => import('@/screens/document/DocumentViewerScreen'), 'DocumentViewerScreen');
+const EntityListScreen = createLazyScreen(() => import('@/screens/entity/EntityListScreen'), 'EntityListScreen');
+const EntityDetailScreen = createLazyScreen(() => import('@/screens/entity/EntityDetailScreen'), 'EntityDetailScreen');
 import { colors } from '@/theme';
 
 const Stack = createNativeStackNavigator<DocumentStackParamList>();
