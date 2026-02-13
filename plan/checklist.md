@@ -140,11 +140,11 @@ Setiap kali menyelesaikan satu phase, jalankan checklist ini:
 - [x] Notification preferences per chat/group
 
 ## Phase 17 — Search System
-- [ ] Backend: Full-text search (messages, documents, contacts)
-- [ ] Backend: Search indexing strategy
-- [ ] Frontend: Global search bar
-- [ ] Frontend: In-chat message search
-- [ ] Frontend: Document search + entity filter
+- [x] Backend: Full-text search (messages, documents, contacts)
+- [x] Backend: Search indexing strategy
+- [x] Frontend: Global search bar
+- [x] Frontend: In-chat message search
+- [x] Frontend: Document search + entity filter
 
 ## Phase 18 — Internationalization
 - [ ] i18n library setup (react-i18next / i18n-js)
