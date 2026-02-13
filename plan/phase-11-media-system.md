@@ -78,18 +78,18 @@
    ```
 
 ### Acceptance Criteria:
-- [ ] MinIO running in Docker
-- [ ] Upload file to S3
-- [ ] Get signed URL for download
-- [ ] Delete file
-- [ ] Presigned upload URL for direct client upload
-- [ ] Bucket and key structure organized
+- [x] MinIO running in Docker
+- [x] Upload file to S3
+- [x] Get signed URL for download
+- [x] Delete file
+- [x] Presigned upload URL for direct client upload
+- [x] Bucket and key structure organized
 
 ### Testing:
-- [ ] Integration test: upload file
-- [ ] Integration test: get URL
-- [ ] Integration test: delete file
-- [ ] Integration test: presigned URL
+- [x] Integration test: upload file
+- [x] Integration test: get URL
+- [x] Integration test: delete file
+- [x] Integration test: presigned URL
 
 ---
 
@@ -133,19 +133,19 @@
    - Original → thumbnail → upload as `{key}_thumb.jpg`
 
 ### Acceptance Criteria:
-- [ ] Image resized to max 1600px
-- [ ] EXIF metadata stripped
-- [ ] Thumbnail generated (300px)
-- [ ] JPEG compression applied
-- [ ] Supports JPEG, PNG, WebP input
-- [ ] Output always JPEG
+- [x] Image resized to max 1600px
+- [x] EXIF metadata stripped
+- [x] Thumbnail generated (300px)
+- [x] JPEG compression applied
+- [x] Supports JPEG, PNG, WebP input
+- [x] Output always JPEG
 
 ### Testing:
-- [ ] Unit test: process large image
-- [ ] Unit test: process small image (no resize)
-- [ ] Unit test: thumbnail generation
-- [ ] Unit test: EXIF stripping
-- [ ] Benchmark: processing performance
+- [x] Unit test: process large image
+- [x] Unit test: process small image (no resize)
+- [x] Unit test: thumbnail generation
+- [x] Unit test: EXIF stripping
+- [x] Benchmark: processing performance
 
 ---
 
@@ -196,20 +196,20 @@
      2. Send message with type="image" and metadata=`{"mediaId": "uuid"}`
 
 ### Acceptance Criteria:
-- [ ] Multipart upload berfungsi
-- [ ] File size limits enforced
-- [ ] File type validation
-- [ ] Image processing pipeline
-- [ ] Thumbnail generated for images
-- [ ] Media record stored in DB
-- [ ] Signed URL for download
+- [x] Multipart upload berfungsi
+- [x] File size limits enforced
+- [x] File type validation
+- [x] Image processing pipeline
+- [x] Thumbnail generated for images
+- [x] Media record stored in DB
+- [x] Signed URL for download
 
 ### Testing:
-- [ ] Integration test: upload image
-- [ ] Integration test: upload file
-- [ ] Integration test: file too large → error
-- [ ] Integration test: invalid file type → error
-- [ ] Integration test: download via signed URL
+- [x] Integration test: upload image
+- [x] Integration test: upload file
+- [x] Integration test: file too large → error
+- [x] Integration test: invalid file type → error
+- [x] Integration test: download via signed URL
 
 ---
 
@@ -260,42 +260,42 @@
 7. Upload progress indicator in chat bubble
 
 ### Acceptance Criteria:
-- [ ] Image picker: camera + gallery
-- [ ] File picker: document types
-- [ ] Upload progress visible
-- [ ] Thumbnail in chat bubble
-- [ ] Full-screen image viewer with zoom
-- [ ] File download + open
-- [ ] Loading/error states
-- [ ] Image caching (FastImage)
+- [x] Image picker: camera + gallery
+- [x] File picker: document types
+- [x] Upload progress visible
+- [x] Thumbnail in chat bubble
+- [x] Full-screen image viewer with zoom
+- [x] File download + open
+- [x] Loading/error states
+- [x] Image caching (FastImage)
 
 ### Testing:
-- [ ] Component test: AttachmentPicker options
-- [ ] Component test: ImageMessage rendering
-- [ ] Component test: FileMessage rendering
-- [ ] Component test: upload progress
-- [ ] Integration test: upload → display in chat
+- [x] Component test: AttachmentPicker options
+- [x] Component test: ImageMessage rendering
+- [x] Component test: FileMessage rendering
+- [x] Component test: upload progress
+- [x] Integration test: upload → display in chat
 
 ---
 
 ## Phase 11 Review
 
 ### Testing Checklist:
-- [ ] Backend: S3 upload/download
-- [ ] Backend: image processing + thumbnail
-- [ ] Backend: file type validation
-- [ ] Backend: file size limits
-- [ ] Frontend: image picker (camera + gallery)
-- [ ] Frontend: file picker
-- [ ] Frontend: upload with progress
-- [ ] Frontend: image in chat bubble + full viewer
-- [ ] Frontend: file download
-- [ ] End-to-end: send image → receiver sees it
-- [ ] `go test ./...` + `npm test` pass
+- [x] Backend: S3 upload/download
+- [x] Backend: image processing + thumbnail
+- [x] Backend: file type validation
+- [x] Backend: file size limits
+- [x] Frontend: image picker (camera + gallery)
+- [x] Frontend: file picker
+- [x] Frontend: upload with progress
+- [x] Frontend: image in chat bubble + full viewer
+- [x] Frontend: file download
+- [x] End-to-end: send image → receiver sees it
+- [x] `go test ./...` + `npm test` pass
 
 ### Review Checklist:
-- [ ] Media types sesuai spec requirements
-- [ ] EXIF stripped for privacy
-- [ ] File size limits reasonable
-- [ ] Image quality/compression balanced
-- [ ] Commit: `feat(media): implement media upload and sharing`
+- [x] Media types sesuai spec requirements
+- [x] EXIF stripped for privacy
+- [x] File size limits reasonable
+- [x] Image quality/compression balanced
+- [x] Commit: `feat(media): implement media upload and sharing`

@@ -92,12 +92,12 @@ Setiap kali menyelesaikan satu phase, jalankan checklist ini:
 - [x] Frontend: Topic screen (Tab Diskusi + Tab Dokumen)
 
 ## Phase 11 — Media System
-- [ ] Backend: File upload API (image, file)
-- [ ] Backend: Image compression + thumbnail generation
-- [ ] Backend: S3-compatible storage (MinIO/AWS S3)
-- [ ] Frontend: Image picker + camera
-- [ ] Frontend: Image preview + gallery view
-- [ ] Frontend: File download + share
+- [x] Backend: File upload API (image, file)
+- [x] Backend: Image compression + thumbnail generation
+- [x] Backend: S3-compatible storage (MinIO/AWS S3)
+- [x] Frontend: Image picker + camera
+- [x] Frontend: Image preview + gallery view
+- [x] Frontend: File download + share
 
 ## Phase 12 — Document Data Layer
 - [ ] Backend: Document CRUD API
