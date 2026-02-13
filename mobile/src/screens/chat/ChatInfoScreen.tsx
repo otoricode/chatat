@@ -253,6 +253,17 @@ export function ChatInfoScreen({ route, navigation }: Props) {
               <Text style={styles.sectionBody}>{otherUser.status}</Text>
             </View>
           ) : null}
+
+          <View style={styles.section}>
+            <Pressable
+              style={styles.topicRow}
+              onPress={() => navigation.navigate('TopicList', { chatId })}
+            >
+              <Text style={styles.topicIcon}>📌</Text>
+              <Text style={styles.topicLabel}>Topik Diskusi</Text>
+              <Text style={styles.topicArrow}>›</Text>
+            </Pressable>
+          </View>
         </ScrollView>
       </SafeAreaView>
     );
@@ -350,6 +361,18 @@ export function ChatInfoScreen({ route, navigation }: Props) {
               )}
             </>
           )}
+        </View>
+
+        {/* Topics shortcut */}
+        <View style={styles.section}>
+          <Pressable
+            style={styles.topicRow}
+            onPress={() => navigation.navigate('TopicList', { chatId })}
+          >
+            <Text style={styles.topicIcon}>📌</Text>
+            <Text style={styles.topicLabel}>Topik Diskusi</Text>
+            <Text style={styles.topicArrow}>›</Text>
+          </Pressable>
         </View>
 
         {/* Members section */}
@@ -548,5 +571,25 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.uiSemiBold,
     fontSize: fontSize.md,
     color: '#EF4444',
+  },
+  topicRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+  },
+  topicIcon: {
+    fontSize: fontSize.xl,
+    marginRight: spacing.md,
+  },
+  topicLabel: {
+    fontFamily: fontFamily.ui,
+    fontSize: fontSize.md,
+    color: colors.textPrimary,
+    flex: 1,
+  },
+  topicArrow: {
+    fontFamily: fontFamily.ui,
+    fontSize: fontSize.xl,
+    color: colors.textMuted,
   },
 });

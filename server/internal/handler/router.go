@@ -92,17 +92,22 @@ func NewRouter(cfg *config.Config, deps *Dependencies) *chi.Mux {
 					r.Post("/members", deps.ChatHandler.AddMember)
 					r.Delete("/members/{memberID}", deps.ChatHandler.RemoveMember)
 					r.Put("/members/{memberID}/admin", deps.ChatHandler.PromoteToAdmin)
+					r.Get("/topics", deps.TopicHandler.ListByChat)
 				})
 			})
 
 			r.Route("/topics", func(r chi.Router) {
+				r.Get("/", deps.TopicHandler.ListByUser)
 				r.Post("/", deps.TopicHandler.Create)
 				r.Route("/{id}", func(r chi.Router) {
 					r.Get("/", deps.TopicHandler.GetByID)
 					r.Put("/", deps.TopicHandler.Update)
 					r.Delete("/", deps.TopicHandler.Delete)
+					r.Post("/members", deps.TopicHandler.AddMember)
+					r.Delete("/members/{userId}", deps.TopicHandler.RemoveMember)
 					r.Post("/messages", deps.TopicHandler.SendMessage)
 					r.Get("/messages", deps.TopicHandler.ListMessages)
+					r.Delete("/messages/{messageId}", deps.TopicHandler.DeleteMessage)
 				})
 			})
 

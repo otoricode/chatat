@@ -31,7 +31,9 @@ export type ChatStackParamList = {
   ContactList: undefined;
   CreateGroup: undefined;
   TopicList: { chatId: string };
+  CreateTopic: { chatId: string; chatType: 'personal' | 'group' };
   Topic: { topicId: string };
+  TopicInfo: { topicId: string };
   DocumentEditor: {
     documentId?: string;
     contextType?: string;

@@ -31,16 +31,18 @@ type WSHandler struct {
 	hub             *ws.Hub
 	jwtSecret       string
 	chatRepo        repository.ChatRepository
+	topicRepo       repository.TopicRepository
 	messageStatRepo repository.MessageStatusRepository
 	redis           *redis.Client
 }
 
 // NewWSHandler creates a new WebSocket handler.
-func NewWSHandler(hub *ws.Hub, jwtSecret string, chatRepo repository.ChatRepository, messageStatRepo repository.MessageStatusRepository, redisClient *redis.Client) *WSHandler {
+func NewWSHandler(hub *ws.Hub, jwtSecret string, chatRepo repository.ChatRepository, topicRepo repository.TopicRepository, messageStatRepo repository.MessageStatusRepository, redisClient *redis.Client) *WSHandler {
 	return &WSHandler{
 		hub:             hub,
 		jwtSecret:       jwtSecret,
 		chatRepo:        chatRepo,
+		topicRepo:       topicRepo,
 		messageStatRepo: messageStatRepo,
 		redis:           redisClient,
 	}
@@ -76,6 +78,9 @@ func (h *WSHandler) HandleConnection(w http.ResponseWriter, r *http.Request) {
 	// Join all chat rooms the user belongs to
 	go h.joinUserChatRooms(client)
 
+	// Join all topic rooms the user belongs to
+	go h.joinUserTopicRooms(client)
+
 	go client.WritePump()
 	go client.ReadPump()
 }
@@ -100,6 +105,28 @@ func (h *WSHandler) joinUserChatRooms(client *ws.Client) {
 		Str("user_id", client.UserID.String()).
 		Int("rooms", len(chats)).
 		Msg("user joined chat rooms")
+}
+
+// joinUserTopicRooms loads user's topics and joins their WS rooms.
+func (h *WSHandler) joinUserTopicRooms(client *ws.Client) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	topics, err := h.topicRepo.ListByUser(ctx, client.UserID)
+	if err != nil {
+		log.Error().Err(err).Str("user_id", client.UserID.String()).Msg("failed to load user topics for WS rooms")
+		return
+	}
+
+	for _, t := range topics {
+		roomID := "topic:" + t.ID.String()
+		h.hub.JoinRoom(client, roomID)
+	}
+
+	log.Debug().
+		Str("user_id", client.UserID.String()).
+		Int("rooms", len(topics)).
+		Msg("user joined topic rooms")
 }
 
 // handleClientMessage routes incoming WS messages from clients.
