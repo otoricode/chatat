@@ -65,7 +65,7 @@ Setiap kali menyelesaikan satu phase, jalankan checklist ini:
 - [x] Frontend: Chat screen dengan message bubbles (kiri/kanan)
 - [x] Frontend: Reply, forward, delete message
 - [x] Frontend: Input bar dengan tombol kirim
-- [ ] Tab Chat + Tab Dokumen dalam chat personal
+- [x] Tab Chat + Tab Dokumen dalam chat personal
 
 ## Phase 08 — Chat Group ✅ (2025-06-14)
 - [x] Backend: Group CRUD (create, update name/icon, delete)
@@ -73,7 +73,7 @@ Setiap kali menyelesaikan satu phase, jalankan checklist ini:
 - [x] Frontend: Group creation wizard (nama, ikon, pilih anggota)
 - [x] Frontend: Group chat screen + member list
 - [x] Frontend: Group settings (edit nama, ikon, anggota)
-- [ ] Tab Chat + Tab Dokumen + Tab Topik dalam grup
+- [x] Tab Chat + Tab Dokumen + Tab Topik dalam grup
 
 ## Phase 09 — Real-time Messaging ✅ (2025-06-14)
 - [x] WebSocket client di React Native
@@ -249,19 +249,19 @@ Setiap kali menyelesaikan satu phase, jalankan checklist ini:
 | 04    | `[x]`  | 2025-06-13    | 2025-06-13      |
 | 05    | `[x]`  | 2025-06-13    | 2025-06-13      |
 | 06    | `[x]`  | 2026-02-13    | 2026-02-13      |
-| 07    | `[ ]`  |               |                 |
-| 08    | `[ ]`  |               |                 |
-| 09    | `[ ]`  |               |                 |
-| 10    | `[ ]`  |               |                 |
-| 11    | `[ ]`  |               |                 |
-| 12    | `[ ]`  |               |                 |
-| 13    | `[ ]`  |               |                 |
-| 14    | `[ ]`  |               |                 |
-| 15    | `[ ]`  |               |                 |
-| 16    | `[ ]`  |               |                 |
-| 17    | `[ ]`  |               |                 |
-| 18    | `[ ]`  |               |                 |
-| 19    | `[ ]`  |               |                 |
+| 07    | `[x]`  | 2025-06-14    | 2025-07-14      |
+| 08    | `[x]`  | 2025-06-14    | 2025-07-14      |
+| 09    | `[x]`  | 2025-06-14    | 2025-06-14      |
+| 10    | `[x]`  | 2025-06-14    | 2025-06-14      |
+| 11    | `[x]`  | 2025-06-14    | 2025-06-14      |
+| 12    | `[x]`  | 2025-06-14    | 2025-06-14      |
+| 13    | `[x]`  | 2025-06-14    | 2025-06-14      |
+| 14    | `[x]`  | 2025-06-14    | 2025-06-14      |
+| 15    | `[x]`  | 2025-06-14    | 2025-06-14      |
+| 16    | `[x]`  | 2025-06-14    | 2025-06-14      |
+| 17    | `[x]`  | 2025-06-14    | 2025-06-14      |
+| 18    | `[x]`  | 2025-06-14    | 2025-06-14      |
+| 19    | `[x]`  | 2025-06-14    | 2025-06-14      |
 | 20    | `[ ]`  |               |                 |
 | 21    | `[ ]`  |               |                 |
 | 22    | `[ ]`  |               |                 |

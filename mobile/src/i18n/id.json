@@ -85,7 +85,10 @@
     "deleteForMe": "Hapus untuk saya",
     "messageOptions": "Opsi Pesan",
     "contactInfo": "Info Kontak",
-    "discussionTopics": "Topik Diskusi"
+    "discussionTopics": "Topik Diskusi",
+    "tabChat": "Chat",
+    "tabDocuments": "Dokumen",
+    "tabTopics": "Topik"
   },
   "group": {
     "createGroup": "Buat Grup",
