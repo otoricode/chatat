@@ -1,7 +1,7 @@
 # Phase 24: Comprehensive Testing
 
 > Implementasi test suite lengkap: unit tests, integration tests, dan E2E tests.
-> Target coverage: 80%+ backend, 70%+ frontend.
+> Target coverage: 90%+ backend, 80%+ frontend.
 
 **Estimasi:** 5 hari
 **Dependency:** All feature phases completed
