@@ -178,6 +178,11 @@ func NewRouter(cfg *config.Config, deps *Dependencies) *chi.Mux {
 					r.Get("/documents", deps.EntityHandler.ListDocuments)
 				})
 			})
+
+			r.Route("/notifications", func(r chi.Router) {
+				r.Post("/devices", deps.NotificationHandler.RegisterDevice)
+				r.Delete("/devices", deps.NotificationHandler.UnregisterDevice)
+			})
 		})
 	})
 

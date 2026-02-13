@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"context"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
 
@@ -35,6 +37,7 @@ type Dependencies struct {
 	DocumentService     service.DocumentService
 	BlockService        service.BlockService
 	TemplateService     service.TemplateService
+	NotificationService service.NotificationService
 
 	// Repositories
 	UserRepo        repository.UserRepository
@@ -49,18 +52,20 @@ type Dependencies struct {
 	DocHistoryRepo  repository.DocumentHistoryRepository
 	TopicMsgRepo    repository.TopicMessageRepository
 	MediaRepo       repository.MediaRepository
+	DeviceTokenRepo repository.DeviceTokenRepository
 
 	// Handlers
-	AuthHandler     *AuthHandler
-	WebhookHandler  *WebhookHandler
-	UserHandler     *UserHandler
-	ContactHandler  *ContactHandler
-	ChatHandler     *ChatHandler
-	TopicHandler    *TopicHandler
-	MediaHandler    *MediaHandler
-	DocumentHandler *DocumentHandler
-	EntityHandler   *EntityHandler
-	WSHandler       *WSHandler
+	AuthHandler         *AuthHandler
+	WebhookHandler      *WebhookHandler
+	UserHandler         *UserHandler
+	ContactHandler      *ContactHandler
+	ChatHandler         *ChatHandler
+	TopicHandler        *TopicHandler
+	MediaHandler        *MediaHandler
+	DocumentHandler     *DocumentHandler
+	EntityHandler       *EntityHandler
+	NotificationHandler *NotificationHandler
+	WSHandler           *WSHandler
 }
 
 // NewDependencies creates and wires all application dependencies.
@@ -78,6 +83,7 @@ func NewDependencies(cfg *config.Config, db *pgxpool.Pool, redisClient *redis.Cl
 	docHistoryRepo := repository.NewDocumentHistoryRepository(db)
 	topicMsgRepo := repository.NewTopicMessageRepository(db)
 	mediaRepo := repository.NewMediaRepository(db)
+	deviceTokenRepo := repository.NewDeviceTokenRepository(db)
 
 	// Services
 	smsProvider := service.NewLogSMSProvider()
@@ -94,10 +100,24 @@ func NewDependencies(cfg *config.Config, db *pgxpool.Pool, redisClient *redis.Cl
 	tokenService := service.NewTokenService(redisClient, service.DefaultTokenConfig(cfg.JWTSecret))
 	sessionService := service.NewSessionService(redisClient, tokenService, 0)
 	userService := service.NewUserService(userRepo)
+
+	// Push notification service (created early so other services can use it)
+	var pushSender service.PushSender
+	if cfg.FCMCredentialsFile != "" {
+		fcmSender, fcmErr := service.NewFCMPushSender(context.Background(), cfg.FCMCredentialsFile)
+		if fcmErr != nil {
+			panic("failed to create FCM sender: " + fcmErr.Error())
+		}
+		pushSender = fcmSender
+	} else {
+		pushSender = service.NewLogPushSender()
+	}
+	notifSvc := service.NewNotificationService(deviceTokenRepo, chatRepo, pushSender)
+
 	contactService := service.NewContactService(userRepo, contactRepo, hub)
 	chatService := service.NewChatService(chatRepo, messageRepo, messageStatRepo, userRepo, hub)
-	messageService := service.NewMessageService(messageRepo, messageStatRepo, chatRepo, hub)
-	groupService := service.NewGroupService(chatRepo, messageRepo, messageStatRepo, userRepo, hub)
+	messageService := service.NewMessageService(messageRepo, messageStatRepo, chatRepo, userRepo, hub, notifSvc)
+	groupService := service.NewGroupService(chatRepo, messageRepo, messageStatRepo, userRepo, hub, notifSvc)
 	topicService := service.NewTopicService(topicRepo, topicMsgRepo, chatRepo, userRepo, hub)
 	topicMsgService := service.NewTopicMessageService(topicMsgRepo, topicRepo, hub)
 	storageSvc, err := service.NewStorageService(cfg)
@@ -107,7 +127,7 @@ func NewDependencies(cfg *config.Config, db *pgxpool.Pool, redisClient *redis.Cl
 	imageSvc := service.NewImageService()
 	mediaSvc := service.NewMediaService(mediaRepo, storageSvc, imageSvc)
 	templateSvc := service.NewTemplateService()
-	documentSvc := service.NewDocumentService(documentRepo, blockRepo, docHistoryRepo, userRepo, templateSvc)
+	documentSvc := service.NewDocumentService(documentRepo, blockRepo, docHistoryRepo, userRepo, templateSvc, notifSvc)
 	blockSvc := service.NewBlockService(blockRepo, documentRepo, docHistoryRepo)
 
 	// Status notifier: broadcasts online/offline events to contacts
@@ -124,6 +144,7 @@ func NewDependencies(cfg *config.Config, db *pgxpool.Pool, redisClient *redis.Cl
 	documentHandler := NewDocumentHandler(documentSvc, blockSvc, templateSvc)
 	entitySvc := service.NewEntityService(entityRepo, userRepo, documentRepo)
 	entityHandler := NewEntityHandler(entitySvc)
+	notifHandler := NewNotificationHandler(notifSvc)
 
 	deps := &Dependencies{
 		Config: cfg,
@@ -148,6 +169,7 @@ func NewDependencies(cfg *config.Config, db *pgxpool.Pool, redisClient *redis.Cl
 		DocumentService:     documentSvc,
 		BlockService:        blockSvc,
 		TemplateService:     templateSvc,
+		NotificationService: notifSvc,
 
 		UserRepo:        userRepo,
 		ContactRepo:     contactRepo,
@@ -161,17 +183,19 @@ func NewDependencies(cfg *config.Config, db *pgxpool.Pool, redisClient *redis.Cl
 		DocHistoryRepo:  docHistoryRepo,
 		TopicMsgRepo:    topicMsgRepo,
 		MediaRepo:       mediaRepo,
+		DeviceTokenRepo: deviceTokenRepo,
 
-		AuthHandler:     authHandler,
-		WebhookHandler:  webhookHandler,
-		UserHandler:     userHandler,
-		ContactHandler:  contactHandler,
-		ChatHandler:     chatHandler,
-		TopicHandler:    topicHandler,
-		MediaHandler:    mediaHandler,
-		DocumentHandler: documentHandler,
-		EntityHandler:   entityHandler,
-		WSHandler:       NewWSHandler(hub, cfg.JWTSecret, chatRepo, topicRepo, messageStatRepo, redisClient),
+		AuthHandler:         authHandler,
+		WebhookHandler:      webhookHandler,
+		UserHandler:         userHandler,
+		ContactHandler:      contactHandler,
+		ChatHandler:         chatHandler,
+		TopicHandler:        topicHandler,
+		MediaHandler:        mediaHandler,
+		DocumentHandler:     documentHandler,
+		EntityHandler:       entityHandler,
+		NotificationHandler: notifHandler,
+		WSHandler:           NewWSHandler(hub, cfg.JWTSecret, chatRepo, topicRepo, messageStatRepo, redisClient),
 	}
 
 	return deps
