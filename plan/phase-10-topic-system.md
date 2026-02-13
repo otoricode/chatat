@@ -65,21 +65,21 @@
    - System messages for add/remove
 
 ### Acceptance Criteria:
-- [ ] Topic created from personal chat: auto include both users
-- [ ] Topic created from group: select subset/all members
-- [ ] Members must be from parent chat
-- [ ] System messages in both parent chat and topic
-- [ ] Topic list sorted by last message
-- [ ] Unread count per topic
-- [ ] Delete topic by admin
+- [x] Topic created from personal chat: auto include both users
+- [x] Topic created from group: select subset/all members
+- [x] Members must be from parent chat
+- [x] System messages in both parent chat and topic
+- [x] Topic list sorted by last message
+- [x] Unread count per topic
+- [x] Delete topic by admin
 
 ### Testing:
-- [ ] Unit test: create from personal (auto members)
-- [ ] Unit test: create from group (subset members)
-- [ ] Unit test: invalid member (not in parent)
-- [ ] Unit test: add/remove member
-- [ ] Unit test: list topics by chat
-- [ ] Unit test: delete topic
+- [x] Unit test: create from personal (auto members)
+- [x] Unit test: create from group (subset members)
+- [x] Unit test: invalid member (not in parent)
+- [x] Unit test: add/remove member
+- [x] Unit test: list topics by chat
+- [x] Unit test: delete topic
 
 ---
 
@@ -100,15 +100,15 @@
 4. Read receipts for topic messages
 
 ### Acceptance Criteria:
-- [ ] Topic message CRUD same pattern as chat messages
-- [ ] Real-time delivery via WS topic rooms
-- [ ] Read receipts work in topics
-- [ ] Cursor pagination for topic messages
+- [x] Topic message CRUD same pattern as chat messages
+- [x] Real-time delivery via WS topic rooms
+- [x] Read receipts work in topics
+- [x] Cursor pagination for topic messages
 
 ### Testing:
-- [ ] Unit test: send topic message
-- [ ] Unit test: topic message pagination
-- [ ] Integration test: real-time topic messaging
+- [x] Unit test: send topic message
+- [x] Unit test: topic message pagination
+- [x] Integration test: real-time topic messaging
 
 ---
 
@@ -138,15 +138,15 @@
    - Only admin can add/remove members
 
 ### Acceptance Criteria:
-- [ ] All CRUD endpoints functioning
-- [ ] Authorization enforced
-- [ ] Message endpoints mirroring chat pattern
-- [ ] Consistent error responses
+- [x] All CRUD endpoints functioning
+- [x] Authorization enforced
+- [x] Message endpoints mirroring chat pattern
+- [x] Consistent error responses
 
 ### Testing:
-- [ ] Integration test: create topic with members
-- [ ] Integration test: topic messaging
-- [ ] Integration test: member management
+- [x] Integration test: create topic with members
+- [x] Integration test: topic messaging
+- [x] Integration test: member management
 
 ---
 
@@ -204,40 +204,40 @@
    - Real-time typing in topics
 
 ### Acceptance Criteria:
-- [ ] Create from personal: auto 2 members
-- [ ] Create from group: select from group members
-- [ ] Topic icon selection from predefined emoji list
-- [ ] Topic list with unread badges
-- [ ] Topic discussion: same UX as chat
-- [ ] Topic info: member management
-- [ ] Real-time messaging in topics
+- [x] Create from personal: auto 2 members
+- [x] Create from group: select from group members
+- [x] Topic icon selection from predefined emoji list
+- [x] Topic list with unread badges
+- [x] Topic discussion: same UX as chat
+- [x] Topic info: member management
+- [x] Real-time messaging in topics
 
 ### Testing:
-- [ ] Component test: CreateTopicScreen (personal vs group)
-- [ ] Component test: TopicListScreen
-- [ ] Component test: TopicScreen (tab switching)
-- [ ] Store test: topicStore
-- [ ] Integration test: create topic → send message
+- [x] Component test: CreateTopicScreen (personal vs group)
+- [x] Component test: TopicListScreen
+- [x] Component test: TopicScreen (tab switching)
+- [x] Store test: topicStore
+- [x] Integration test: create topic → send message
 
 ---
 
 ## Phase 10 Review
 
 ### Testing Checklist:
-- [ ] Backend: create topic from personal/group
-- [ ] Backend: topic membership validation
-- [ ] Backend: topic messaging
-- [ ] Frontend: create topic wizard
-- [ ] Frontend: topic list with badges
-- [ ] Frontend: topic discussion screen
-- [ ] Frontend: topic info + member management
-- [ ] Real-time: messages delivered in topics
-- [ ] System messages in parent chat
-- [ ] `go test ./...` + `npm test` pass
+- [x] Backend: create topic from personal/group
+- [x] Backend: topic membership validation
+- [x] Backend: topic messaging
+- [x] Frontend: create topic wizard
+- [x] Frontend: topic list with badges
+- [x] Frontend: topic discussion screen
+- [x] Frontend: topic info + member management
+- [x] Real-time: messages delivered in topics
+- [x] System messages in parent chat
+- [x] `go test ./...` + `npm test` pass
 
 ### Review Checklist:
-- [ ] Topic sesuai `spesifikasi-chatat.md` section 4
-- [ ] Membership rules enforced (from parent only)
-- [ ] Topic icon list sesuai spec 4.3.1
-- [ ] Tab layout: Diskusi + Dokumen
-- [ ] Commit: `feat(topic): implement topic system with discussion`
+- [x] Topic sesuai `spesifikasi-chatat.md` section 4
+- [x] Membership rules enforced (from parent only)
+- [x] Topic icon list sesuai spec 4.3.1
+- [x] Tab layout: Diskusi + Dokumen
+- [x] Commit: `feat(topic): implement topic system with discussion`

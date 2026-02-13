@@ -73,22 +73,22 @@
    - CASCADE: delete messages, members, topics, documents via FK
 
 ### Acceptance Criteria:
-- [ ] Create group: min 3 people (creator + 2)
-- [ ] Group has name, icon (emoji), optional description
-- [ ] Admin can: add/remove members, update group info
-- [ ] System messages for membership changes
-- [ ] Creator cannot be removed
-- [ ] Leave group notification
-- [ ] Group delete cascades all related data
+- [x] Create group: min 3 people (creator + 2)
+- [x] Group has name, icon (emoji), optional description
+- [x] Admin can: add/remove members, update group info
+- [x] System messages for membership changes
+- [x] Creator cannot be removed
+- [x] Leave group notification
+- [x] Group delete cascades all related data
 
 ### Testing:
-- [ ] Unit test: create group (valid + invalid member count)
-- [ ] Unit test: add member (admin vs non-admin)
-- [ ] Unit test: remove member
-- [ ] Unit test: promote to admin
-- [ ] Unit test: leave group
-- [ ] Unit test: delete group (admin vs non-admin)
-- [ ] Unit test: system messages generated
+- [x] Unit test: create group (valid + invalid member count)
+- [x] Unit test: add member (admin vs non-admin)
+- [x] Unit test: remove member
+- [x] Unit test: promote to admin
+- [x] Unit test: leave group
+- [x] Unit test: delete group (admin vs non-admin)
+- [x] Unit test: system messages generated
 
 ---
 
@@ -121,15 +121,15 @@
    - `member_removed`: member kicked/left
 
 ### Acceptance Criteria:
-- [ ] All CRUD endpoints functioning
-- [ ] Admin-only actions enforced
-- [ ] WebSocket broadcasts for group events
-- [ ] Error responses for unauthorized actions
+- [x] All CRUD endpoints functioning
+- [x] Admin-only actions enforced
+- [x] WebSocket broadcasts for group events
+- [x] Error responses for unauthorized actions
 
 ### Testing:
-- [ ] Integration test: create group flow
-- [ ] Integration test: member management
-- [ ] Integration test: authorization enforcement
+- [x] Integration test: create group flow
+- [x] Integration test: member management
+- [x] Integration test: authorization enforcement
 
 ---
 
@@ -155,17 +155,17 @@
 3. After creation: navigate to new group chat screen
 
 ### Acceptance Criteria:
-- [ ] Multi-select contacts (min 2)
-- [ ] Selected members shown as chips
-- [ ] Search filtering contacts
-- [ ] Group name + icon required
-- [ ] Create → navigate to group chat
-- [ ] Loading state during creation
+- [x] Multi-select contacts (min 2)
+- [x] Selected members shown as chips
+- [x] Search filtering contacts
+- [x] Group name + icon required
+- [x] Create → navigate to group chat
+- [x] Loading state during creation
 
 ### Testing:
-- [ ] Component test: contact selection
-- [ ] Component test: member chips
-- [ ] Component test: group creation form validation
+- [x] Component test: contact selection
+- [x] Component test: member chips
+- [x] Component test: group creation form validation
 
 ---
 
@@ -199,16 +199,16 @@
 5. Document/Topic tab: placeholder "Segera hadir" until Phase 10/13
 
 ### Acceptance Criteria:
-- [ ] Group header: icon, name, member count
-- [ ] Sender names visible (colored) above bubbles
-- [ ] 3 tabs switching
-- [ ] Tab badges: unread count on Chat tab
-- [ ] Tap header → group info
+- [x] Group header: icon, name, member count
+- [x] Sender names visible (colored) above bubbles
+- [x] 3 tabs switching
+- [x] Tab badges: unread count on Chat tab
+- [x] Tap header → group info
 
 ### Testing:
-- [ ] Component test: group header
-- [ ] Component test: sender name rendering
-- [ ] Component test: tab switching
+- [x] Component test: group header
+- [x] Component test: sender name rendering
+- [x] Component test: tab switching
 
 ---
 
@@ -237,38 +237,38 @@
 4. Delete group confirmation dialog
 
 ### Acceptance Criteria:
-- [ ] Group details editable by admin
-- [ ] Member list with roles
-- [ ] Admin actions: add, remove, promote
-- [ ] Leave group with confirmation
-- [ ] Delete group with confirmation (admin only)
-- [ ] Non-admin: no edit buttons
+- [x] Group details editable by admin
+- [x] Member list with roles
+- [x] Admin actions: add, remove, promote
+- [x] Leave group with confirmation
+- [x] Delete group with confirmation (admin only)
+- [x] Non-admin: no edit buttons
 
 ### Testing:
-- [ ] Component test: member list rendering
-- [ ] Component test: admin vs non-admin view
-- [ ] Component test: leave confirmation
-- [ ] Integration test: update group info
+- [x] Component test: member list rendering
+- [x] Component test: admin vs non-admin view
+- [x] Component test: leave confirmation
+- [x] Integration test: update group info
 
 ---
 
 ## Phase 08 Review
 
 ### Testing Checklist:
-- [ ] Backend: create group with members
-- [ ] Backend: add/remove members (admin)
-- [ ] Backend: leave group
-- [ ] Backend: system messages generated
-- [ ] Frontend: create group wizard
-- [ ] Frontend: group chat with sender names
-- [ ] Frontend: 3-tab layout
-- [ ] Frontend: group info + member management
-- [ ] End-to-end: create group → chat → manage members
-- [ ] `go test ./...` + `npm test` pass
+- [x] Backend: create group with members
+- [x] Backend: add/remove members (admin)
+- [x] Backend: leave group
+- [x] Backend: system messages generated
+- [x] Frontend: create group wizard
+- [x] Frontend: group chat with sender names
+- [x] Frontend: 3-tab layout
+- [x] Frontend: group info + member management
+- [x] End-to-end: create group → chat → manage members
+- [x] `go test ./...` + `npm test` pass
 
 ### Review Checklist:
-- [ ] Group sesuai `spesifikasi-chatat.md` section 3.3
-- [ ] Tab layout sesuai spec
-- [ ] Admin rules enforced
-- [ ] System messages clear and accurate
-- [ ] Commit: `feat(chat): implement group chat with member management`
+- [x] Group sesuai `spesifikasi-chatat.md` section 3.3
+- [x] Tab layout sesuai spec
+- [x] Admin rules enforced
+- [x] System messages clear and accurate
+- [x] Commit: `feat(chat): implement group chat with member management`

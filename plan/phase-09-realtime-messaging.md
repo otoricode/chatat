@@ -71,20 +71,20 @@
    ```
 
 ### Acceptance Criteria:
-- [ ] WebSocket connects with auth token
-- [ ] Auto-reconnect with exponential backoff
-- [ ] Offline message queue flushed on reconnect
-- [ ] Event system: subscribe/unsubscribe per type
-- [ ] Ping/pong keepalive
-- [ ] Clean disconnect on logout
-- [ ] Connection state observable
+- [x] WebSocket connects with auth token
+- [x] Auto-reconnect with exponential backoff
+- [x] Offline message queue flushed on reconnect
+- [x] Event system: subscribe/unsubscribe per type
+- [x] Ping/pong keepalive
+- [x] Clean disconnect on logout
+- [x] Connection state observable
 
 ### Testing:
-- [ ] Unit test: connect/disconnect
-- [ ] Unit test: message sending
-- [ ] Unit test: event handlers
-- [ ] Unit test: reconnect logic
-- [ ] Unit test: offline queue
+- [x] Unit test: connect/disconnect
+- [x] Unit test: message sending
+- [x] Unit test: event handlers
+- [x] Unit test: reconnect logic
+- [x] Unit test: offline queue
 
 ---
 
@@ -128,16 +128,16 @@
 4. Same pattern for topic messages (separate event type or flag)
 
 ### Acceptance Criteria:
-- [ ] Message sent → appears instantly on receiver's screen
-- [ ] Chat list: last message updates real-time
-- [ ] Unread count increments for non-active chats
-- [ ] Auto-scroll to new message in active chat
-- [ ] Works for personal + group + topic messages
+- [x] Message sent → appears instantly on receiver's screen
+- [x] Chat list: last message updates real-time
+- [x] Unread count increments for non-active chats
+- [x] Auto-scroll to new message in active chat
+- [x] Works for personal + group + topic messages
 
 ### Testing:
-- [ ] Integration test: send message → receive via WS
-- [ ] Unit test: message listener updates stores
-- [ ] Unit test: unread count increment
+- [x] Integration test: send message → receive via WS
+- [x] Unit test: message listener updates stores
+- [x] Unit test: unread count increment
 
 ---
 
@@ -185,21 +185,21 @@
    - Show in MessageBubble component
 
 ### Acceptance Criteria:
-- [ ] Sent status: immediately on send
-- [ ] Delivered status: when receiver's device gets message
-- [ ] Read status: when receiver opens chat
-- [ ] Group: read = all members have read
-- [ ] Status icons render correctly (✓, ✓✓, blue ✓✓)
-- [ ] Batch read receipt (not per-message)
-- [ ] Status transitions are one-way (sent→delivered→read)
+- [x] Sent status: immediately on send
+- [x] Delivered status: when receiver's device gets message
+- [x] Read status: when receiver opens chat
+- [x] Group: read = all members have read
+- [x] Status icons render correctly (✓, ✓✓, blue ✓✓)
+- [x] Batch read receipt (not per-message)
+- [x] Status transitions are one-way (sent→delivered→read)
 
 ### Testing:
-- [ ] Unit test: status transitions
-- [ ] Unit test: delivery ack flow
-- [ ] Unit test: read receipt flow
-- [ ] Unit test: group read status (all members)
-- [ ] Component test: status icon rendering
-- [ ] Integration test: full delivery cycle
+- [x] Unit test: status transitions
+- [x] Unit test: delivery ack flow
+- [x] Unit test: read receipt flow
+- [x] Unit test: group read status (all members)
+- [x] Component test: status icon rendering
+- [x] Integration test: full delivery cycle
 
 ---
 
@@ -236,19 +236,19 @@
    - Green italic text
 
 ### Acceptance Criteria:
-- [ ] Typing indicator shows when contact types
-- [ ] Auto-clear after 3 seconds
-- [ ] Debounced sending (max 1 per 2s)
-- [ ] Group: show up to 2 names
-- [ ] Chat list: typing preview replaces last message
-- [ ] No phantom typing (always clears)
+- [x] Typing indicator shows when contact types
+- [x] Auto-clear after 3 seconds
+- [x] Debounced sending (max 1 per 2s)
+- [x] Group: show up to 2 names
+- [x] Chat list: typing preview replaces last message
+- [x] No phantom typing (always clears)
 
 ### Testing:
-- [ ] Unit test: typing debounce
-- [ ] Unit test: typing auto-clear
-- [ ] Unit test: group typing display
-- [ ] Component test: typing indicator UI
-- [ ] Integration test: typing flow between users
+- [x] Unit test: typing debounce
+- [x] Unit test: typing auto-clear
+- [x] Unit test: group typing display
+- [x] Component test: typing indicator UI
+- [x] Integration test: typing flow between users
 
 ---
 
@@ -269,36 +269,36 @@
 3. Contact list: sort online contacts first
 
 ### Acceptance Criteria:
-- [ ] Online status updates in real-time
-- [ ] Chat header shows accurate status
-- [ ] Contact list sorts online first
-- [ ] Last seen format: relative + absolute
-- [ ] Status updates debounced (no flicker)
+- [x] Online status updates in real-time
+- [x] Chat header shows accurate status
+- [x] Contact list sorts online first
+- [x] Last seen format: relative + absolute
+- [x] Status updates debounced (no flicker)
 
 ### Testing:
-- [ ] Unit test: status update handler
-- [ ] Unit test: last seen formatting
-- [ ] Component test: status text rendering
-- [ ] Integration test: connect → contacts see online
+- [x] Unit test: status update handler
+- [x] Unit test: last seen formatting
+- [x] Component test: status text rendering
+- [x] Integration test: connect → contacts see online
 
 ---
 
 ## Phase 09 Review
 
 ### Testing Checklist:
-- [ ] WebSocket: connect, reconnect, offline queue
-- [ ] Messages: real-time delivery both directions
-- [ ] Delivery status: ✓ → ✓✓ → blue ✓✓
-- [ ] Typing: show/hide correctly, debounced
-- [ ] Online: status changes reflect immediately
-- [ ] Group: all features work with multiple users
-- [ ] Reconnect: messages delivered after reconnect
-- [ ] `go test ./...` + `npm test` pass
+- [x] WebSocket: connect, reconnect, offline queue
+- [x] Messages: real-time delivery both directions
+- [x] Delivery status: ✓ → ✓✓ → blue ✓✓
+- [x] Typing: show/hide correctly, debounced
+- [x] Online: status changes reflect immediately
+- [x] Group: all features work with multiple users
+- [x] Reconnect: messages delivered after reconnect
+- [x] `go test ./...` + `npm test` pass
 
 ### Review Checklist:
-- [ ] Real-time features sesuai `spesifikasi-chatat.md` section 3.4
-- [ ] Status icons sesuai WA behavior
-- [ ] No memory leaks on WS reconnects
-- [ ] No goroutine leaks on server
-- [ ] Event types documented
-- [ ] Commit: `feat(ws): implement real-time messaging and status`
+- [x] Real-time features sesuai `spesifikasi-chatat.md` section 3.4
+- [x] Status icons sesuai WA behavior
+- [x] No memory leaks on WS reconnects
+- [x] No goroutine leaks on server
+- [x] Event types documented
+- [x] Commit: `feat(ws): implement real-time messaging and status`

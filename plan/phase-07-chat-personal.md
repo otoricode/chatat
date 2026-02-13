@@ -53,18 +53,18 @@
 4. Implementasi pin/archive (update sort preference)
 
 ### Acceptance Criteria:
-- [ ] Personal chat: get-or-create pattern (idempotent)
-- [ ] Chat list: sorted by last message, pinned first
-- [ ] Unread count accurate per chat
-- [ ] Last message preview included
-- [ ] Other user info included for personal chats
+- [x] Personal chat: get-or-create pattern (idempotent)
+- [x] Chat list: sorted by last message, pinned first
+- [x] Unread count accurate per chat
+- [x] Last message preview included
+- [x] Other user info included for personal chats
 
 ### Testing:
-- [ ] Unit test: create personal chat
-- [ ] Unit test: get existing personal chat
-- [ ] Unit test: list chats (sort order)
-- [ ] Unit test: unread count calculation
-- [ ] Unit test: pin/unpin
+- [x] Unit test: create personal chat
+- [x] Unit test: get existing personal chat
+- [x] Unit test: list chats (sort order)
+- [x] Unit test: unread count calculation
+- [x] Unit test: pin/unpin
 
 ---
 
@@ -124,24 +124,24 @@
    - Only sender can delete for all (within 1 hour)
 
 ### Acceptance Criteria:
-- [ ] Send message: validated, stored, broadcast
-- [ ] Cursor pagination: 50 per page, ordered by created_at DESC
-- [ ] Reply: includes original message preview
-- [ ] Forward: copies message to target chat with forwarded metadata
-- [ ] Delete for self: hidden only for requester
-- [ ] Delete for all: all users see "Pesan dihapus"
-- [ ] Delete for all: only within 1 hour by sender
+- [x] Send message: validated, stored, broadcast
+- [x] Cursor pagination: 50 per page, ordered by created_at DESC
+- [x] Reply: includes original message preview
+- [x] Forward: copies message to target chat with forwarded metadata
+- [x] Delete for self: hidden only for requester
+- [x] Delete for all: all users see "Pesan dihapus"
+- [x] Delete for all: only within 1 hour by sender
 
 ### Testing:
-- [ ] Unit test: send message (valid)
-- [ ] Unit test: send message (not a member → error)
-- [ ] Unit test: cursor pagination
-- [ ] Unit test: reply message
-- [ ] Unit test: forward message to another chat
-- [ ] Unit test: forward message (not a member of target → error)
-- [ ] Unit test: delete for self
-- [ ] Unit test: delete for all
-- [ ] Unit test: delete for all expired (>1 hour)
+- [x] Unit test: send message (valid)
+- [x] Unit test: send message (not a member → error)
+- [x] Unit test: cursor pagination
+- [x] Unit test: reply message
+- [x] Unit test: forward message to another chat
+- [x] Unit test: forward message (not a member of target → error)
+- [x] Unit test: delete for self
+- [x] Unit test: delete for all
+- [x] Unit test: delete for all expired (>1 hour)
 
 ---
 
@@ -173,15 +173,15 @@
    - Delete for all: verify user is sender
 
 ### Acceptance Criteria:
-- [ ] All endpoints return correct response format
-- [ ] Authorization: only chat members can access
-- [ ] Pagination: cursor + hasMore
-- [ ] Error responses for invalid requests
+- [x] All endpoints return correct response format
+- [x] Authorization: only chat members can access
+- [x] Pagination: cursor + hasMore
+- [x] Error responses for invalid requests
 
 ### Testing:
-- [ ] Integration test: create personal chat and send messages
-- [ ] Integration test: pagination flow
-- [ ] Integration test: unauthorized access blocked
+- [x] Integration test: create personal chat and send messages
+- [x] Integration test: pagination flow
+- [x] Integration test: unauthorized access blocked
 
 ---
 
@@ -222,21 +222,21 @@
 5. FAB action: open ContactListScreen
 
 ### Acceptance Criteria:
-- [ ] Chat list sorted: pinned first, then by last message time
-- [ ] Unread badge shows count (99+ for > 99)
-- [ ] Last message preview truncated
-- [ ] Timestamp relative format
-- [ ] Pull-to-refresh
-- [ ] Long-press context menu
-- [ ] FAB opens contact list
-- [ ] Empty state
+- [x] Chat list sorted: pinned first, then by last message time
+- [x] Unread badge shows count (99+ for > 99)
+- [x] Last message preview truncated
+- [x] Timestamp relative format
+- [x] Pull-to-refresh
+- [x] Long-press context menu
+- [x] FAB opens contact list
+- [x] Empty state
 
 ### Testing:
-- [ ] Component test: ChatListItem renders correctly
-- [ ] Component test: unread badge
-- [ ] Component test: timestamp formatting
-- [ ] Store test: fetchChats
-- [ ] Store test: updateLastMessage
+- [x] Component test: ChatListItem renders correctly
+- [x] Component test: unread badge
+- [x] Component test: timestamp formatting
+- [x] Store test: fetchChats
+- [x] Store test: updateLastMessage
 
 ---
 
@@ -296,23 +296,23 @@
 5. Infinite scroll: load more saat scroll ke atas (older messages)
 
 ### Acceptance Criteria:
-- [ ] Message bubbles: left/right aligned, correct colors
-- [ ] Timestamps: HH:MM format on each bubble
-- [ ] Date separators: auto-inserted between different days
-- [ ] Status: ✓ / ✓✓ / blue ✓✓ indicators
-- [ ] Reply: swipe-to-reply, preview shown
-- [ ] Delete: soft delete ("Pesan dihapus")
-- [ ] Input: multiline, send button, attachment button
-- [ ] Infinite scroll (cursor pagination)
-- [ ] Auto-scroll to bottom on new message
-- [ ] Keyboard avoidance (input stays above keyboard)
+- [x] Message bubbles: left/right aligned, correct colors
+- [x] Timestamps: HH:MM format on each bubble
+- [x] Date separators: auto-inserted between different days
+- [x] Status: ✓ / ✓✓ / blue ✓✓ indicators
+- [x] Reply: swipe-to-reply, preview shown
+- [x] Delete: soft delete ("Pesan dihapus")
+- [x] Input: multiline, send button, attachment button
+- [x] Infinite scroll (cursor pagination)
+- [x] Auto-scroll to bottom on new message
+- [x] Keyboard avoidance (input stays above keyboard)
 
 ### Testing:
-- [ ] Component test: MessageBubble (self/other)
-- [ ] Component test: ChatInput (send toggle)
-- [ ] Component test: DateSeparator
-- [ ] Store test: fetchMessages, addMessage
-- [ ] Integration test: send and receive message flow
+- [x] Component test: MessageBubble (self/other)
+- [x] Component test: ChatInput (send toggle)
+- [x] Component test: DateSeparator
+- [x] Store test: fetchMessages, addMessage
+- [x] Integration test: send and receive message flow
 
 ---
 
@@ -351,39 +351,39 @@
    ```
 
 ### Acceptance Criteria:
-- [ ] Contact permission requested
-- [ ] Contacts synced with server
-- [ ] Alphabetical sections
-- [ ] Search filtering (client-side)
-- [ ] Online indicator
-- [ ] Tap → open personal chat
-- [ ] "Buat Grup" button visible
+- [x] Contact permission requested
+- [x] Contacts synced with server
+- [x] Alphabetical sections
+- [x] Search filtering (client-side)
+- [x] Online indicator
+- [x] Tap → open personal chat
+- [x] "Buat Grup" button visible
 
 ### Testing:
-- [ ] Component test: contact list rendering
-- [ ] Component test: search filtering
-- [ ] Store test: sync contacts
-- [ ] Hook test: useContacts
+- [x] Component test: contact list rendering
+- [x] Component test: search filtering
+- [x] Store test: sync contacts
+- [x] Hook test: useContacts
 
 ---
 
 ## Phase 07 Review
 
 ### Testing Checklist:
-- [ ] Backend: create personal chat API
-- [ ] Backend: send/receive messages API
-- [ ] Backend: cursor pagination
-- [ ] Backend: reply, delete message
-- [ ] Frontend: chat list displays correctly
-- [ ] Frontend: chat screen WhatsApp-identical
-- [ ] Frontend: contact list → start chat
-- [ ] Frontend: real-time message (via WebSocket)
-- [ ] End-to-end: User A sends → User B receives
-- [ ] `go test ./...` + `npm test` pass
+- [x] Backend: create personal chat API
+- [x] Backend: send/receive messages API
+- [x] Backend: cursor pagination
+- [x] Backend: reply, delete message
+- [x] Frontend: chat list displays correctly
+- [x] Frontend: chat screen WhatsApp-identical
+- [x] Frontend: contact list → start chat
+- [x] Frontend: real-time message (via WebSocket)
+- [x] End-to-end: User A sends → User B receives
+- [x] `go test ./...` + `npm test` pass
 
 ### Review Checklist:
-- [ ] Chat sesuai `spesifikasi-chatat.md` section 3
-- [ ] Bubble colors sesuai spec 9.2
-- [ ] Message features sesuai spec 3.4
-- [ ] Error handling sesuai `docs/error-handling.md`
-- [ ] Commit: `feat(chat): implement personal chat with messaging`
+- [x] Chat sesuai `spesifikasi-chatat.md` section 3
+- [x] Bubble colors sesuai spec 9.2
+- [x] Message features sesuai spec 3.4
+- [x] Error handling sesuai `docs/error-handling.md`
+- [x] Commit: `feat(chat): implement personal chat with messaging`
