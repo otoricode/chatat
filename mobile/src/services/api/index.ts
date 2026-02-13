@@ -8,3 +8,11 @@ export { documentsApi } from './documents';
 export { entitiesApi } from './entities';
 export { mediaApi } from './media';
 export { notificationsApi } from './notifications';
+export { searchApi } from './search';
+export type {
+  MessageSearchResult,
+  DocumentSearchResult,
+  ContactSearchResult,
+  EntitySearchResult,
+  SearchAllResponse,
+} from './search';

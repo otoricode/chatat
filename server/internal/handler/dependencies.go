@@ -38,6 +38,7 @@ type Dependencies struct {
 	BlockService        service.BlockService
 	TemplateService     service.TemplateService
 	NotificationService service.NotificationService
+	SearchService       service.SearchService
 
 	// Repositories
 	UserRepo        repository.UserRepository
@@ -53,6 +54,7 @@ type Dependencies struct {
 	TopicMsgRepo    repository.TopicMessageRepository
 	MediaRepo       repository.MediaRepository
 	DeviceTokenRepo repository.DeviceTokenRepository
+	SearchRepo      repository.SearchRepository
 
 	// Handlers
 	AuthHandler         *AuthHandler
@@ -65,6 +67,7 @@ type Dependencies struct {
 	DocumentHandler     *DocumentHandler
 	EntityHandler       *EntityHandler
 	NotificationHandler *NotificationHandler
+	SearchHandler       *SearchHandler
 	WSHandler           *WSHandler
 }
 
@@ -84,6 +87,7 @@ func NewDependencies(cfg *config.Config, db *pgxpool.Pool, redisClient *redis.Cl
 	topicMsgRepo := repository.NewTopicMessageRepository(db)
 	mediaRepo := repository.NewMediaRepository(db)
 	deviceTokenRepo := repository.NewDeviceTokenRepository(db)
+	searchRepo := repository.NewSearchRepository(db)
 
 	// Services
 	smsProvider := service.NewLogSMSProvider()
@@ -145,6 +149,8 @@ func NewDependencies(cfg *config.Config, db *pgxpool.Pool, redisClient *redis.Cl
 	entitySvc := service.NewEntityService(entityRepo, userRepo, documentRepo)
 	entityHandler := NewEntityHandler(entitySvc)
 	notifHandler := NewNotificationHandler(notifSvc)
+	searchSvc := service.NewSearchService(searchRepo, chatRepo)
+	searchHandler := NewSearchHandler(searchSvc)
 
 	deps := &Dependencies{
 		Config: cfg,
@@ -170,6 +176,7 @@ func NewDependencies(cfg *config.Config, db *pgxpool.Pool, redisClient *redis.Cl
 		BlockService:        blockSvc,
 		TemplateService:     templateSvc,
 		NotificationService: notifSvc,
+		SearchService:       searchSvc,
 
 		UserRepo:        userRepo,
 		ContactRepo:     contactRepo,
@@ -184,6 +191,7 @@ func NewDependencies(cfg *config.Config, db *pgxpool.Pool, redisClient *redis.Cl
 		TopicMsgRepo:    topicMsgRepo,
 		MediaRepo:       mediaRepo,
 		DeviceTokenRepo: deviceTokenRepo,
+		SearchRepo:      searchRepo,
 
 		AuthHandler:         authHandler,
 		WebhookHandler:      webhookHandler,
@@ -195,6 +203,7 @@ func NewDependencies(cfg *config.Config, db *pgxpool.Pool, redisClient *redis.Cl
 		DocumentHandler:     documentHandler,
 		EntityHandler:       entityHandler,
 		NotificationHandler: notifHandler,
+		SearchHandler:       searchHandler,
 		WSHandler:           NewWSHandler(hub, cfg.JWTSecret, chatRepo, topicRepo, messageStatRepo, redisClient),
 	}
 

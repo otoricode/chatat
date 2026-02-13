@@ -35,6 +35,7 @@ export type ChatStackParamList = {
   Topic: { topicId: string };
   TopicInfo: { topicId: string };
   ImageViewer: { url: string; filename?: string };
+  Search: undefined;
   DocumentEditor: {
     documentId?: string;
     contextType?: string;

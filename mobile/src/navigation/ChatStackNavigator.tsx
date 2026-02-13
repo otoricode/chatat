@@ -13,6 +13,7 @@ import { TopicScreen } from '@/screens/topic/TopicScreen';
 import { TopicInfoScreen } from '@/screens/topic/TopicInfoScreen';
 import { ImageViewerScreen } from '@/screens/chat/ImageViewerScreen';
 import { DocumentEditorScreen } from '@/screens/document/DocumentEditorScreen';
+import { SearchScreen } from '@/screens/search/SearchScreen';
 import { colors } from '@/theme';
 
 const Stack = createNativeStackNavigator<ChatStackParamList>();
@@ -86,6 +87,11 @@ export function ChatStackNavigator() {
         name="DocumentEditor"
         component={DocumentEditorScreen}
         options={{ title: 'Dokumen' }}
+      />
+      <Stack.Screen
+        name="Search"
+        component={SearchScreen}
+        options={{ title: 'Pencarian', animation: 'fade' }}
       />
     </Stack.Navigator>
   );
