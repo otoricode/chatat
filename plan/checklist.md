@@ -155,11 +155,11 @@ Setiap kali menyelesaikan satu phase, jalankan checklist ini:
 - [x] Dynamic language switch
 
 ## Phase 19 — Local Storage & Sync
-- [ ] SQLite/WatermelonDB local database setup
-- [ ] Message store-and-forward (server relay → device)
-- [ ] Offline message queue (send when back online)
-- [ ] Sync engine: server timestamp comparison
-- [ ] Chat history retained on device
+- [x] SQLite/WatermelonDB local database setup
+- [x] Message store-and-forward (server relay → device)
+- [x] Offline message queue (send when back online)
+- [x] Sync engine: server timestamp comparison
+- [x] Chat history retained on device
 
 ## Phase 20 — Cloud Backup
 - [ ] Google Drive backup (Android)
