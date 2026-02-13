@@ -84,6 +84,7 @@ type documentService struct {
 	historyRepo repository.DocumentHistoryRepository
 	userRepo    repository.UserRepository
 	templateSvc TemplateService
+	notifSvc    NotificationService
 }
 
 // NewDocumentService creates a new document service.
@@ -93,6 +94,7 @@ func NewDocumentService(
 	historyRepo repository.DocumentHistoryRepository,
 	userRepo repository.UserRepository,
 	templateSvc TemplateService,
+	notifSvc NotificationService,
 ) DocumentService {
 	return &documentService{
 		docRepo:     docRepo,
@@ -100,6 +102,7 @@ func NewDocumentService(
 		historyRepo: historyRepo,
 		userRepo:    userRepo,
 		templateSvc: templateSvc,
+		notifSvc:    notifSvc,
 	}
 }
 
@@ -467,6 +470,32 @@ func (s *documentService) LockDocument(ctx context.Context, docID, userID uuid.U
 	}
 
 	_ = s.historyRepo.Create(ctx, docID, userID, action, details)
+
+	// Notify collaborators about document lock (fire-and-forget)
+	if s.notifSvc != nil {
+		go func() {
+			ownerName := "Seseorang"
+			if owner, err := s.userRepo.FindByID(context.Background(), userID); err == nil && owner.Name != "" {
+				ownerName = owner.Name
+			}
+			collabs, err := s.docRepo.ListCollaborators(context.Background(), docID)
+			if err != nil || len(collabs) == 0 {
+				return
+			}
+			var collabIDs []uuid.UUID
+			for _, c := range collabs {
+				if c.UserID != userID {
+					collabIDs = append(collabIDs, c.UserID)
+				}
+			}
+			if len(collabIDs) == 0 {
+				return
+			}
+			notif := BuildDocLockedNotif(ownerName, doc.Title, docID)
+			_ = s.notifSvc.SendToUsers(context.Background(), collabIDs, notif)
+		}()
+	}
+
 	return nil
 }
 
@@ -521,6 +550,19 @@ func (s *documentService) AddSigner(ctx context.Context, docID, ownerID, signerI
 	}
 
 	_ = s.historyRepo.Create(ctx, docID, ownerID, "signer_added", "Penandatangan ditambahkan")
+
+	// Notify signer about signature request (fire-and-forget)
+	if s.notifSvc != nil {
+		go func() {
+			ownerName := "Seseorang"
+			if owner, err := s.userRepo.FindByID(context.Background(), ownerID); err == nil && owner.Name != "" {
+				ownerName = owner.Name
+			}
+			notif := BuildSignatureRequestNotif(ownerName, doc.Title, docID)
+			_ = s.notifSvc.SendToUser(context.Background(), signerID, notif)
+		}()
+	}
+
 	return nil
 }
 

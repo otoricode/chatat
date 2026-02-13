@@ -16,12 +16,12 @@ import (
 
 // SendMessageInput holds the input for sending a message.
 type SendMessageInput struct {
-	ChatID    uuid.UUID        `json:"chatId"`
-	SenderID  uuid.UUID        `json:"-"`
-	Content   string           `json:"content"`
-	ReplyToID *uuid.UUID       `json:"replyToId"`
+	ChatID    uuid.UUID         `json:"chatId"`
+	SenderID  uuid.UUID         `json:"-"`
+	Content   string            `json:"content"`
+	ReplyToID *uuid.UUID        `json:"replyToId"`
 	Type      model.MessageType `json:"type"`
-	Metadata  json.RawMessage  `json:"metadata"`
+	Metadata  json.RawMessage   `json:"metadata"`
 }
 
 // MessagePage represents a paginated list of messages.
@@ -51,7 +51,9 @@ type messageService struct {
 	messageRepo     repository.MessageRepository
 	messageStatRepo repository.MessageStatusRepository
 	chatRepo        repository.ChatRepository
+	userRepo        repository.UserRepository
 	hub             *ws.Hub
+	notifSvc        NotificationService
 }
 
 // NewMessageService creates a new MessageService.
@@ -59,13 +61,17 @@ func NewMessageService(
 	messageRepo repository.MessageRepository,
 	messageStatRepo repository.MessageStatusRepository,
 	chatRepo repository.ChatRepository,
+	userRepo repository.UserRepository,
 	hub *ws.Hub,
+	notifSvc NotificationService,
 ) MessageService {
 	return &messageService{
 		messageRepo:     messageRepo,
 		messageStatRepo: messageStatRepo,
 		chatRepo:        chatRepo,
+		userRepo:        userRepo,
 		hub:             hub,
+		notifSvc:        notifSvc,
 	}
 }
 
@@ -142,6 +148,30 @@ func (s *messageService) SendMessage(ctx context.Context, input SendMessageInput
 	data, err := json.Marshal(event)
 	if err == nil {
 		s.hub.SendToRoom(roomID, data, uuid.Nil)
+	}
+
+	// Send push notification (fire-and-forget)
+	if s.notifSvc != nil {
+		go func() {
+			senderName := "Seseorang"
+			if sender, err := s.userRepo.FindByID(context.Background(), input.SenderID); err == nil && sender.Name != "" {
+				senderName = sender.Name
+			}
+
+			chat, err := s.chatRepo.FindByID(context.Background(), input.ChatID)
+			if err != nil {
+				return
+			}
+
+			var notif model.Notification
+			if chat.Type == model.ChatTypeGroup {
+				notif = BuildGroupMessageNotif(chat.Name, senderName, input.Content, input.ChatID)
+			} else {
+				notif = BuildMessageNotif(senderName, input.Content, input.ChatID, string(chat.Type))
+			}
+
+			_ = s.notifSvc.SendToChat(context.Background(), input.ChatID, input.SenderID, notif)
+		}()
 	}
 
 	return msg, nil

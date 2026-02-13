@@ -19,7 +19,7 @@ func TestMessageService_SendMessage(t *testing.T) {
 	hub := newTestHub()
 	defer hub.Shutdown()
 
-	svc := NewMessageService(msgRepo, msgStatRepo, chatRepo, hub)
+	svc := NewMessageService(msgRepo, msgStatRepo, chatRepo, nil, hub, nil)
 
 	// Create a chat with two members
 	userA := uuid.New()
@@ -71,7 +71,7 @@ func TestMessageService_GetMessages(t *testing.T) {
 	hub := newTestHub()
 	defer hub.Shutdown()
 
-	svc := NewMessageService(msgRepo, msgStatRepo, chatRepo, hub)
+	svc := NewMessageService(msgRepo, msgStatRepo, chatRepo, nil, hub, nil)
 
 	chatID := uuid.New()
 	userA := uuid.New()
@@ -109,7 +109,7 @@ func TestMessageService_ReplyMessage(t *testing.T) {
 	hub := newTestHub()
 	defer hub.Shutdown()
 
-	svc := NewMessageService(msgRepo, msgStatRepo, chatRepo, hub)
+	svc := NewMessageService(msgRepo, msgStatRepo, chatRepo, nil, hub, nil)
 
 	userA := uuid.New()
 	userB := uuid.New()
@@ -159,7 +159,7 @@ func TestMessageService_ForwardMessage(t *testing.T) {
 	hub := newTestHub()
 	defer hub.Shutdown()
 
-	svc := NewMessageService(msgRepo, msgStatRepo, chatRepo, hub)
+	svc := NewMessageService(msgRepo, msgStatRepo, chatRepo, nil, hub, nil)
 
 	userA := uuid.New()
 	userB := uuid.New()
@@ -208,7 +208,7 @@ func TestMessageService_DeleteMessage(t *testing.T) {
 	hub := newTestHub()
 	defer hub.Shutdown()
 
-	svc := NewMessageService(msgRepo, msgStatRepo, chatRepo, hub)
+	svc := NewMessageService(msgRepo, msgStatRepo, chatRepo, nil, hub, nil)
 
 	userA := uuid.New()
 	userB := uuid.New()
@@ -266,7 +266,7 @@ func TestMessageService_MarkChatAsRead(t *testing.T) {
 	hub := newTestHub()
 	defer hub.Shutdown()
 
-	svc := NewMessageService(msgRepo, msgStatRepo, chatRepo, hub)
+	svc := NewMessageService(msgRepo, msgStatRepo, chatRepo, nil, hub, nil)
 
 	chatID := uuid.New()
 	userA := uuid.New()
