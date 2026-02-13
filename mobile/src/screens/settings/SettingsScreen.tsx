@@ -89,6 +89,11 @@ export function SettingsScreen() {
             onPress={() => navigation.navigate('NotificationSettings')}
           />
           <SettingRow
+            icon="🔒"
+            label={t('privacy.title')}
+            onPress={() => navigation.navigate('PrivacySettings')}
+          />
+          <SettingRow
             icon="☁️"
             label={t('backup.title')}
             onPress={() => navigation.navigate('Backup')}

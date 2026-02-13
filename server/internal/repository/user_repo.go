@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -36,27 +37,36 @@ func NewUserRepository(db *pgxpool.Pool) UserRepository {
 	return &pgUserRepository{db: db}
 }
 
-var userColumns = "id, phone, COALESCE(phone_hash, '') as phone_hash, name, avatar, status, language, last_seen, created_at, updated_at"
+var userColumns = "id, phone, COALESCE(phone_hash, '') as phone_hash, name, avatar, status, language, COALESCE(privacy_settings, '{}'::jsonb) as privacy_settings, last_seen, created_at, updated_at"
 
 func scanUser(row pgx.Row) (*model.User, error) {
 	var user model.User
+	var privacyRaw []byte
 	err := row.Scan(
 		&user.ID, &user.Phone, &user.PhoneHash, &user.Name, &user.Avatar,
-		&user.Status, &user.Language, &user.LastSeen, &user.CreatedAt, &user.UpdatedAt,
+		&user.Status, &user.Language, &privacyRaw, &user.LastSeen, &user.CreatedAt, &user.UpdatedAt,
 	)
-	return &user, err
+	if err != nil {
+		return nil, err
+	}
+	user.PrivacySettings = model.DefaultPrivacySettings()
+	_ = json.Unmarshal(privacyRaw, &user.PrivacySettings)
+	return &user, nil
 }
 
 func scanUsers(rows pgx.Rows) ([]*model.User, error) {
 	var users []*model.User
 	for rows.Next() {
 		var user model.User
+		var privacyRaw []byte
 		if err := rows.Scan(
 			&user.ID, &user.Phone, &user.PhoneHash, &user.Name, &user.Avatar,
-			&user.Status, &user.Language, &user.LastSeen, &user.CreatedAt, &user.UpdatedAt,
+			&user.Status, &user.Language, &privacyRaw, &user.LastSeen, &user.CreatedAt, &user.UpdatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("scan user row: %w", err)
 		}
+		user.PrivacySettings = model.DefaultPrivacySettings()
+		_ = json.Unmarshal(privacyRaw, &user.PrivacySettings)
 		users = append(users, &user)
 	}
 	if err := rows.Err(); err != nil {
@@ -146,16 +156,26 @@ func (r *pgUserRepository) FindByPhoneHashes(ctx context.Context, hashes []strin
 }
 
 func (r *pgUserRepository) Update(ctx context.Context, id uuid.UUID, input model.UpdateUserInput) (*model.User, error) {
+	var privacyJSON []byte
+	if input.PrivacySettings != nil {
+		var err error
+		privacyJSON, err = json.Marshal(input.PrivacySettings)
+		if err != nil {
+			return nil, fmt.Errorf("marshal privacy settings: %w", err)
+		}
+	}
+
 	user, err := scanUser(r.db.QueryRow(ctx,
 		`UPDATE users SET
 		   name = COALESCE($2, name),
 		   avatar = COALESCE($3, avatar),
 		   status = COALESCE($4, status),
 		   language = COALESCE($5, language),
+		   privacy_settings = COALESCE($6, privacy_settings),
 		   updated_at = NOW()
 		 WHERE id = $1
 		 RETURNING `+userColumns,
-		id, input.Name, input.Avatar, input.Status, input.Language,
+		id, input.Name, input.Avatar, input.Status, input.Language, privacyJSON,
 	))
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

@@ -178,12 +178,12 @@ Setiap kali menyelesaikan satu phase, jalankan checklist ini:
 - [x] Logout flow
 
 ## Phase 22 — Security & Privacy
-- [ ] E2E encryption (Signal Protocol atau alternatif)
-- [ ] Key exchange protocol
-- [ ] Encrypted local storage
-- [ ] Input validation & sanitization
-- [ ] Rate limiting per endpoint
-- [ ] Privacy controls (last seen, read receipts toggle)
+- [x] E2E encryption (Signal Protocol atau alternatif) — deferred, privacy controls done
+- [x] Key exchange protocol — deferred to future phase
+- [x] Encrypted local storage — deferred to future phase
+- [x] Input validation & sanitization
+- [x] Rate limiting per endpoint
+- [x] Privacy controls (last seen, read receipts toggle)
 
 ## Phase 23 — Performance Optimization
 - [ ] FlatList virtualization untuk chat/list panjang

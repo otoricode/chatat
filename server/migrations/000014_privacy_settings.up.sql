@@ -1,0 +1,1 @@
+ALTER TABLE users ADD COLUMN IF NOT EXISTS privacy_settings JSONB NOT NULL DEFAULT '{"lastSeenVisibility":"everyone","onlineVisibility":"everyone","readReceipts":true,"profilePhotoVisibility":"everyone"}';

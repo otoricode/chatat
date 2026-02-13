@@ -22,6 +22,7 @@ import { LanguageScreen } from '@/screens/settings/LanguageScreen';
 import { NotificationSettingsScreen } from '@/screens/settings/NotificationSettingsScreen';
 import { StorageScreen } from '@/screens/settings/StorageScreen';
 import { AboutScreen } from '@/screens/settings/AboutScreen';
+import { PrivacySettingsScreen } from '@/screens/settings/PrivacySettingsScreen';
 import { colors } from '@/theme';
 
 const Stack = createNativeStackNavigator<ChatStackParamList>();
@@ -132,6 +133,11 @@ export function ChatStackNavigator() {
         name="About"
         component={AboutScreen}
         options={{ title: t('settings.about') }}
+      />
+      <Stack.Screen
+        name="PrivacySettings"
+        component={PrivacySettingsScreen}
+        options={{ title: t('privacy.title') }}
       />
       <Stack.Screen
         name="Backup"

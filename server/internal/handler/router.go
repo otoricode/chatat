@@ -6,6 +6,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
+	"github.com/redis/go-redis/v9"
 
 	"github.com/otoritech/chatat/internal/config"
 	mw "github.com/otoritech/chatat/internal/middleware"
@@ -13,23 +14,29 @@ import (
 
 // NewRouter creates and configures the Chi router with all middleware and routes.
 func NewRouter(cfg *config.Config, deps *Dependencies) *chi.Mux {
+	return NewRouterWithRedis(cfg, deps, deps.Redis)
+}
+
+// NewRouterWithRedis creates and configures the Chi router with all middleware and routes.
+func NewRouterWithRedis(cfg *config.Config, deps *Dependencies, redisClient *redis.Client) *chi.Mux {
 	r := chi.NewRouter()
 
 	// Global middleware
+	r.Use(mw.SecurityHeaders)
 	r.Use(chimiddleware.RequestID)
 	r.Use(chimiddleware.RealIP)
 	r.Use(mw.Logger)
 	r.Use(chimiddleware.Recoverer)
 	r.Use(chimiddleware.Timeout(30 * time.Second))
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"*"},
+		AllowedOrigins:   cfg.CORSAllowedOrigins(),
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "Accept-Language"},
 		ExposedHeaders:   []string{"Link"},
 		AllowCredentials: true,
 		MaxAge:           300,
 	}))
-	r.Use(mw.RateLimit(100.0/60.0, 100)) // 100 req/min
+	r.Use(mw.RateLimit(100.0/60.0, 100)) // 100 req/min global
 	r.Use(mw.Language())
 
 	// Health check
@@ -40,6 +47,14 @@ func NewRouter(cfg *config.Config, deps *Dependencies) *chi.Mux {
 		// Public routes (auth)
 		r.Group(func(r chi.Router) {
 			r.Use(mw.RateLimit(5.0/60.0, 5)) // 5 req/min for auth
+			if redisClient != nil {
+				r.Use(mw.RedisRateLimit(redisClient, mw.RedisRateLimitConfig{
+					Requests:  10,
+					Window:    5 * time.Minute,
+					KeyPrefix: "auth",
+					ByIP:      true,
+				}))
+			}
 			r.Post("/auth/otp/send", deps.AuthHandler.SendOTP)
 			r.Post("/auth/otp/verify", deps.AuthHandler.VerifyOTP)
 			r.Post("/auth/reverse-otp/init", deps.AuthHandler.InitReverseOTP)
@@ -64,6 +79,8 @@ func NewRouter(cfg *config.Config, deps *Dependencies) *chi.Mux {
 				r.Put("/me", deps.UserHandler.UpdateMe)
 				r.Post("/me/setup", deps.UserHandler.SetupProfile)
 				r.Delete("/me", deps.UserHandler.DeleteAccount)
+				r.Get("/me/privacy", deps.UserHandler.GetPrivacySettings)
+				r.Put("/me/privacy", deps.UserHandler.UpdatePrivacySettings)
 			})
 
 			r.Route("/contacts", func(r chi.Router) {

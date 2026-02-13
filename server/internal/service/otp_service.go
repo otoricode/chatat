@@ -124,6 +124,16 @@ func (s *otpService) Generate(ctx context.Context, phone string) (string, error)
 }
 
 func (s *otpService) Verify(ctx context.Context, phone string, code string) error {
+	// Check lockout first
+	lockoutKey := fmt.Sprintf("otp_lockout:%s", phone)
+	locked, err := s.redis.Exists(ctx, lockoutKey).Result()
+	if err != nil {
+		return apperror.Internal(err)
+	}
+	if locked > 0 {
+		return apperror.RateLimited()
+	}
+
 	otpKey := fmt.Sprintf("otp:%s", phone)
 
 	raw, err := s.redis.Get(ctx, otpKey).Bytes()
@@ -142,7 +152,9 @@ func (s *otpService) Verify(ctx context.Context, phone string, code string) erro
 	// Check max attempts
 	if data.Attempts >= s.config.MaxAttempts {
 		_ = s.redis.Del(ctx, otpKey).Err()
-		return apperror.InvalidOTP()
+		// Set lockout for 30 minutes after exceeding max attempts
+		_ = s.redis.Set(ctx, lockoutKey, "1", 30*time.Minute).Err()
+		return apperror.RateLimited()
 	}
 
 	// Constant-time comparison
@@ -157,8 +169,9 @@ func (s *otpService) Verify(ctx context.Context, phone string, code string) erro
 		return apperror.InvalidOTP()
 	}
 
-	// OTP verified, delete it
+	// OTP verified, delete it and clear any lockout
 	_ = s.redis.Del(ctx, otpKey).Err()
+	_ = s.redis.Del(ctx, lockoutKey).Err()
 	return nil
 }
 
