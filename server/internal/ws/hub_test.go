@@ -1,6 +1,7 @@
 package ws_test
 
 import (
+	"sync"
 	"testing"
 	"time"
 
@@ -156,4 +157,68 @@ func TestHub_GetOnlineUsers(t *testing.T) {
 
 	online := hub.GetOnlineUsers([]uuid.UUID{user1, user2, user3})
 	assert.Len(t, online, 2)
+}
+
+func TestHub_SetEventCallbacks(t *testing.T) {
+	hub := ws.NewHub()
+
+	var connectedUser, disconnectedUser uuid.UUID
+	var mu sync.Mutex
+	hub.SetEventCallbacks(
+		func(id uuid.UUID) {
+			mu.Lock()
+			connectedUser = id
+			mu.Unlock()
+		},
+		func(id uuid.UUID) {
+			mu.Lock()
+			disconnectedUser = id
+			mu.Unlock()
+		},
+	)
+
+	go hub.Run()
+	t.Cleanup(func() { hub.Shutdown() })
+
+	userID := uuid.New()
+	client := &ws.Client{
+		UserID: userID,
+		Send:   make(chan []byte, 256),
+		Hub:    hub,
+	}
+
+	hub.RegisterClient(client)
+	assert.Eventually(t, func() bool {
+		mu.Lock()
+		defer mu.Unlock()
+		return connectedUser == userID
+	}, time.Second, 10*time.Millisecond)
+
+	hub.UnregisterClient(client)
+	// onDisconnect is debounced by 5 seconds in hub.go
+	assert.Eventually(t, func() bool {
+		mu.Lock()
+		defer mu.Unlock()
+		return disconnectedUser == userID
+	}, 7*time.Second, 100*time.Millisecond)
+}
+
+func TestHub_Shutdown(t *testing.T) {
+	hub := ws.NewHub()
+	go hub.Run()
+
+	userID := uuid.New()
+	client := &ws.Client{
+		UserID: userID,
+		Send:   make(chan []byte, 256),
+		Hub:    hub,
+	}
+
+	hub.RegisterClient(client)
+	time.Sleep(10 * time.Millisecond)
+	assert.True(t, hub.IsOnline(userID))
+
+	hub.Shutdown()
+	time.Sleep(10 * time.Millisecond)
+	// After shutdown, hub should not process new operations
 }

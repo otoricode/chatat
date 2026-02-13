@@ -855,3 +855,53 @@ func TestDocumentService_Signers(t *testing.T) {
 		assert.Equal(t, "BAD_REQUEST", appErr.Code)
 	})
 }
+
+func TestDocumentService_GetHistory(t *testing.T) {
+	docRepo := newMockDocumentRepo()
+	blockRepo := newMockBlockRepo()
+	historyRepo := &mockDocHistoryRepo{}
+	userRepo := &docTestUserRepo{users: make(map[uuid.UUID]*model.User)}
+	templateSvc := NewTemplateService()
+
+	svc := NewDocumentService(docRepo, blockRepo, historyRepo, userRepo, templateSvc, nil)
+	ctx := context.Background()
+	ownerID := uuid.New()
+
+	t.Run("returns history entries", func(t *testing.T) {
+		result, err := svc.Create(ctx, CreateDocumentInput{Title: "HistDoc", OwnerID: ownerID})
+		require.NoError(t, err)
+
+		history, err := svc.GetHistory(ctx, result.Document.ID)
+		require.NoError(t, err)
+		assert.True(t, len(history) > 0)
+		assert.Equal(t, "created", history[0].Action)
+	})
+
+	t.Run("no history for unknown doc", func(t *testing.T) {
+		history, err := svc.GetHistory(ctx, uuid.New())
+		require.NoError(t, err)
+		assert.Empty(t, history)
+	})
+}
+
+func TestDocumentService_RemoveTag(t *testing.T) {
+	docRepo := newMockDocumentRepo()
+	blockRepo := newMockBlockRepo()
+	historyRepo := &mockDocHistoryRepo{}
+	userRepo := &docTestUserRepo{users: make(map[uuid.UUID]*model.User)}
+	templateSvc := NewTemplateService()
+
+	svc := NewDocumentService(docRepo, blockRepo, historyRepo, userRepo, templateSvc, nil)
+	ctx := context.Background()
+	ownerID := uuid.New()
+
+	result, err := svc.Create(ctx, CreateDocumentInput{Title: "TagDoc", OwnerID: ownerID})
+	require.NoError(t, err)
+
+	_ = svc.AddTag(ctx, result.Document.ID, "important")
+
+	t.Run("remove existing tag", func(t *testing.T) {
+		err := svc.RemoveTag(ctx, result.Document.ID, "important")
+		assert.NoError(t, err)
+	})
+}

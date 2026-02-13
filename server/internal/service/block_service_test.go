@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
 	"github.com/google/uuid"
@@ -251,5 +252,61 @@ func TestTemplateService(t *testing.T) {
 			tmpl := svc.GetTemplate(id)
 			assert.NotNil(t, tmpl, "Template %s should exist", id)
 		}
+	})
+}
+
+func TestBlockService_MoveBlock(t *testing.T) {
+	svc, docRepo, _ := newTestBlockService()
+	userID := uuid.New()
+	doc := createTestDoc(docRepo, userID)
+
+	// Add 3 blocks
+	b1, _ := svc.AddBlock(context.Background(), doc.ID, userID, AddBlockInput{Type: model.BlockTypeParagraph, Content: "A"})
+	b2, _ := svc.AddBlock(context.Background(), doc.ID, userID, AddBlockInput{Type: model.BlockTypeParagraph, Content: "B"})
+	_, _ = svc.AddBlock(context.Background(), doc.ID, userID, AddBlockInput{Type: model.BlockTypeParagraph, Content: "C"})
+
+	t.Run("move to new position", func(t *testing.T) {
+		err := svc.MoveBlock(context.Background(), doc.ID, b1.ID, 2)
+		require.NoError(t, err)
+	})
+
+	t.Run("block not found", func(t *testing.T) {
+		err := svc.MoveBlock(context.Background(), doc.ID, uuid.New(), 0)
+		assert.Error(t, err)
+	})
+
+	t.Run("locked doc rejected", func(t *testing.T) {
+		docRepo.docs[doc.ID].Locked = true
+		err := svc.MoveBlock(context.Background(), doc.ID, b2.ID, 0)
+		assert.Error(t, err)
+		docRepo.docs[doc.ID].Locked = false
+	})
+}
+
+func TestBlockService_BatchUpdate(t *testing.T) {
+	svc, docRepo, _ := newTestBlockService()
+	userID := uuid.New()
+	doc := createTestDoc(docRepo, userID)
+
+	t.Run("add via batch", func(t *testing.T) {
+		addData, _ := json.Marshal(AddBlockInput{Type: model.BlockTypeParagraph, Content: "batch"})
+		err := svc.BatchUpdate(context.Background(), doc.ID, userID, []BlockOperation{
+			{Type: "add", Data: addData},
+		})
+		require.NoError(t, err)
+	})
+
+	t.Run("invalid op type", func(t *testing.T) {
+		err := svc.BatchUpdate(context.Background(), doc.ID, userID, []BlockOperation{
+			{Type: "invalid", Data: json.RawMessage("{}")},
+		})
+		assert.Error(t, err)
+	})
+
+	t.Run("locked doc rejected", func(t *testing.T) {
+		docRepo.docs[doc.ID].Locked = true
+		err := svc.BatchUpdate(context.Background(), doc.ID, userID, []BlockOperation{})
+		assert.Error(t, err)
+		docRepo.docs[doc.ID].Locked = false
 	})
 }

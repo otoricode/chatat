@@ -274,3 +274,27 @@ func TestMessageService_MarkChatAsRead(t *testing.T) {
 	err := svc.MarkChatAsRead(context.Background(), chatID, userA)
 	require.NoError(t, err)
 }
+
+func TestMessageService_SearchMessages(t *testing.T) {
+	chatRepo := newMockChatRepo()
+	msgRepo := newMockMessageRepo()
+	msgStatRepo := newMockMessageStatRepo()
+	hub := newTestHub()
+	defer hub.Shutdown()
+
+	svc := NewMessageService(msgRepo, msgStatRepo, chatRepo, nil, hub, nil)
+
+	chatID := uuid.New()
+
+	t.Run("success", func(t *testing.T) {
+		msgs, err := svc.SearchMessages(context.Background(), chatID, "hello")
+		require.NoError(t, err)
+		// mock repo returns nil, just check no error
+		assert.Empty(t, msgs)
+	})
+
+	t.Run("empty query rejected", func(t *testing.T) {
+		_, err := svc.SearchMessages(context.Background(), chatID, "")
+		assert.Error(t, err)
+	})
+}

@@ -444,3 +444,39 @@ func TestChatService_IsMember(t *testing.T) {
 		assert.False(t, ok)
 	})
 }
+
+func TestChatService_GetChat(t *testing.T) {
+	chatRepo := newMockChatRepo()
+	msgRepo := newMockMessageRepo()
+	msgStatRepo := newMockMessageStatRepo()
+	userRepo := newMockUserRepo()
+	hub := newTestHub()
+	defer hub.Shutdown()
+
+	svc := NewChatService(chatRepo, msgRepo, msgStatRepo, userRepo, hub)
+
+	userA := uuid.New()
+	userB := uuid.New()
+	userRepo.addUser(&model.User{ID: userA, Phone: "+628111", Name: "A", Avatar: "\U0001F60A"})
+	userRepo.addUser(&model.User{ID: userB, Phone: "+628222", Name: "B", Avatar: "\U0001F60A"})
+
+	chat, err := svc.CreatePersonalChat(context.Background(), userA, userB)
+	require.NoError(t, err)
+
+	t.Run("success", func(t *testing.T) {
+		detail, err := svc.GetChat(context.Background(), chat.ID, userA)
+		require.NoError(t, err)
+		assert.Equal(t, chat.ID, detail.Chat.ID)
+		assert.Len(t, detail.Members, 2)
+	})
+
+	t.Run("not a member", func(t *testing.T) {
+		_, err := svc.GetChat(context.Background(), chat.ID, uuid.New())
+		assert.Error(t, err)
+	})
+
+	t.Run("not found", func(t *testing.T) {
+		_, err := svc.GetChat(context.Background(), uuid.New(), userA)
+		assert.Error(t, err)
+	})
+}

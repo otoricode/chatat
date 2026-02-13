@@ -590,3 +590,102 @@ func TestTopicMessageService_DeleteMessage(t *testing.T) {
 		assert.True(t, topicMsgRepo.messages[msg.ID].IsDeleted)
 	})
 }
+
+func TestTopicService_GetTopic(t *testing.T) {
+	svc, _, _, chatRepo, userRepo := setupTopicService()
+
+	userA := uuid.New()
+	userB := uuid.New()
+	userRepo.addUser(&model.User{ID: userA, Phone: "+628111", Name: "A"})
+	userRepo.addUser(&model.User{ID: userB, Phone: "+628222", Name: "B"})
+
+	// Create a parent chat
+	chatID := uuid.New()
+	chatRepo.chats[chatID] = &model.Chat{ID: chatID, Type: model.ChatTypeGroup, Name: "Group"}
+	_ = chatRepo.AddMember(context.Background(), chatID, userA, model.MemberRoleAdmin)
+	_ = chatRepo.AddMember(context.Background(), chatID, userB, model.MemberRoleMember)
+
+	// Create topic
+	topic, err := svc.CreateTopic(context.Background(), userA, CreateTopicInput{
+		Name:     "Test Topic",
+		Icon:     "\U0001F4AC",
+		ParentID: chatID,
+	})
+	require.NoError(t, err)
+
+	t.Run("success", func(t *testing.T) {
+		detail, err := svc.GetTopic(context.Background(), topic.ID, userA)
+		require.NoError(t, err)
+		assert.Equal(t, topic.ID, detail.Topic.ID)
+		assert.NotEmpty(t, detail.Members)
+	})
+
+	t.Run("non member forbidden", func(t *testing.T) {
+		outsider := uuid.New()
+		_, err := svc.GetTopic(context.Background(), topic.ID, outsider)
+		assert.Error(t, err)
+	})
+
+	t.Run("not found", func(t *testing.T) {
+		_, err := svc.GetTopic(context.Background(), uuid.New(), userA)
+		assert.Error(t, err)
+	})
+}
+
+func TestTopicService_ListByUser(t *testing.T) {
+	svc, _, _, chatRepo, userRepo := setupTopicService()
+
+	userA := uuid.New()
+	userRepo.addUser(&model.User{ID: userA, Phone: "+628111", Name: "A"})
+
+	chatID := uuid.New()
+	chatRepo.chats[chatID] = &model.Chat{ID: chatID, Type: model.ChatTypeGroup, Name: "Group"}
+	_ = chatRepo.AddMember(context.Background(), chatID, userA, model.MemberRoleAdmin)
+
+	_, err := svc.CreateTopic(context.Background(), userA, CreateTopicInput{
+		Name:     "Topic 1",
+		Icon:     "\U0001F4AC",
+		ParentID: chatID,
+	})
+	require.NoError(t, err)
+
+	items, err := svc.ListByUser(context.Background(), userA)
+	require.NoError(t, err)
+	assert.Len(t, items, 1)
+}
+
+func TestTopicService_UpdateTopic(t *testing.T) {
+	svc, topicRepo, _, chatRepo, userRepo := setupTopicService()
+
+	userA := uuid.New()
+	userRepo.addUser(&model.User{ID: userA, Phone: "+628111", Name: "A"})
+
+	chatID := uuid.New()
+	chatRepo.chats[chatID] = &model.Chat{ID: chatID, Type: model.ChatTypeGroup, Name: "Group"}
+	_ = chatRepo.AddMember(context.Background(), chatID, userA, model.MemberRoleAdmin)
+
+	topic, err := svc.CreateTopic(context.Background(), userA, CreateTopicInput{
+		Name:     "Old Name",
+		Icon:     "\U0001F4AC",
+		ParentID: chatID,
+	})
+	require.NoError(t, err)
+
+	newName := "New Name"
+	updated, err := svc.UpdateTopic(context.Background(), topic.ID, userA, UpdateTopicInput{
+		Name: &newName,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "New Name", updated.Name)
+
+	// Verify in repo
+	assert.Equal(t, "New Name", topicRepo.topics[topic.ID].Name)
+
+	t.Run("non admin cannot update", func(t *testing.T) {
+		outsider := uuid.New()
+		_, err := svc.UpdateTopic(context.Background(), topic.ID, outsider, UpdateTopicInput{
+			Name: &newName,
+		})
+		assert.Error(t, err)
+	})
+}

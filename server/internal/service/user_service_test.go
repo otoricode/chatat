@@ -284,3 +284,82 @@ func TestHashPhone(t *testing.T) {
 	assert.NotEqual(t, h1, h3)
 	assert.Len(t, h1, 64) // SHA-256 hex is 64 chars
 }
+
+func TestValidatePrivacySettings(t *testing.T) {
+	t.Run("all valid everyone", func(t *testing.T) {
+		err := validatePrivacySettings(model.PrivacySettings{
+			LastSeenVisibility:     "everyone",
+			OnlineVisibility:       "everyone",
+			ProfilePhotoVisibility: "everyone",
+		})
+		assert.NoError(t, err)
+	})
+
+	t.Run("all valid contacts", func(t *testing.T) {
+		err := validatePrivacySettings(model.PrivacySettings{
+			LastSeenVisibility:     "contacts",
+			OnlineVisibility:       "contacts",
+			ProfilePhotoVisibility: "contacts",
+		})
+		assert.NoError(t, err)
+	})
+
+	t.Run("all valid nobody", func(t *testing.T) {
+		err := validatePrivacySettings(model.PrivacySettings{
+			LastSeenVisibility:     "nobody",
+			OnlineVisibility:       "nobody",
+			ProfilePhotoVisibility: "nobody",
+		})
+		assert.NoError(t, err)
+	})
+
+	t.Run("mixed valid", func(t *testing.T) {
+		err := validatePrivacySettings(model.PrivacySettings{
+			LastSeenVisibility:     "everyone",
+			OnlineVisibility:       "contacts",
+			ProfilePhotoVisibility: "nobody",
+		})
+		assert.NoError(t, err)
+	})
+
+	t.Run("invalid lastSeenVisibility", func(t *testing.T) {
+		err := validatePrivacySettings(model.PrivacySettings{
+			LastSeenVisibility:     "invalid",
+			OnlineVisibility:       "everyone",
+			ProfilePhotoVisibility: "everyone",
+		})
+		assert.Error(t, err)
+		var appErr *apperror.AppError
+		assert.ErrorAs(t, err, &appErr)
+		assert.Equal(t, "VALIDATION_ERROR", appErr.Code)
+	})
+
+	t.Run("invalid onlineVisibility", func(t *testing.T) {
+		err := validatePrivacySettings(model.PrivacySettings{
+			LastSeenVisibility:     "everyone",
+			OnlineVisibility:       "bad",
+			ProfilePhotoVisibility: "everyone",
+		})
+		assert.Error(t, err)
+		var appErr *apperror.AppError
+		assert.ErrorAs(t, err, &appErr)
+		assert.Equal(t, "VALIDATION_ERROR", appErr.Code)
+	})
+
+	t.Run("invalid profilePhotoVisibility", func(t *testing.T) {
+		err := validatePrivacySettings(model.PrivacySettings{
+			LastSeenVisibility:     "everyone",
+			OnlineVisibility:       "everyone",
+			ProfilePhotoVisibility: "xyz",
+		})
+		assert.Error(t, err)
+		var appErr *apperror.AppError
+		assert.ErrorAs(t, err, &appErr)
+		assert.Equal(t, "VALIDATION_ERROR", appErr.Code)
+	})
+
+	t.Run("empty values invalid", func(t *testing.T) {
+		err := validatePrivacySettings(model.PrivacySettings{})
+		assert.Error(t, err)
+	})
+}
