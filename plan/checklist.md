@@ -75,13 +75,13 @@ Setiap kali menyelesaikan satu phase, jalankan checklist ini:
 - [x] Frontend: Group settings (edit nama, ikon, anggota)
 - [ ] Tab Chat + Tab Dokumen + Tab Topik dalam grup
 
-## Phase 09 — Real-time Messaging
-- [ ] WebSocket client di React Native
-- [ ] Message relay server-to-client real-time
-- [ ] Typing indicator ("sedang mengetik...")
-- [ ] Online/offline status real-time
-- [ ] Read receipts (✓ sent, ✓✓ delivered, biru = read)
-- [ ] Auto-reconnect + offline queue
+## Phase 09 — Real-time Messaging ✅ (2025-06-14)
+- [x] WebSocket client di React Native
+- [x] Message relay server-to-client real-time
+- [x] Typing indicator ("sedang mengetik...")
+- [x] Online/offline status real-time
+- [x] Read receipts (✓ sent, ✓✓ delivered, biru = read)
+- [x] Auto-reconnect + offline queue
 
 ## Phase 10 — Topic System
 - [ ] Backend: Topic CRUD (parent: personal/group)
