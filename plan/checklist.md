@@ -58,13 +58,13 @@ Setiap kali menyelesaikan satu phase, jalankan checklist ini:
 - [x] Shared components: Loading, Empty, Error, Avatar, Badge
 - [x] FAB (Floating Action Button) per tab
 
-## Phase 07 — Chat Personal
-- [ ] Backend: personal chat creation, message send/receive API
-- [ ] Backend: delivery status (sent, delivered, read)
-- [ ] Frontend: Chat list dengan preview, badge unread, timestamp
-- [ ] Frontend: Chat screen dengan message bubbles (kiri/kanan)
-- [ ] Frontend: Reply, forward, delete message
-- [ ] Frontend: Input bar dengan tombol kirim
+## Phase 07 — Chat Personal ✅ (2025-06-14)
+- [x] Backend: personal chat creation, message send/receive API
+- [x] Backend: delivery status (sent, delivered, read)
+- [x] Frontend: Chat list dengan preview, badge unread, timestamp
+- [x] Frontend: Chat screen dengan message bubbles (kiri/kanan)
+- [x] Frontend: Reply, forward, delete message
+- [x] Frontend: Input bar dengan tombol kirim
 - [ ] Tab Chat + Tab Dokumen dalam chat personal
 
 ## Phase 08 — Chat Group
