@@ -107,13 +107,13 @@ Setiap kali menyelesaikan satu phase, jalankan checklist ini:
 - [x] Backend: Document history log
 
 ## Phase 13 — Block Editor
-- [ ] 13 block types fully implemented
-- [ ] Slash command menu (`/`)
-- [ ] Floating toolbar (bold, italic, strikethrough, code, link)
-- [ ] Table block (dynamic rows/columns, column types)
-- [ ] Checklist block (interactive checkboxes)
-- [ ] Toggle block (collapsible content)
-- [ ] Template selection (8 templates)
+- [x] 13 block types fully implemented
+- [x] Slash command menu (`/`)
+- [x] Floating toolbar (bold, italic, strikethrough, code, link)
+- [x] Table block (dynamic rows/columns, column types)
+- [x] Checklist block (interactive checkboxes)
+- [x] Toggle block (collapsible content)
+- [x] Template selection (8 templates)
 
 ## Phase 14 — Document Collaboration & Locking
 - [ ] Real-time document sync via WebSocket

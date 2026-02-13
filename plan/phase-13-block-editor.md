@@ -77,18 +77,18 @@
    - Show save indicator (Menyimpan... / Tersimpan)
 
 ### Acceptance Criteria:
-- [ ] Editor renders blocks from API data
-- [ ] Zustand store manages editor state
-- [ ] FlatList-based rendering (performant 100+ blocks)
-- [ ] Auto-save debounced at 2s
-- [ ] Save indicator shown
-- [ ] Read-only mode for locked docs
+- [x] Editor renders blocks from API data
+- [x] Zustand store manages editor state
+- [x] FlatList-based rendering (performant 100+ blocks)
+- [x] Auto-save debounced at 2s
+- [x] Save indicator shown
+- [x] Read-only mode for locked docs
 
 ### Testing:
-- [ ] Unit test: editorStore actions (add, update, delete, move)
-- [ ] Unit test: auto-save debounce logic
-- [ ] Component test: BlockEditor renders blocks
-- [ ] Component test: read-only mode disables editing
+- [x] Unit test: editorStore actions (add, update, delete, move)
+- [x] Unit test: auto-save debounce logic
+- [x] Component test: BlockEditor renders blocks
+- [x] Component test: read-only mode disables editing
 
 ---
 
@@ -162,21 +162,21 @@
    - Padding left: 16px
 
 ### Acceptance Criteria:
-- [ ] Paragraph: editable, multiline, placeholder
-- [ ] Headings: 3 levels, correct sizes
-- [ ] Bullet list: auto-bullet, indent
-- [ ] Numbered list: auto-number, re-number
-- [ ] Checklist: toggle checked, strikethrough
-- [ ] Quote: left accent border, italic
-- [ ] Enter key: create new block of same type
-- [ ] Backspace on empty: delete block, merge with previous
+- [x] Paragraph: editable, multiline, placeholder
+- [x] Headings: 3 levels, correct sizes
+- [x] Bullet list: auto-bullet, indent
+- [x] Numbered list: auto-number, re-number
+- [x] Checklist: toggle checked, strikethrough
+- [x] Quote: left accent border, italic
+- [x] Enter key: create new block of same type
+- [x] Backspace on empty: delete block, merge with previous
 
 ### Testing:
-- [ ] Component test: each block type renders correctly
-- [ ] Component test: text editing
-- [ ] Component test: checklist toggle
-- [ ] Component test: list auto-create on Enter
-- [ ] Snapshot test: each block type
+- [x] Component test: each block type renders correctly
+- [x] Component test: text editing
+- [x] Component test: checklist toggle
+- [x] Component test: list auto-create on Enter
+- [x] Snapshot test: each block type
 
 ---
 
@@ -272,21 +272,21 @@
    - Height: 1px, color: #374151
 
 ### Acceptance Criteria:
-- [ ] Table: add/remove rows & columns, edit cells, horizontal scroll
-- [ ] Table: column type selector (Teks, Angka, Tanggal, Checkbox) saat buat kolom
-- [ ] Table: drag-to-resize kolom (drag pembatas header kolom)
-- [ ] Table: header row auto-styled
-- [ ] Callout: emoji + color + content
-- [ ] Code: monospace font, language label, copy button
-- [ ] Toggle: expand/collapse, nested blocks
-- [ ] Divider: renders horizontal line
+- [x] Table: add/remove rows & columns, edit cells, horizontal scroll
+- [x] Table: column type selector (Teks, Angka, Tanggal, Checkbox) saat buat kolom
+- [x] Table: drag-to-resize kolom (drag pembatas header kolom)
+- [x] Table: header row auto-styled
+- [x] Callout: emoji + color + content
+- [x] Code: monospace font, language label, copy button
+- [x] Toggle: expand/collapse, nested blocks
+- [x] Divider: renders horizontal line
 
 ### Testing:
-- [ ] Component test: table add row/column
-- [ ] Component test: callout with emoji
-- [ ] Component test: code block copy
-- [ ] Component test: toggle expand/collapse
-- [ ] Snapshot test: all special blocks
+- [x] Component test: table add row/column
+- [x] Component test: callout with emoji
+- [x] Component test: code block copy
+- [x] Component test: toggle expand/collapse
+- [x] Snapshot test: all special blocks
 
 ---
 
@@ -354,20 +354,20 @@
    - Focus new block immediately
 
 ### Acceptance Criteria:
-- [ ] "/" triggers slash menu
-- [ ] Menu shows all 13 block types
-- [ ] Filter by typing after "/"
-- [ ] Select replaces current block type
-- [ ] Menu positioned below cursor
-- [ ] Dismiss on Escape or outside tap
-- [ ] Smooth animation (fade in/out)
+- [x] "/" triggers slash menu
+- [x] Menu shows all 13 block types
+- [x] Filter by typing after "/"
+- [x] Select replaces current block type
+- [x] Menu positioned below cursor
+- [x] Dismiss on Escape or outside tap
+- [x] Smooth animation (fade in/out)
 
 ### Testing:
-- [ ] Component test: slash menu renders all options
-- [ ] Component test: filter works
-- [ ] Component test: select inserts block
-- [ ] Component test: dismiss on outside tap
-- [ ] Integration test: type "/" → select → block created
+- [x] Component test: slash menu renders all options
+- [x] Component test: filter works
+- [x] Component test: select inserts block
+- [x] Component test: dismiss on outside tap
+- [x] Integration test: type "/" → select → block created
 
 ---
 
@@ -429,18 +429,18 @@
    - Animated appearance
 
 ### Acceptance Criteria:
-- [ ] Toolbar appears on text selection
-- [ ] 7 formatting actions available (bold, italic, underline, strikethrough, code, link, highlight)
-- [ ] Format applied to selected text
-- [ ] Active formats highlighted
-- [ ] Position: above selection, avoid edges
-- [ ] Smooth animation
+- [x] Toolbar appears on text selection
+- [x] 7 formatting actions available (bold, italic, underline, strikethrough, code, link, highlight)
+- [x] Format applied to selected text
+- [x] Active formats highlighted
+- [x] Position: above selection, avoid edges
+- [x] Smooth animation
 
 ### Testing:
-- [ ] Component test: toolbar renders all actions
-- [ ] Component test: active format highlighting
-- [ ] Unit test: format text (bold, italic, etc.)
-- [ ] Integration test: select text → format → deselect
+- [x] Component test: toolbar renders all actions
+- [x] Component test: active format highlighting
+- [x] Unit test: format text (bold, italic, etc.)
+- [x] Integration test: select text → format → deselect
 
 ---
 
@@ -473,39 +473,39 @@
    - Cannot convert between incompatible types (table → paragraph)
 
 ### Acceptance Criteria:
-- [ ] Long press shows action menu
-- [ ] Duplicate, delete, move up/down work
-- [ ] Block type conversion
-- [ ] Drag handle visible on active block
-- [ ] Smooth drag-and-drop reorder
-- [ ] Haptic feedback on drag
-- [ ] Incompatible conversion rejected gracefully
+- [x] Long press shows action menu
+- [x] Duplicate, delete, move up/down work
+- [x] Block type conversion
+- [x] Drag handle visible on active block
+- [x] Smooth drag-and-drop reorder
+- [x] Haptic feedback on drag
+- [x] Incompatible conversion rejected gracefully
 
 ### Testing:
-- [ ] Component test: action menu renders
-- [ ] Unit test: block duplicate
-- [ ] Unit test: block type conversion
-- [ ] Integration test: drag reorder updates positions
+- [x] Component test: action menu renders
+- [x] Unit test: block duplicate
+- [x] Unit test: block type conversion
+- [x] Integration test: drag reorder updates positions
 
 ---
 
 ## Phase 13 Review
 
 ### Testing Checklist:
-- [ ] All 13 block types render correctly
-- [ ] Slash command menu with filter
-- [ ] Floating toolbar with formatting
-- [ ] Block actions (duplicate, delete, move, change type)
-- [ ] Drag-to-reorder
-- [ ] Auto-save
-- [ ] Read-only mode
-- [ ] Performance: 100+ blocks smooth scroll
-- [ ] Keyboard handling: no overlap, smooth scroll
+- [x] All 13 block types render correctly
+- [x] Slash command menu with filter
+- [x] Floating toolbar with formatting
+- [x] Block actions (duplicate, delete, move, change type)
+- [x] Drag-to-reorder
+- [x] Auto-save
+- [x] Read-only mode
+- [x] Performance: 100+ blocks smooth scroll
+- [x] Keyboard handling: no overlap, smooth scroll
 
 ### Review Checklist:
-- [ ] Block types match `spesifikasi-chatat.md` section 5.3
-- [ ] Labels in Indonesian
-- [ ] Dark theme applied (#0F1117 bg, #6EE7B7 accent)
-- [ ] Responsive on different screen sizes
-- [ ] Consistent with WhatsApp-style design system
-- [ ] Commit: `feat(editor): implement Notion-style block editor`
+- [x] Block types match `spesifikasi-chatat.md` section 5.3
+- [x] Labels in Indonesian
+- [x] Dark theme applied (#0F1117 bg, #6EE7B7 accent)
+- [x] Responsive on different screen sizes
+- [x] Consistent with WhatsApp-style design system
+- [x] Commit: `feat(editor): implement Notion-style block editor`
