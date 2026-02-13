@@ -124,13 +124,13 @@ Setiap kali menyelesaikan satu phase, jalankan checklist ini:
 - [x] Lock status badges (Draft, Menunggu Tanda Tangan, Terkunci)
 - [x] Document inline card di chat + tab Dokumen
 
-## Phase 15 — Entity System
-- [ ] Backend: Entity CRUD (free-form tags)
-- [ ] Backend: Entity-document linking (many-to-many)
-- [ ] Backend: Contact-as-entity support
-- [ ] Frontend: Entity picker/creator in document editor
-- [ ] Frontend: Entity filter on document list
-- [ ] Frontend: Entity search
+## Phase 15 — Entity System ✅
+- [x] Backend: Entity CRUD (free-form tags)
+- [x] Backend: Entity-document linking (many-to-many)
+- [x] Backend: Contact-as-entity support
+- [x] Frontend: Entity picker/creator in document editor
+- [x] Frontend: Entity filter on document list
+- [x] Frontend: Entity search
 
 ## Phase 16 — Push Notifications
 - [ ] FCM setup (Android)
