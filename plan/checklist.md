@@ -132,12 +132,12 @@ Setiap kali menyelesaikan satu phase, jalankan checklist ini:
 - [x] Frontend: Entity filter on document list
 - [x] Frontend: Entity search
 
-## Phase 16 — Push Notifications
-- [ ] FCM setup (Android)
-- [ ] APNs setup (iOS)
-- [ ] Notification types: new message, signature request, document shared
-- [ ] Deep linking: tap notification → open relevant screen
-- [ ] Notification preferences per chat/group
+## Phase 16 — Push Notifications ✅
+- [x] FCM setup (Android)
+- [x] APNs setup (iOS)
+- [x] Notification types: new message, signature request, document shared
+- [x] Deep linking: tap notification → open relevant screen
+- [x] Notification preferences per chat/group
 
 ## Phase 17 — Search System
 - [ ] Backend: Full-text search (messages, documents, contacts)
