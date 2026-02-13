@@ -18,15 +18,17 @@ type Dependencies struct {
 	Hub    *ws.Hub
 
 	// Services
-	OTPService     service.OTPService
-	ReverseOTP     service.ReverseOTPService
-	TokenService   service.TokenService
-	SessionService service.SessionService
-	UserService    service.UserService
-	ContactService service.ContactService
-	ChatService    service.ChatService
-	MessageService service.MessageService
-	GroupService   service.GroupService
+	OTPService          service.OTPService
+	ReverseOTP          service.ReverseOTPService
+	TokenService        service.TokenService
+	SessionService      service.SessionService
+	UserService         service.UserService
+	ContactService      service.ContactService
+	ChatService         service.ChatService
+	MessageService      service.MessageService
+	GroupService        service.GroupService
+	TopicService        service.TopicService
+	TopicMessageService service.TopicMessageService
 
 	// Repositories
 	UserRepo        repository.UserRepository
@@ -47,7 +49,7 @@ type Dependencies struct {
 	UserHandler     *UserHandler
 	ContactHandler  *ContactHandler
 	ChatHandler     *ChatHandler
-	TopicHandler    *TopicStubHandler
+	TopicHandler    *TopicHandler
 	DocumentHandler *DocumentStubHandler
 	EntityHandler   *EntityStubHandler
 	WSHandler       *WSHandler
@@ -87,6 +89,8 @@ func NewDependencies(cfg *config.Config, db *pgxpool.Pool, redisClient *redis.Cl
 	chatService := service.NewChatService(chatRepo, messageRepo, messageStatRepo, userRepo, hub)
 	messageService := service.NewMessageService(messageRepo, messageStatRepo, chatRepo, hub)
 	groupService := service.NewGroupService(chatRepo, messageRepo, messageStatRepo, userRepo, hub)
+	topicService := service.NewTopicService(topicRepo, topicMsgRepo, chatRepo, userRepo, hub)
+	topicMsgService := service.NewTopicMessageService(topicMsgRepo, topicRepo, hub)
 
 	// Status notifier: broadcasts online/offline events to contacts
 	_ = service.NewStatusNotifier(hub, contactRepo, userRepo, redisClient)
@@ -97,6 +101,7 @@ func NewDependencies(cfg *config.Config, db *pgxpool.Pool, redisClient *redis.Cl
 	userHandler := NewUserHandler(userService)
 	contactHandler := NewContactHandler(contactService)
 	chatHandler := NewChatHandler(chatService, messageService, groupService)
+	topicHandler := NewTopicHandler(topicService, topicMsgService)
 
 	deps := &Dependencies{
 		Config: cfg,
@@ -104,15 +109,17 @@ func NewDependencies(cfg *config.Config, db *pgxpool.Pool, redisClient *redis.Cl
 		Redis:  redisClient,
 		Hub:    hub,
 
-		OTPService:     otpService,
-		ReverseOTP:     reverseOTPService,
-		TokenService:   tokenService,
-		SessionService: sessionService,
-		UserService:    userService,
-		ContactService: contactService,
-		ChatService:    chatService,
-		MessageService: messageService,
-		GroupService:   groupService,
+		OTPService:          otpService,
+		ReverseOTP:          reverseOTPService,
+		TokenService:        tokenService,
+		SessionService:      sessionService,
+		UserService:         userService,
+		ContactService:      contactService,
+		ChatService:         chatService,
+		MessageService:      messageService,
+		GroupService:        groupService,
+		TopicService:        topicService,
+		TopicMessageService: topicMsgService,
 
 		UserRepo:        userRepo,
 		ContactRepo:     contactRepo,
@@ -131,10 +138,10 @@ func NewDependencies(cfg *config.Config, db *pgxpool.Pool, redisClient *redis.Cl
 		UserHandler:     userHandler,
 		ContactHandler:  contactHandler,
 		ChatHandler:     chatHandler,
-		TopicHandler:    &TopicStubHandler{},
+		TopicHandler:    topicHandler,
 		DocumentHandler: &DocumentStubHandler{},
 		EntityHandler:   &EntityStubHandler{},
-		WSHandler:       NewWSHandler(hub, cfg.JWTSecret, chatRepo, messageStatRepo, redisClient),
+		WSHandler:       NewWSHandler(hub, cfg.JWTSecret, chatRepo, topicRepo, messageStatRepo, redisClient),
 	}
 
 	return deps

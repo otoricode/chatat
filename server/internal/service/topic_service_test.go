@@ -1,0 +1,592 @@
+package service
+
+import (
+	"context"
+	"testing"
+	"time"
+
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/otoritech/chatat/internal/model"
+	"github.com/otoritech/chatat/pkg/apperror"
+)
+
+// --- Mock Topic Repository ---
+type mockTopicRepo struct {
+	topics  map[uuid.UUID]*model.Topic
+	members map[uuid.UUID][]*model.TopicMember // topicID -> members
+}
+
+func newMockTopicRepo() *mockTopicRepo {
+	return &mockTopicRepo{
+		topics:  make(map[uuid.UUID]*model.Topic),
+		members: make(map[uuid.UUID][]*model.TopicMember),
+	}
+}
+
+func (m *mockTopicRepo) Create(_ context.Context, input model.CreateTopicInput) (*model.Topic, error) {
+	topic := &model.Topic{
+		ID:          uuid.New(),
+		Name:        input.Name,
+		Icon:        input.Icon,
+		Description: input.Description,
+		ParentType:  input.ParentType,
+		ParentID:    input.ParentID,
+		CreatedBy:   input.CreatedBy,
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
+	}
+	if topic.Icon == "" {
+		topic.Icon = "💬"
+	}
+	m.topics[topic.ID] = topic
+	return topic, nil
+}
+
+func (m *mockTopicRepo) FindByID(_ context.Context, id uuid.UUID) (*model.Topic, error) {
+	t, ok := m.topics[id]
+	if !ok {
+		return nil, apperror.NotFound("topic", id.String())
+	}
+	return t, nil
+}
+
+func (m *mockTopicRepo) ListByParent(_ context.Context, parentID uuid.UUID) ([]*model.Topic, error) {
+	var result []*model.Topic
+	for _, t := range m.topics {
+		if t.ParentID == parentID {
+			result = append(result, t)
+		}
+	}
+	return result, nil
+}
+
+func (m *mockTopicRepo) ListByUser(_ context.Context, userID uuid.UUID) ([]*model.Topic, error) {
+	var result []*model.Topic
+	for topicID, t := range m.topics {
+		for _, mem := range m.members[topicID] {
+			if mem.UserID == userID {
+				result = append(result, t)
+				break
+			}
+		}
+	}
+	return result, nil
+}
+
+func (m *mockTopicRepo) AddMember(_ context.Context, topicID, userID uuid.UUID, role model.MemberRole) error {
+	// Check for duplicate
+	for _, mem := range m.members[topicID] {
+		if mem.UserID == userID {
+			return nil // ON CONFLICT DO NOTHING
+		}
+	}
+	m.members[topicID] = append(m.members[topicID], &model.TopicMember{
+		TopicID:  topicID,
+		UserID:   userID,
+		Role:     role,
+		JoinedAt: time.Now(),
+	})
+	return nil
+}
+
+func (m *mockTopicRepo) RemoveMember(_ context.Context, topicID, userID uuid.UUID) error {
+	members := m.members[topicID]
+	for i, mem := range members {
+		if mem.UserID == userID {
+			m.members[topicID] = append(members[:i], members[i+1:]...)
+			return nil
+		}
+	}
+	return apperror.NotFound("topic member", userID.String())
+}
+
+func (m *mockTopicRepo) GetMembers(_ context.Context, topicID uuid.UUID) ([]*model.TopicMember, error) {
+	return m.members[topicID], nil
+}
+
+func (m *mockTopicRepo) Update(_ context.Context, id uuid.UUID, input model.UpdateTopicInput) (*model.Topic, error) {
+	t, ok := m.topics[id]
+	if !ok {
+		return nil, apperror.NotFound("topic", id.String())
+	}
+	if input.Name != nil {
+		t.Name = *input.Name
+	}
+	if input.Icon != nil {
+		t.Icon = *input.Icon
+	}
+	if input.Description != nil {
+		t.Description = *input.Description
+	}
+	t.UpdatedAt = time.Now()
+	return t, nil
+}
+
+func (m *mockTopicRepo) Delete(_ context.Context, id uuid.UUID) error {
+	if _, ok := m.topics[id]; !ok {
+		return apperror.NotFound("topic", id.String())
+	}
+	delete(m.topics, id)
+	delete(m.members, id)
+	return nil
+}
+
+// --- Mock Topic Message Repository ---
+type mockTopicMsgRepo struct {
+	messages map[uuid.UUID]*model.TopicMessage
+	byTopic  map[uuid.UUID][]*model.TopicMessage
+}
+
+func newMockTopicMsgRepo() *mockTopicMsgRepo {
+	return &mockTopicMsgRepo{
+		messages: make(map[uuid.UUID]*model.TopicMessage),
+		byTopic:  make(map[uuid.UUID][]*model.TopicMessage),
+	}
+}
+
+func (m *mockTopicMsgRepo) Create(_ context.Context, input model.CreateTopicMessageInput) (*model.TopicMessage, error) {
+	msgType := input.Type
+	if msgType == "" {
+		msgType = model.MessageTypeText
+	}
+	msg := &model.TopicMessage{
+		ID:        uuid.New(),
+		TopicID:   input.TopicID,
+		SenderID:  input.SenderID,
+		Content:   input.Content,
+		ReplyToID: input.ReplyToID,
+		Type:      msgType,
+		CreatedAt: time.Now(),
+	}
+	m.messages[msg.ID] = msg
+	m.byTopic[input.TopicID] = append([]*model.TopicMessage{msg}, m.byTopic[input.TopicID]...)
+	return msg, nil
+}
+
+func (m *mockTopicMsgRepo) FindByID(_ context.Context, id uuid.UUID) (*model.TopicMessage, error) {
+	msg, ok := m.messages[id]
+	if !ok {
+		return nil, apperror.NotFound("topic message", id.String())
+	}
+	return msg, nil
+}
+
+func (m *mockTopicMsgRepo) ListByTopic(_ context.Context, topicID uuid.UUID, cursor *time.Time, limit int) ([]*model.TopicMessage, error) {
+	msgs := m.byTopic[topicID]
+	if limit <= 0 {
+		limit = 50
+	}
+	var result []*model.TopicMessage
+	for _, msg := range msgs {
+		if cursor != nil && !msg.CreatedAt.Before(*cursor) {
+			continue
+		}
+		result = append(result, msg)
+		if len(result) >= limit {
+			break
+		}
+	}
+	return result, nil
+}
+
+func (m *mockTopicMsgRepo) MarkAsDeleted(_ context.Context, id uuid.UUID, forAll bool) error {
+	msg, ok := m.messages[id]
+	if !ok {
+		return apperror.NotFound("topic message", id.String())
+	}
+	msg.IsDeleted = true
+	msg.DeletedForAll = forAll
+	return nil
+}
+
+// --- Topic Service Tests ---
+
+func setupTopicService() (TopicService, *mockTopicRepo, *mockTopicMsgRepo, *mockChatRepo, *mockUserRepo) {
+	topicRepo := newMockTopicRepo()
+	topicMsgRepo := newMockTopicMsgRepo()
+	chatRepo := newMockChatRepo()
+	userRepo := newMockUserRepo()
+	hub := newTestHub()
+	defer hub.Shutdown()
+
+	svc := NewTopicService(topicRepo, topicMsgRepo, chatRepo, userRepo, hub)
+	return svc, topicRepo, topicMsgRepo, chatRepo, userRepo
+}
+
+func TestTopicService_CreateFromPersonalChat(t *testing.T) {
+	svc, _, _, chatRepo, userRepo := setupTopicService()
+
+	userA := uuid.New()
+	userB := uuid.New()
+	userRepo.addUser(&model.User{ID: userA, Phone: "+628111", Name: "Andi"})
+	userRepo.addUser(&model.User{ID: userB, Phone: "+628222", Name: "Budi"})
+
+	// Create personal chat
+	chat, _ := chatRepo.Create(context.Background(), model.CreateChatInput{
+		Type:      model.ChatTypePersonal,
+		CreatedBy: userA,
+	})
+	_ = chatRepo.AddMember(context.Background(), chat.ID, userA, model.MemberRoleAdmin)
+	_ = chatRepo.AddMember(context.Background(), chat.ID, userB, model.MemberRoleMember)
+
+	// Create topic from personal chat
+	topic, err := svc.CreateTopic(context.Background(), userA, CreateTopicInput{
+		Name:     "Pembagian Lahan",
+		Icon:     "🌾",
+		ParentID: chat.ID,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "Pembagian Lahan", topic.Name)
+	assert.Equal(t, "🌾", topic.Icon)
+	assert.Equal(t, model.ChatTypePersonal, topic.ParentType)
+}
+
+func TestTopicService_CreateFromGroupChat(t *testing.T) {
+	svc, topicRepo, _, chatRepo, userRepo := setupTopicService()
+
+	creator := uuid.New()
+	memberA := uuid.New()
+	memberB := uuid.New()
+	userRepo.addUser(&model.User{ID: creator, Phone: "+628111", Name: "Creator"})
+	userRepo.addUser(&model.User{ID: memberA, Phone: "+628222", Name: "MemberA"})
+	userRepo.addUser(&model.User{ID: memberB, Phone: "+628333", Name: "MemberB"})
+
+	// Create group chat
+	chat, _ := chatRepo.Create(context.Background(), model.CreateChatInput{
+		Type:      model.ChatTypeGroup,
+		Name:      "Tim Proyek",
+		CreatedBy: creator,
+	})
+	_ = chatRepo.AddMember(context.Background(), chat.ID, creator, model.MemberRoleAdmin)
+	_ = chatRepo.AddMember(context.Background(), chat.ID, memberA, model.MemberRoleMember)
+	_ = chatRepo.AddMember(context.Background(), chat.ID, memberB, model.MemberRoleMember)
+
+	t.Run("with subset members", func(t *testing.T) {
+		topic, err := svc.CreateTopic(context.Background(), creator, CreateTopicInput{
+			Name:      "Desain UI",
+			Icon:      "🎨",
+			ParentID:  chat.ID,
+			MemberIDs: []uuid.UUID{creator, memberA},
+		})
+		require.NoError(t, err)
+		assert.Equal(t, "Desain UI", topic.Name)
+		assert.Equal(t, model.ChatTypeGroup, topic.ParentType)
+
+		// Check members
+		members, _ := topicRepo.GetMembers(context.Background(), topic.ID)
+		assert.Len(t, members, 2) // creator + memberA
+	})
+
+	t.Run("with all members (no memberIDs)", func(t *testing.T) {
+		topic, err := svc.CreateTopic(context.Background(), creator, CreateTopicInput{
+			Name:     "General",
+			Icon:     "📢",
+			ParentID: chat.ID,
+		})
+		require.NoError(t, err)
+
+		members, _ := topicRepo.GetMembers(context.Background(), topic.ID)
+		assert.Len(t, members, 3) // all group members
+	})
+}
+
+func TestTopicService_CreateInvalidMember(t *testing.T) {
+	svc, _, _, chatRepo, userRepo := setupTopicService()
+
+	creator := uuid.New()
+	memberA := uuid.New()
+	outsider := uuid.New()
+	userRepo.addUser(&model.User{ID: creator, Phone: "+628111", Name: "Creator"})
+	userRepo.addUser(&model.User{ID: memberA, Phone: "+628222", Name: "MemberA"})
+	userRepo.addUser(&model.User{ID: outsider, Phone: "+628444", Name: "Outsider"})
+
+	chat, _ := chatRepo.Create(context.Background(), model.CreateChatInput{
+		Type:      model.ChatTypeGroup,
+		Name:      "Tim",
+		CreatedBy: creator,
+	})
+	_ = chatRepo.AddMember(context.Background(), chat.ID, creator, model.MemberRoleAdmin)
+	_ = chatRepo.AddMember(context.Background(), chat.ID, memberA, model.MemberRoleMember)
+
+	// Outsider not in parent chat
+	_, err := svc.CreateTopic(context.Background(), creator, CreateTopicInput{
+		Name:      "Test",
+		Icon:      "📌",
+		ParentID:  chat.ID,
+		MemberIDs: []uuid.UUID{creator, outsider},
+	})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "not in parent chat")
+}
+
+func TestTopicService_CreateValidation(t *testing.T) {
+	svc, _, _, chatRepo, userRepo := setupTopicService()
+
+	creator := uuid.New()
+	userRepo.addUser(&model.User{ID: creator, Phone: "+628111", Name: "Creator"})
+
+	chat, _ := chatRepo.Create(context.Background(), model.CreateChatInput{
+		Type:      model.ChatTypePersonal,
+		CreatedBy: creator,
+	})
+	_ = chatRepo.AddMember(context.Background(), chat.ID, creator, model.MemberRoleAdmin)
+
+	t.Run("missing name", func(t *testing.T) {
+		_, err := svc.CreateTopic(context.Background(), creator, CreateTopicInput{
+			Icon:     "📌",
+			ParentID: chat.ID,
+		})
+		require.Error(t, err)
+	})
+
+	t.Run("missing icon", func(t *testing.T) {
+		_, err := svc.CreateTopic(context.Background(), creator, CreateTopicInput{
+			Name:     "Test",
+			ParentID: chat.ID,
+		})
+		require.Error(t, err)
+	})
+
+	t.Run("non-member creator", func(t *testing.T) {
+		nonMember := uuid.New()
+		_, err := svc.CreateTopic(context.Background(), nonMember, CreateTopicInput{
+			Name:     "Test",
+			Icon:     "📌",
+			ParentID: chat.ID,
+		})
+		require.Error(t, err)
+	})
+}
+
+func TestTopicService_AddRemoveMember(t *testing.T) {
+	svc, topicRepo, _, chatRepo, userRepo := setupTopicService()
+
+	admin := uuid.New()
+	memberA := uuid.New()
+	memberB := uuid.New()
+	userRepo.addUser(&model.User{ID: admin, Phone: "+628111", Name: "Admin"})
+	userRepo.addUser(&model.User{ID: memberA, Phone: "+628222", Name: "MemberA"})
+	userRepo.addUser(&model.User{ID: memberB, Phone: "+628333", Name: "MemberB"})
+
+	// Create group and topic
+	chat, _ := chatRepo.Create(context.Background(), model.CreateChatInput{
+		Type:      model.ChatTypeGroup,
+		Name:      "Tim",
+		CreatedBy: admin,
+	})
+	_ = chatRepo.AddMember(context.Background(), chat.ID, admin, model.MemberRoleAdmin)
+	_ = chatRepo.AddMember(context.Background(), chat.ID, memberA, model.MemberRoleMember)
+	_ = chatRepo.AddMember(context.Background(), chat.ID, memberB, model.MemberRoleMember)
+
+	topic, _ := svc.CreateTopic(context.Background(), admin, CreateTopicInput{
+		Name:      "Test",
+		Icon:      "📌",
+		ParentID:  chat.ID,
+		MemberIDs: []uuid.UUID{admin},
+	})
+
+	t.Run("add member", func(t *testing.T) {
+		err := svc.AddMember(context.Background(), topic.ID, memberA, admin)
+		require.NoError(t, err)
+
+		members, _ := topicRepo.GetMembers(context.Background(), topic.ID)
+		assert.Len(t, members, 2)
+	})
+
+	t.Run("add member not in parent", func(t *testing.T) {
+		outsider := uuid.New()
+		err := svc.AddMember(context.Background(), topic.ID, outsider, admin)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "not a member of the parent chat")
+	})
+
+	t.Run("non-admin cannot add", func(t *testing.T) {
+		err := svc.AddMember(context.Background(), topic.ID, memberB, memberA)
+		require.Error(t, err)
+	})
+
+	t.Run("remove member", func(t *testing.T) {
+		err := svc.RemoveMember(context.Background(), topic.ID, memberA, admin)
+		require.NoError(t, err)
+
+		members, _ := topicRepo.GetMembers(context.Background(), topic.ID)
+		assert.Len(t, members, 1)
+	})
+}
+
+func TestTopicService_ListByChat(t *testing.T) {
+	svc, _, _, chatRepo, userRepo := setupTopicService()
+
+	user := uuid.New()
+	userRepo.addUser(&model.User{ID: user, Phone: "+628111", Name: "User"})
+
+	chat, _ := chatRepo.Create(context.Background(), model.CreateChatInput{
+		Type:      model.ChatTypePersonal,
+		CreatedBy: user,
+	})
+	_ = chatRepo.AddMember(context.Background(), chat.ID, user, model.MemberRoleAdmin)
+
+	// Create 2 topics
+	_, _ = svc.CreateTopic(context.Background(), user, CreateTopicInput{
+		Name: "Topic A", Icon: "📌", ParentID: chat.ID,
+	})
+	_, _ = svc.CreateTopic(context.Background(), user, CreateTopicInput{
+		Name: "Topic B", Icon: "📎", ParentID: chat.ID,
+	})
+
+	topics, err := svc.ListByChat(context.Background(), chat.ID, user)
+	require.NoError(t, err)
+	assert.Len(t, topics, 2)
+}
+
+func TestTopicService_DeleteTopic(t *testing.T) {
+	svc, topicRepo, _, chatRepo, userRepo := setupTopicService()
+
+	admin := uuid.New()
+	member := uuid.New()
+	userRepo.addUser(&model.User{ID: admin, Phone: "+628111", Name: "Admin"})
+	userRepo.addUser(&model.User{ID: member, Phone: "+628222", Name: "Member"})
+
+	chat, _ := chatRepo.Create(context.Background(), model.CreateChatInput{
+		Type:      model.ChatTypeGroup,
+		Name:      "Group",
+		CreatedBy: admin,
+	})
+	_ = chatRepo.AddMember(context.Background(), chat.ID, admin, model.MemberRoleAdmin)
+	_ = chatRepo.AddMember(context.Background(), chat.ID, member, model.MemberRoleMember)
+
+	topic, _ := svc.CreateTopic(context.Background(), admin, CreateTopicInput{
+		Name: "To Delete", Icon: "🗑️", ParentID: chat.ID,
+	})
+
+	t.Run("non-admin cannot delete", func(t *testing.T) {
+		err := svc.DeleteTopic(context.Background(), topic.ID, member)
+		require.Error(t, err)
+	})
+
+	t.Run("admin can delete", func(t *testing.T) {
+		err := svc.DeleteTopic(context.Background(), topic.ID, admin)
+		require.NoError(t, err)
+
+		_, err = topicRepo.FindByID(context.Background(), topic.ID)
+		require.Error(t, err)
+		assert.True(t, apperror.IsNotFound(err))
+	})
+}
+
+// --- Topic Message Service Tests ---
+
+func TestTopicMessageService_SendMessage(t *testing.T) {
+	topicRepo := newMockTopicRepo()
+	topicMsgRepo := newMockTopicMsgRepo()
+	hub := newTestHub()
+	defer hub.Shutdown()
+
+	svc := NewTopicMessageService(topicMsgRepo, topicRepo, hub)
+
+	user := uuid.New()
+	topicID := uuid.New()
+	topicRepo.topics[topicID] = &model.Topic{ID: topicID, Name: "Test"}
+	topicRepo.members[topicID] = []*model.TopicMember{
+		{TopicID: topicID, UserID: user, Role: model.MemberRoleAdmin},
+	}
+
+	t.Run("success", func(t *testing.T) {
+		msg, err := svc.SendMessage(context.Background(), SendTopicMessageInput{
+			TopicID:  topicID,
+			SenderID: user,
+			Content:  "Hello topic",
+		})
+		require.NoError(t, err)
+		assert.Equal(t, "Hello topic", msg.Content)
+		assert.Equal(t, topicID, msg.TopicID)
+	})
+
+	t.Run("non-member cannot send", func(t *testing.T) {
+		outsider := uuid.New()
+		_, err := svc.SendMessage(context.Background(), SendTopicMessageInput{
+			TopicID:  topicID,
+			SenderID: outsider,
+			Content:  "Hello",
+		})
+		require.Error(t, err)
+	})
+
+	t.Run("empty content", func(t *testing.T) {
+		_, err := svc.SendMessage(context.Background(), SendTopicMessageInput{
+			TopicID:  topicID,
+			SenderID: user,
+			Content:  "",
+		})
+		require.Error(t, err)
+	})
+}
+
+func TestTopicMessageService_GetMessages(t *testing.T) {
+	topicRepo := newMockTopicRepo()
+	topicMsgRepo := newMockTopicMsgRepo()
+	hub := newTestHub()
+	defer hub.Shutdown()
+
+	svc := NewTopicMessageService(topicMsgRepo, topicRepo, hub)
+
+	user := uuid.New()
+	topicID := uuid.New()
+	topicRepo.topics[topicID] = &model.Topic{ID: topicID, Name: "Test"}
+	topicRepo.members[topicID] = []*model.TopicMember{
+		{TopicID: topicID, UserID: user, Role: model.MemberRoleAdmin},
+	}
+
+	// Send 3 messages
+	for i := 0; i < 3; i++ {
+		_, _ = svc.SendMessage(context.Background(), SendTopicMessageInput{
+			TopicID:  topicID,
+			SenderID: user,
+			Content:  "msg",
+		})
+		time.Sleep(time.Millisecond) // ensure different timestamps
+	}
+
+	page, err := svc.GetMessages(context.Background(), topicID, "", 10)
+	require.NoError(t, err)
+	assert.Len(t, page.Messages, 3)
+	assert.False(t, page.HasMore)
+}
+
+func TestTopicMessageService_DeleteMessage(t *testing.T) {
+	topicRepo := newMockTopicRepo()
+	topicMsgRepo := newMockTopicMsgRepo()
+	hub := newTestHub()
+	defer hub.Shutdown()
+
+	svc := NewTopicMessageService(topicMsgRepo, topicRepo, hub)
+
+	user := uuid.New()
+	other := uuid.New()
+	topicID := uuid.New()
+	topicRepo.topics[topicID] = &model.Topic{ID: topicID, Name: "Test"}
+	topicRepo.members[topicID] = []*model.TopicMember{
+		{TopicID: topicID, UserID: user, Role: model.MemberRoleAdmin},
+		{TopicID: topicID, UserID: other, Role: model.MemberRoleMember},
+	}
+
+	msg, _ := svc.SendMessage(context.Background(), SendTopicMessageInput{
+		TopicID:  topicID,
+		SenderID: user,
+		Content:  "to delete",
+	})
+
+	t.Run("other user cannot delete", func(t *testing.T) {
+		err := svc.DeleteMessage(context.Background(), msg.ID, other, true)
+		require.Error(t, err)
+	})
+
+	t.Run("sender can delete", func(t *testing.T) {
+		err := svc.DeleteMessage(context.Background(), msg.ID, user, true)
+		require.NoError(t, err)
+		assert.True(t, topicMsgRepo.messages[msg.ID].IsDeleted)
+	})
+}
