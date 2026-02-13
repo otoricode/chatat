@@ -25,6 +25,9 @@ type Config struct {
 	S3AccessKey string
 	S3SecretKey string
 	S3Region    string
+
+	// FCM (Push Notifications) configuration
+	FCMCredentialsFile string // path to Firebase service account JSON
 }
 
 // Load reads configuration from environment variables and returns a Config.
@@ -46,6 +49,8 @@ func Load() (*Config, error) {
 		S3AccessKey: getEnv("S3_ACCESS_KEY", "minioadmin"),
 		S3SecretKey: getEnv("S3_SECRET_KEY", "minioadmin"),
 		S3Region:    getEnv("S3_REGION", "us-east-1"),
+
+		FCMCredentialsFile: getEnv("FCM_CREDENTIALS_FILE", ""),
 	}
 
 	if err := cfg.validate(); err != nil {

@@ -61,6 +61,7 @@ type groupService struct {
 	messageStatRepo repository.MessageStatusRepository
 	userRepo        repository.UserRepository
 	hub             *ws.Hub
+	notifSvc        NotificationService
 }
 
 // NewGroupService creates a new GroupService.
@@ -70,6 +71,7 @@ func NewGroupService(
 	messageStatRepo repository.MessageStatusRepository,
 	userRepo repository.UserRepository,
 	hub *ws.Hub,
+	notifSvc NotificationService,
 ) GroupService {
 	return &groupService{
 		chatRepo:        chatRepo,
@@ -77,6 +79,7 @@ func NewGroupService(
 		messageStatRepo: messageStatRepo,
 		userRepo:        userRepo,
 		hub:             hub,
+		notifSvc:        notifSvc,
 	}
 }
 
@@ -281,6 +284,14 @@ func (s *groupService) AddMember(ctx context.Context, chatID, userID, addedBy uu
 		"userId": userID.String(),
 		"name":   newUserName,
 	})
+
+	// Send push notification to new member (fire-and-forget)
+	if s.notifSvc != nil {
+		go func() {
+			notif := BuildGroupInviteNotif(adderName, chat.Name, chatID)
+			_ = s.notifSvc.SendToUser(context.Background(), userID, notif)
+		}()
+	}
 
 	return nil
 }

@@ -369,7 +369,7 @@ func TestDocumentService_Create(t *testing.T) {
 	userRepo := &docTestUserRepo{users: make(map[uuid.UUID]*model.User)}
 	templateSvc := NewTemplateService()
 
-	svc := NewDocumentService(docRepo, blockRepo, historyRepo, userRepo, templateSvc)
+	svc := NewDocumentService(docRepo, blockRepo, historyRepo, userRepo, templateSvc, nil)
 	ctx := context.Background()
 	ownerID := uuid.New()
 
@@ -437,7 +437,7 @@ func TestDocumentService_GetByID(t *testing.T) {
 		ownerID: {ID: ownerID, Name: "Owner", Avatar: "O"},
 	}}
 	templateSvc := NewTemplateService()
-	svc := NewDocumentService(docRepo, blockRepo, historyRepo, userRepo, templateSvc)
+	svc := NewDocumentService(docRepo, blockRepo, historyRepo, userRepo, templateSvc, nil)
 	ctx := context.Background()
 
 	t.Run("owner can access", func(t *testing.T) {
@@ -479,7 +479,7 @@ func TestDocumentService_Update(t *testing.T) {
 	historyRepo := &mockDocHistoryRepo{}
 	userRepo := &docTestUserRepo{users: make(map[uuid.UUID]*model.User)}
 	templateSvc := NewTemplateService()
-	svc := NewDocumentService(docRepo, blockRepo, historyRepo, userRepo, templateSvc)
+	svc := NewDocumentService(docRepo, blockRepo, historyRepo, userRepo, templateSvc, nil)
 	ctx := context.Background()
 	ownerID := uuid.New()
 
@@ -519,7 +519,7 @@ func TestDocumentService_Delete(t *testing.T) {
 	historyRepo := &mockDocHistoryRepo{}
 	userRepo := &docTestUserRepo{users: make(map[uuid.UUID]*model.User)}
 	templateSvc := NewTemplateService()
-	svc := NewDocumentService(docRepo, blockRepo, historyRepo, userRepo, templateSvc)
+	svc := NewDocumentService(docRepo, blockRepo, historyRepo, userRepo, templateSvc, nil)
 	ctx := context.Background()
 	ownerID := uuid.New()
 
@@ -556,7 +556,7 @@ func TestDocumentService_Duplicate(t *testing.T) {
 	historyRepo := &mockDocHistoryRepo{}
 	userRepo := &docTestUserRepo{users: make(map[uuid.UUID]*model.User)}
 	templateSvc := NewTemplateService()
-	svc := NewDocumentService(docRepo, blockRepo, historyRepo, userRepo, templateSvc)
+	svc := NewDocumentService(docRepo, blockRepo, historyRepo, userRepo, templateSvc, nil)
 	ctx := context.Background()
 	ownerID := uuid.New()
 
@@ -575,7 +575,7 @@ func TestDocumentService_Collaborators(t *testing.T) {
 	historyRepo := &mockDocHistoryRepo{}
 	userRepo := &docTestUserRepo{users: make(map[uuid.UUID]*model.User)}
 	templateSvc := NewTemplateService()
-	svc := NewDocumentService(docRepo, blockRepo, historyRepo, userRepo, templateSvc)
+	svc := NewDocumentService(docRepo, blockRepo, historyRepo, userRepo, templateSvc, nil)
 	ctx := context.Background()
 	ownerID := uuid.New()
 	collabID := uuid.New()
@@ -622,7 +622,7 @@ func TestDocumentService_Tags(t *testing.T) {
 	historyRepo := &mockDocHistoryRepo{}
 	userRepo := &docTestUserRepo{users: make(map[uuid.UUID]*model.User)}
 	templateSvc := NewTemplateService()
-	svc := NewDocumentService(docRepo, blockRepo, historyRepo, userRepo, templateSvc)
+	svc := NewDocumentService(docRepo, blockRepo, historyRepo, userRepo, templateSvc, nil)
 	ctx := context.Background()
 	ownerID := uuid.New()
 
@@ -655,7 +655,7 @@ func TestDocumentService_ListAll(t *testing.T) {
 	historyRepo := &mockDocHistoryRepo{}
 	userRepo := &docTestUserRepo{users: make(map[uuid.UUID]*model.User)}
 	templateSvc := NewTemplateService()
-	svc := NewDocumentService(docRepo, blockRepo, historyRepo, userRepo, templateSvc)
+	svc := NewDocumentService(docRepo, blockRepo, historyRepo, userRepo, templateSvc, nil)
 	ctx := context.Background()
 
 	ownerID := uuid.New()
@@ -674,7 +674,7 @@ func TestDocumentService_ListByContext(t *testing.T) {
 	historyRepo := &mockDocHistoryRepo{}
 	userRepo := &docTestUserRepo{users: make(map[uuid.UUID]*model.User)}
 	templateSvc := NewTemplateService()
-	svc := NewDocumentService(docRepo, blockRepo, historyRepo, userRepo, templateSvc)
+	svc := NewDocumentService(docRepo, blockRepo, historyRepo, userRepo, templateSvc, nil)
 	ctx := context.Background()
 	ownerID := uuid.New()
 
@@ -699,7 +699,7 @@ func TestDocumentService_LockUnlock(t *testing.T) {
 	historyRepo := &mockDocHistoryRepo{}
 	userRepo := &docTestUserRepo{users: make(map[uuid.UUID]*model.User)}
 	templateSvc := NewTemplateService()
-	svc := NewDocumentService(docRepo, blockRepo, historyRepo, userRepo, templateSvc)
+	svc := NewDocumentService(docRepo, blockRepo, historyRepo, userRepo, templateSvc, nil)
 	ctx := context.Background()
 	ownerID := uuid.New()
 
@@ -773,7 +773,7 @@ func TestDocumentService_Signers(t *testing.T) {
 		signerID: {ID: signerID, Name: "Signer"},
 	}}
 	templateSvc := NewTemplateService()
-	svc := NewDocumentService(docRepo, blockRepo, historyRepo, userRepo, templateSvc)
+	svc := NewDocumentService(docRepo, blockRepo, historyRepo, userRepo, templateSvc, nil)
 	ctx := context.Background()
 
 	t.Run("owner can add signer", func(t *testing.T) {

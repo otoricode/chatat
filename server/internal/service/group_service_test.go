@@ -19,7 +19,7 @@ func TestGroupService_CreateGroup(t *testing.T) {
 	hub := newTestHub()
 	defer hub.Shutdown()
 
-	svc := NewGroupService(chatRepo, msgRepo, msgStatRepo, userRepo, hub)
+	svc := NewGroupService(chatRepo, msgRepo, msgStatRepo, userRepo, hub, nil)
 
 	creator := uuid.New()
 	memberA := uuid.New()
@@ -105,7 +105,7 @@ func TestGroupService_UpdateGroup(t *testing.T) {
 	hub := newTestHub()
 	defer hub.Shutdown()
 
-	svc := NewGroupService(chatRepo, msgRepo, msgStatRepo, userRepo, hub)
+	svc := NewGroupService(chatRepo, msgRepo, msgStatRepo, userRepo, hub, nil)
 
 	creator := uuid.New()
 	memberA := uuid.New()
@@ -148,7 +148,7 @@ func TestGroupService_AddMember(t *testing.T) {
 	hub := newTestHub()
 	defer hub.Shutdown()
 
-	svc := NewGroupService(chatRepo, msgRepo, msgStatRepo, userRepo, hub)
+	svc := NewGroupService(chatRepo, msgRepo, msgStatRepo, userRepo, hub, nil)
 
 	creator := uuid.New()
 	memberA := uuid.New()
@@ -197,7 +197,7 @@ func TestGroupService_RemoveMember(t *testing.T) {
 	hub := newTestHub()
 	defer hub.Shutdown()
 
-	svc := NewGroupService(chatRepo, msgRepo, msgStatRepo, userRepo, hub)
+	svc := NewGroupService(chatRepo, msgRepo, msgStatRepo, userRepo, hub, nil)
 
 	creator := uuid.New()
 	memberA := uuid.New()
@@ -242,7 +242,7 @@ func TestGroupService_PromoteToAdmin(t *testing.T) {
 	hub := newTestHub()
 	defer hub.Shutdown()
 
-	svc := NewGroupService(chatRepo, msgRepo, msgStatRepo, userRepo, hub)
+	svc := NewGroupService(chatRepo, msgRepo, msgStatRepo, userRepo, hub, nil)
 
 	creator := uuid.New()
 	memberA := uuid.New()
@@ -291,7 +291,7 @@ func TestGroupService_LeaveGroup(t *testing.T) {
 	hub := newTestHub()
 	defer hub.Shutdown()
 
-	svc := NewGroupService(chatRepo, msgRepo, msgStatRepo, userRepo, hub)
+	svc := NewGroupService(chatRepo, msgRepo, msgStatRepo, userRepo, hub, nil)
 
 	creator := uuid.New()
 	memberA := uuid.New()
@@ -336,7 +336,7 @@ func TestGroupService_DeleteGroup(t *testing.T) {
 	hub := newTestHub()
 	defer hub.Shutdown()
 
-	svc := NewGroupService(chatRepo, msgRepo, msgStatRepo, userRepo, hub)
+	svc := NewGroupService(chatRepo, msgRepo, msgStatRepo, userRepo, hub, nil)
 
 	creator := uuid.New()
 	memberA := uuid.New()
@@ -376,7 +376,7 @@ func TestGroupService_GetGroupInfo(t *testing.T) {
 	hub := newTestHub()
 	defer hub.Shutdown()
 
-	svc := NewGroupService(chatRepo, msgRepo, msgStatRepo, userRepo, hub)
+	svc := NewGroupService(chatRepo, msgRepo, msgStatRepo, userRepo, hub, nil)
 
 	creator := uuid.New()
 	memberA := uuid.New()
