@@ -3,6 +3,7 @@
 export const APP_NAME = 'Chatat';
 
 export const API_BASE_URL = 'http://localhost:8080/api/v1';
+export const WS_BASE_URL = 'ws://localhost:8080/ws';
 
 export const OTP_LENGTH = 6;
 export const OTP_EXPIRY_SECONDS = 120;

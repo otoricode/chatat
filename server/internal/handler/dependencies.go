@@ -134,7 +134,7 @@ func NewDependencies(cfg *config.Config, db *pgxpool.Pool, redisClient *redis.Cl
 		TopicHandler:    &TopicStubHandler{},
 		DocumentHandler: &DocumentStubHandler{},
 		EntityHandler:   &EntityStubHandler{},
-		WSHandler:       NewWSHandler(hub, cfg.JWTSecret),
+		WSHandler:       NewWSHandler(hub, cfg.JWTSecret, chatRepo, messageStatRepo, redisClient),
 	}
 
 	return deps

@@ -23,6 +23,8 @@ import { useAuthStore } from '@/stores/authStore';
 import { chatsApi } from '@/services/api/chats';
 import { isDifferentDay } from '@/lib/timeFormat';
 import { formatLastSeen } from '@/lib/timeFormat';
+import { useTypingIndicator } from '@/hooks/useTypingIndicator';
+import { wsClient } from '@/services/ws';
 import { colors, fontSize, fontFamily, spacing } from '@/theme';
 import type { Message } from '@/types/chat';
 
@@ -49,10 +51,22 @@ export function ChatScreen({ route, navigation }: Props) {
   const chatMessages = messages[chatId] ?? [];
   const chatHasMore = hasMore[chatId] ?? false;
 
+  // Typing indicator
+  const { typingText, sendTyping } = useTypingIndicator(chatId);
+
   useEffect(() => {
     fetchMessages(chatId);
     markAsRead(chatId);
-  }, [chatId, fetchMessages, markAsRead]);
+
+    // Send read receipt via WebSocket
+    const lastMsg = (messages[chatId] ?? [])[0];
+    if (lastMsg) {
+      wsClient.send('read_receipt', {
+        chatId,
+        lastReadMessageId: lastMsg.id,
+      });
+    }
+  }, [chatId, fetchMessages, markAsRead, messages]);
 
   // Load group member info
   useEffect(() => {
@@ -86,8 +100,8 @@ export function ChatScreen({ route, navigation }: Props) {
             <Avatar emoji={chat?.icon || '\u{1F465}'} size="sm" />
             <View>
               <Text style={headerStyles.name}>{chat?.name || 'Grup'}</Text>
-              <Text style={headerStyles.status}>
-                {memberCount > 0 ? `${memberCount} anggota` : ''}
+              <Text style={[headerStyles.status, typingText ? headerStyles.typingStatus : undefined]}>
+                {typingText || (memberCount > 0 ? `${memberCount} anggota` : '')}
               </Text>
             </View>
           </Pressable>
@@ -110,20 +124,22 @@ export function ChatScreen({ route, navigation }: Props) {
             />
             <View>
               <Text style={headerStyles.name}>{otherUser?.name || 'Chat'}</Text>
-              <Text style={headerStyles.status}>
-                {otherUser
+              <Text style={[headerStyles.status, typingText ? headerStyles.typingStatus : undefined]}>
+                {typingText || (otherUser
                   ? formatLastSeen(otherUser.lastSeen, chatItem?.isOnline ?? false)
-                  : ''}
+                  : '')}
               </Text>
             </View>
           </Pressable>
         ),
       });
     }
-  }, [navigation, chatId, otherUser, chatItem, isGroup, memberMap]);
+  }, [navigation, chatId, otherUser, chatItem, isGroup, memberMap, typingText]);
 
   const handleSend = useCallback(
     async (text: string) => {
+      // Stop typing indicator on send
+      sendTyping(false);
       try {
         const res = await chatsApi.sendMessage(chatId, {
           content: text,
@@ -136,7 +152,7 @@ export function ChatScreen({ route, navigation }: Props) {
         Alert.alert('Gagal', 'Pesan gagal dikirim. Coba lagi.');
       }
     },
-    [chatId, replyTo, addMessage],
+    [chatId, replyTo, addMessage, sendTyping],
   );
 
   const handleMessageLongPress = useCallback(
@@ -246,6 +262,7 @@ export function ChatScreen({ route, navigation }: Props) {
         />
         <ChatInput
           onSend={handleSend}
+          onTyping={() => sendTyping(true)}
           replyTo={replyTo}
           onCancelReply={() => setReplyTo(null)}
         />
@@ -282,5 +299,9 @@ const headerStyles = StyleSheet.create({
     fontFamily: fontFamily.ui,
     fontSize: fontSize.xs,
     color: colors.textMuted,
+  },
+  typingStatus: {
+    color: colors.green,
+    fontStyle: 'italic',
   },
 });

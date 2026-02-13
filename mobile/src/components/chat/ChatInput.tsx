@@ -11,12 +11,20 @@ import { colors, fontSize, fontFamily, spacing } from '@/theme';
 
 type Props = {
   onSend: (text: string) => void;
+  onTyping?: () => void;
   replyTo?: { id: string; content: string } | null;
   onCancelReply?: () => void;
 };
 
-export function ChatInput({ onSend, replyTo, onCancelReply }: Props) {
+export function ChatInput({ onSend, onTyping, replyTo, onCancelReply }: Props) {
   const [text, setText] = useState('');
+
+  const handleChangeText = useCallback((value: string) => {
+    setText(value);
+    if (value.length > 0) {
+      onTyping?.();
+    }
+  }, [onTyping]);
 
   const handleSend = useCallback(() => {
     const trimmed = text.trim();
@@ -44,7 +52,7 @@ export function ChatInput({ onSend, replyTo, onCancelReply }: Props) {
         <TextInput
           style={styles.input}
           value={text}
-          onChangeText={setText}
+          onChangeText={handleChangeText}
           placeholder="Ketik pesan..."
           placeholderTextColor={colors.textMuted}
           multiline

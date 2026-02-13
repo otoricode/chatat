@@ -16,12 +16,16 @@ const (
 	maxMessageSize = 4096
 )
 
+// MessageHandler is a callback invoked when the client receives a typed message.
+type MessageHandler func(client *Client, msg WSMessage)
+
 // Client represents a single WebSocket connection.
 type Client struct {
-	UserID uuid.UUID
-	Conn   *websocket.Conn
-	Send   chan []byte
-	Hub    *Hub
+	UserID         uuid.UUID
+	Conn           *websocket.Conn
+	Send           chan []byte
+	Hub            *Hub
+	MessageHandler MessageHandler
 }
 
 // NewClient creates a new client.
@@ -66,10 +70,14 @@ func (c *Client) ReadPump() {
 			continue
 		}
 
-		log.Debug().
-			Str("user_id", c.UserID.String()).
-			Str("type", wsMsg.Type).
-			Msg("ws message received")
+		if c.MessageHandler != nil {
+			c.MessageHandler(c, wsMsg)
+		} else {
+			log.Debug().
+				Str("user_id", c.UserID.String()).
+				Str("type", wsMsg.Type).
+				Msg("ws message received (no handler)")
+		}
 	}
 }
 

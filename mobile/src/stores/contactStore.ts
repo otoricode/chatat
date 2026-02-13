@@ -11,6 +11,7 @@ type ContactState = {
 
   fetchContacts: () => Promise<void>;
   searchContacts: (query: string) => ContactInfo[];
+  updateOnlineStatus: (userId: string, isOnline: boolean, lastSeen: string) => void;
   clearError: () => void;
 };
 
@@ -47,4 +48,12 @@ export const useContactStore = create<ContactState>()((set, get) => ({
   },
 
   clearError: () => set({ error: null }),
+
+  updateOnlineStatus: (userId, isOnline, lastSeen) => {
+    set((state) => ({
+      contacts: state.contacts.map((c) =>
+        c.userId === userId ? { ...c, isOnline, lastSeen } : c,
+      ),
+    }));
+  },
 }));

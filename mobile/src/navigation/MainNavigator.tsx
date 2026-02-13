@@ -6,6 +6,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import type { MainTabParamList } from './types';
 import { ChatStackNavigator } from './ChatStackNavigator';
 import { DocumentStackNavigator } from './DocumentStackNavigator';
+import { RealtimeProvider } from '@/components/shared/RealtimeProvider';
 import { colors, fontSize } from '@/theme';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -28,6 +29,7 @@ function DocumentTabIcon({ focused }: { focused: boolean }) {
 
 export function MainNavigator() {
   return (
+    <RealtimeProvider>
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
@@ -54,6 +56,7 @@ export function MainNavigator() {
         }}
       />
     </Tab.Navigator>
+    </RealtimeProvider>
   );
 }
 

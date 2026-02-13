@@ -10,11 +10,13 @@ type WSMessage struct {
 
 // WebSocket message types.
 const (
-	WSTypeMessage      = "message"
-	WSTypeTyping       = "typing"
-	WSTypeOnlineStatus = "online_status"
-	WSTypeReadReceipt  = "read_receipt"
-	WSTypeDocUpdate    = "doc_update"
-	WSTypeDocLock      = "doc_lock"
-	WSTypeNotification = "notification"
+	WSTypeMessage       = "message"
+	WSTypeMessageAck    = "message_ack"
+	WSTypeMessageStatus = "message_status"
+	WSTypeTyping        = "typing"
+	WSTypeOnlineStatus  = "online_status"
+	WSTypeReadReceipt   = "read_receipt"
+	WSTypeDocUpdate     = "doc_update"
+	WSTypeDocLock       = "doc_lock"
+	WSTypeNotification  = "notification"
 )

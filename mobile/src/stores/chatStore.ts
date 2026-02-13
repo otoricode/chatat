@@ -14,6 +14,7 @@ type ChatState = {
   pinChat: (chatId: string) => Promise<void>;
   unpinChat: (chatId: string) => Promise<void>;
   markAsRead: (chatId: string) => Promise<void>;
+  updateChatOnlineStatus: (userId: string, isOnline: boolean, lastSeen: string) => void;
   clearError: () => void;
 };
 
@@ -86,4 +87,19 @@ export const useChatStore = create<ChatState>()((set, get) => ({
   },
 
   clearError: () => set({ error: null }),
+
+  updateChatOnlineStatus: (userId, isOnline, lastSeen) => {
+    set((state) => ({
+      chats: state.chats.map((item) => {
+        if (item.otherUser && item.otherUser.id === userId) {
+          return {
+            ...item,
+            isOnline,
+            otherUser: { ...item.otherUser, lastSeen },
+          };
+        }
+        return item;
+      }),
+    }));
+  },
 }));
