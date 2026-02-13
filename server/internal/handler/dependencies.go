@@ -59,7 +59,7 @@ type Dependencies struct {
 	TopicHandler    *TopicHandler
 	MediaHandler    *MediaHandler
 	DocumentHandler *DocumentHandler
-	EntityHandler   *EntityStubHandler
+	EntityHandler   *EntityHandler
 	WSHandler       *WSHandler
 }
 
@@ -122,6 +122,8 @@ func NewDependencies(cfg *config.Config, db *pgxpool.Pool, redisClient *redis.Cl
 	topicHandler := NewTopicHandler(topicService, topicMsgService)
 	mediaHandler := NewMediaHandler(mediaSvc)
 	documentHandler := NewDocumentHandler(documentSvc, blockSvc, templateSvc)
+	entitySvc := service.NewEntityService(entityRepo, userRepo, documentRepo)
+	entityHandler := NewEntityHandler(entitySvc)
 
 	deps := &Dependencies{
 		Config: cfg,
@@ -168,7 +170,7 @@ func NewDependencies(cfg *config.Config, db *pgxpool.Pool, redisClient *redis.Cl
 		TopicHandler:    topicHandler,
 		MediaHandler:    mediaHandler,
 		DocumentHandler: documentHandler,
-		EntityHandler:   &EntityStubHandler{},
+		EntityHandler:   entityHandler,
 		WSHandler:       NewWSHandler(hub, cfg.JWTSecret, chatRepo, topicRepo, messageStatRepo, redisClient),
 	}
 

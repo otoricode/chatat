@@ -21,6 +21,7 @@ import { LockActionSheet } from '@/components/document/LockActionSheet';
 import { SignConfirmModal } from '@/components/document/SignConfirmModal';
 import { documentsApi } from '@/services/api/documents';
 import { useCollaborativeEditing } from '@/hooks/useCollaborativeEditing';
+import { EntityTagBar } from '@/components/entity/EntityTagBar';
 
 type Props = NativeStackScreenProps<DocumentStackParamList, 'DocumentEditor'>;
 
@@ -236,6 +237,9 @@ export function DocumentEditorScreen({ route, navigation }: Props) {
           blurOnSubmit
         />
       </View>
+
+      {/* Entity Tags */}
+      {editorDocId && <EntityTagBar documentId={editorDocId} />}
 
       {/* Editor */}
       <BlockEditor readOnly={isLocked} />

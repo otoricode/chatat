@@ -260,3 +260,26 @@ export interface TemplateBlock {
   emoji?: string;
   color?: string;
 }
+
+// Entity types
+export interface Entity {
+  id: string;
+  name: string;
+  type: string;
+  fields: Record<string, string>;
+  ownerId: string;
+  contactUserId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EntityListItem extends Entity {
+  documentCount: number;
+}
+
+export interface EntityListResponse {
+  data: EntityListItem[];
+  total: number;
+  limit: number;
+  offset: number;
+}

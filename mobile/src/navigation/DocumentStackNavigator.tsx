@@ -5,6 +5,8 @@ import type { DocumentStackParamList } from './types';
 import { DocumentListScreen } from '@/screens/document/DocumentListScreen';
 import { DocumentEditorScreen } from '@/screens/document/DocumentEditorScreen';
 import { DocumentViewerScreen } from '@/screens/document/DocumentViewerScreen';
+import { EntityListScreen } from '@/screens/entity/EntityListScreen';
+import { EntityDetailScreen } from '@/screens/entity/EntityDetailScreen';
 import { colors } from '@/theme';
 
 const Stack = createNativeStackNavigator<DocumentStackParamList>();
@@ -34,6 +36,16 @@ export function DocumentStackNavigator() {
         name="DocumentViewer"
         component={DocumentViewerScreen}
         options={{ title: 'Dokumen' }}
+      />
+      <Stack.Screen
+        name="EntityList"
+        component={EntityListScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="EntityDetail"
+        component={EntityDetailScreen}
+        options={{ title: 'Entity' }}
       />
     </Stack.Navigator>
   );
