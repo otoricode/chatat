@@ -22,8 +22,13 @@ type DocumentRepository interface {
 	ListByTopic(ctx context.Context, topicID uuid.UUID) ([]*model.Document, error)
 	ListByOwner(ctx context.Context, ownerID uuid.UUID) ([]*model.Document, error)
 	ListByTag(ctx context.Context, tag string) ([]*model.Document, error)
+	ListAccessible(ctx context.Context, userID uuid.UUID) ([]*model.Document, error)
+	ListCollaborators(ctx context.Context, docID uuid.UUID) ([]*model.DocumentCollaborator, error)
+	ListSigners(ctx context.Context, docID uuid.UUID) ([]*model.DocumentSigner, error)
+	ListTags(ctx context.Context, docID uuid.UUID) ([]string, error)
 	AddCollaborator(ctx context.Context, docID, userID uuid.UUID, role model.CollaboratorRole) error
 	RemoveCollaborator(ctx context.Context, docID, userID uuid.UUID) error
+	UpdateCollaboratorRole(ctx context.Context, docID, userID uuid.UUID, role model.CollaboratorRole) error
 	AddSigner(ctx context.Context, docID, userID uuid.UUID) error
 	RecordSignature(ctx context.Context, docID, userID uuid.UUID, name string) error
 	Lock(ctx context.Context, docID uuid.UUID, lockedBy model.LockedByType) error
@@ -142,6 +147,111 @@ func (r *pgDocumentRepository) ListByOwner(ctx context.Context, ownerID uuid.UUI
 		return nil, fmt.Errorf("list documents by owner: %w", err)
 	}
 	return docs, nil
+}
+
+func (r *pgDocumentRepository) ListAccessible(ctx context.Context, userID uuid.UUID) ([]*model.Document, error) {
+	rows, err := r.db.Query(ctx,
+		`SELECT DISTINCT d.`+documentColumns+`
+		 FROM documents d
+		 LEFT JOIN document_collaborators dc ON d.id = dc.document_id
+		 WHERE d.owner_id = $1 OR dc.user_id = $1
+		 ORDER BY d.updated_at DESC`, userID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("list accessible documents: %w", err)
+	}
+	defer rows.Close()
+
+	var docs []*model.Document
+	for rows.Next() {
+		var doc model.Document
+		if err := rows.Scan(
+			&doc.ID, &doc.Title, &doc.Icon, &doc.Cover, &doc.OwnerID,
+			&doc.ChatID, &doc.TopicID, &doc.IsStandalone, &doc.RequireSigs,
+			&doc.Locked, &doc.LockedAt, &doc.LockedBy, &doc.CreatedAt, &doc.UpdatedAt,
+		); err != nil {
+			return nil, fmt.Errorf("scan accessible document: %w", err)
+		}
+		docs = append(docs, &doc)
+	}
+	return docs, rows.Err()
+}
+
+func (r *pgDocumentRepository) ListCollaborators(ctx context.Context, docID uuid.UUID) ([]*model.DocumentCollaborator, error) {
+	rows, err := r.db.Query(ctx,
+		`SELECT document_id, user_id, role, added_at
+		 FROM document_collaborators WHERE document_id = $1
+		 ORDER BY added_at`, docID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("list collaborators: %w", err)
+	}
+	defer rows.Close()
+
+	var collaborators []*model.DocumentCollaborator
+	for rows.Next() {
+		var c model.DocumentCollaborator
+		if err := rows.Scan(&c.DocumentID, &c.UserID, &c.Role, &c.AddedAt); err != nil {
+			return nil, fmt.Errorf("scan collaborator: %w", err)
+		}
+		collaborators = append(collaborators, &c)
+	}
+	return collaborators, rows.Err()
+}
+
+func (r *pgDocumentRepository) ListSigners(ctx context.Context, docID uuid.UUID) ([]*model.DocumentSigner, error) {
+	rows, err := r.db.Query(ctx,
+		`SELECT document_id, user_id, signed_at, signer_name
+		 FROM document_signers WHERE document_id = $1`, docID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("list signers: %w", err)
+	}
+	defer rows.Close()
+
+	var signers []*model.DocumentSigner
+	for rows.Next() {
+		var s model.DocumentSigner
+		if err := rows.Scan(&s.DocumentID, &s.UserID, &s.SignedAt, &s.SignerName); err != nil {
+			return nil, fmt.Errorf("scan signer: %w", err)
+		}
+		signers = append(signers, &s)
+	}
+	return signers, rows.Err()
+}
+
+func (r *pgDocumentRepository) ListTags(ctx context.Context, docID uuid.UUID) ([]string, error) {
+	rows, err := r.db.Query(ctx,
+		`SELECT tag FROM document_tags WHERE document_id = $1 ORDER BY tag`, docID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("list tags: %w", err)
+	}
+	defer rows.Close()
+
+	var tags []string
+	for rows.Next() {
+		var tag string
+		if err := rows.Scan(&tag); err != nil {
+			return nil, fmt.Errorf("scan tag: %w", err)
+		}
+		tags = append(tags, tag)
+	}
+	return tags, rows.Err()
+}
+
+func (r *pgDocumentRepository) UpdateCollaboratorRole(ctx context.Context, docID, userID uuid.UUID, role model.CollaboratorRole) error {
+	result, err := r.db.Exec(ctx,
+		`UPDATE document_collaborators SET role = $3 WHERE document_id = $1 AND user_id = $2`,
+		docID, userID, role,
+	)
+	if err != nil {
+		return fmt.Errorf("update collaborator role: %w", err)
+	}
+	if result.RowsAffected() == 0 {
+		return apperror.NotFound("collaborator", userID.String())
+	}
+	return nil
 }
 
 func (r *pgDocumentRepository) ListByTag(ctx context.Context, tag string) ([]*model.Document, error) {

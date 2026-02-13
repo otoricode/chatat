@@ -238,7 +238,7 @@ func (h *WSHandler) handleMessageAck(client *ws.Client, payload json.RawMessage)
 // --- Read Receipt ---
 
 type readReceiptPayload struct {
-	ChatID           string `json:"chatId"`
+	ChatID            string `json:"chatId"`
 	LastReadMessageID string `json:"lastReadMessageId"`
 }
 

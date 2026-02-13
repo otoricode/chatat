@@ -32,6 +32,9 @@ type Dependencies struct {
 	StorageService      service.StorageService
 	ImageService        service.ImageService
 	MediaService        service.MediaService
+	DocumentService     service.DocumentService
+	BlockService        service.BlockService
+	TemplateService     service.TemplateService
 
 	// Repositories
 	UserRepo        repository.UserRepository
@@ -55,7 +58,7 @@ type Dependencies struct {
 	ChatHandler     *ChatHandler
 	TopicHandler    *TopicHandler
 	MediaHandler    *MediaHandler
-	DocumentHandler *DocumentStubHandler
+	DocumentHandler *DocumentHandler
 	EntityHandler   *EntityStubHandler
 	WSHandler       *WSHandler
 }
@@ -103,6 +106,9 @@ func NewDependencies(cfg *config.Config, db *pgxpool.Pool, redisClient *redis.Cl
 	}
 	imageSvc := service.NewImageService()
 	mediaSvc := service.NewMediaService(mediaRepo, storageSvc, imageSvc)
+	templateSvc := service.NewTemplateService()
+	documentSvc := service.NewDocumentService(documentRepo, blockRepo, docHistoryRepo, userRepo, templateSvc)
+	blockSvc := service.NewBlockService(blockRepo, documentRepo, docHistoryRepo)
 
 	// Status notifier: broadcasts online/offline events to contacts
 	_ = service.NewStatusNotifier(hub, contactRepo, userRepo, redisClient)
@@ -115,6 +121,7 @@ func NewDependencies(cfg *config.Config, db *pgxpool.Pool, redisClient *redis.Cl
 	chatHandler := NewChatHandler(chatService, messageService, groupService)
 	topicHandler := NewTopicHandler(topicService, topicMsgService)
 	mediaHandler := NewMediaHandler(mediaSvc)
+	documentHandler := NewDocumentHandler(documentSvc, blockSvc, templateSvc)
 
 	deps := &Dependencies{
 		Config: cfg,
@@ -136,6 +143,9 @@ func NewDependencies(cfg *config.Config, db *pgxpool.Pool, redisClient *redis.Cl
 		StorageService:      storageSvc,
 		ImageService:        imageSvc,
 		MediaService:        mediaSvc,
+		DocumentService:     documentSvc,
+		BlockService:        blockSvc,
+		TemplateService:     templateSvc,
 
 		UserRepo:        userRepo,
 		ContactRepo:     contactRepo,
@@ -157,7 +167,7 @@ func NewDependencies(cfg *config.Config, db *pgxpool.Pool, redisClient *redis.Cl
 		ChatHandler:     chatHandler,
 		TopicHandler:    topicHandler,
 		MediaHandler:    mediaHandler,
-		DocumentHandler: &DocumentStubHandler{},
+		DocumentHandler: documentHandler,
 		EntityHandler:   &EntityStubHandler{},
 		WSHandler:       NewWSHandler(hub, cfg.JWTSecret, chatRepo, topicRepo, messageStatRepo, redisClient),
 	}

@@ -16,6 +16,7 @@ import (
 // BlockRepository defines operations for managing document blocks.
 type BlockRepository interface {
 	Create(ctx context.Context, input model.CreateBlockInput) (*model.Block, error)
+	FindByID(ctx context.Context, id uuid.UUID) (*model.Block, error)
 	ListByDocument(ctx context.Context, docID uuid.UUID) ([]*model.Block, error)
 	Update(ctx context.Context, id uuid.UUID, input model.UpdateBlockInput) (*model.Block, error)
 	Reorder(ctx context.Context, docID uuid.UUID, blockIDs []uuid.UUID) error
@@ -49,6 +50,25 @@ func (r *pgBlockRepository) Create(ctx context.Context, input model.CreateBlockI
 	}
 
 	return &block, nil
+}
+
+func (r *pgBlockRepository) FindByID(ctx context.Context, id uuid.UUID) (*model.Block, error) {
+	var b model.Block
+	err := r.db.QueryRow(ctx,
+		`SELECT id, document_id, type, content, checked, rows, columns, language, emoji, color, sort_order, parent_block_id, created_at, updated_at
+		 FROM blocks WHERE id = $1`, id,
+	).Scan(
+		&b.ID, &b.DocumentID, &b.Type, &b.Content, &b.Checked,
+		&b.Rows, &b.Columns, &b.Language, &b.Emoji, &b.Color,
+		&b.SortOrder, &b.ParentBlockID, &b.CreatedAt, &b.UpdatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, apperror.NotFound("block", id.String())
+		}
+		return nil, fmt.Errorf("find block by id: %w", err)
+	}
+	return &b, nil
 }
 
 func (r *pgBlockRepository) ListByDocument(ctx context.Context, docID uuid.UUID) ([]*model.Block, error) {

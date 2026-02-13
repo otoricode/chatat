@@ -93,6 +93,7 @@ func NewRouter(cfg *config.Config, deps *Dependencies) *chi.Mux {
 					r.Delete("/members/{memberID}", deps.ChatHandler.RemoveMember)
 					r.Put("/members/{memberID}/admin", deps.ChatHandler.PromoteToAdmin)
 					r.Get("/topics", deps.TopicHandler.ListByChat)
+					r.Get("/documents", deps.DocumentHandler.ListByChat)
 				})
 			})
 
@@ -108,6 +109,7 @@ func NewRouter(cfg *config.Config, deps *Dependencies) *chi.Mux {
 					r.Post("/messages", deps.TopicHandler.SendMessage)
 					r.Get("/messages", deps.TopicHandler.ListMessages)
 					r.Delete("/messages/{messageId}", deps.TopicHandler.DeleteMessage)
+					r.Get("/documents", deps.DocumentHandler.ListByTopic)
 				})
 			})
 
@@ -125,12 +127,32 @@ func NewRouter(cfg *config.Config, deps *Dependencies) *chi.Mux {
 					r.Get("/", deps.DocumentHandler.GetByID)
 					r.Put("/", deps.DocumentHandler.Update)
 					r.Delete("/", deps.DocumentHandler.Delete)
+					r.Post("/duplicate", deps.DocumentHandler.Duplicate)
 					r.Post("/lock", deps.DocumentHandler.Lock)
 					r.Post("/sign", deps.DocumentHandler.Sign)
+
+					// Block endpoints
+					r.Post("/blocks", deps.DocumentHandler.AddBlock)
+					r.Put("/blocks/reorder", deps.DocumentHandler.ReorderBlocks)
+					r.Post("/blocks/batch", deps.DocumentHandler.BatchBlocks)
+					r.Put("/blocks/{blockId}", deps.DocumentHandler.UpdateBlock)
+					r.Delete("/blocks/{blockId}", deps.DocumentHandler.DeleteBlock)
+
+					// Collaborator endpoints
 					r.Post("/collaborators", deps.DocumentHandler.AddCollaborator)
+					r.Put("/collaborators/{userID}", deps.DocumentHandler.UpdateCollaboratorRole)
 					r.Delete("/collaborators/{userID}", deps.DocumentHandler.RemoveCollaborator)
+
+					// Tag endpoints
+					r.Post("/tags", deps.DocumentHandler.AddTag)
+					r.Delete("/tags/{tag}", deps.DocumentHandler.RemoveTag)
+
+					// History endpoint
+					r.Get("/history", deps.DocumentHandler.GetHistory)
 				})
 			})
+
+			r.Get("/templates", deps.DocumentHandler.ListTemplates)
 
 			r.Route("/entities", func(r chi.Router) {
 				r.Get("/", deps.EntityHandler.List)
