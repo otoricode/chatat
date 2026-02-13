@@ -9,6 +9,7 @@ export { entitiesApi } from './entities';
 export { mediaApi } from './media';
 export { notificationsApi } from './notifications';
 export { searchApi } from './search';
+export { backupApi } from './backup';
 export type {
   MessageSearchResult,
   DocumentSearchResult,
@@ -16,3 +17,10 @@ export type {
   EntitySearchResult,
   SearchAllResponse,
 } from './search';
+export type {
+  BackupRecord,
+  BackupBundle,
+  BackupPlatform,
+  BackupStatus,
+  LogBackupInput,
+} from './backup';
