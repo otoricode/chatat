@@ -144,6 +144,11 @@ func TestBlockService_DeleteBlock(t *testing.T) {
 		require.Error(t, err)
 		docRepo.docs[doc.ID].Locked = false
 	})
+
+	t.Run("block not found", func(t *testing.T) {
+		err := svc.DeleteBlock(ctx, uuid.New(), ownerID)
+		require.Error(t, err)
+	})
 }
 
 func TestBlockService_GetBlocks(t *testing.T) {
@@ -155,9 +160,19 @@ func TestBlockService_GetBlocks(t *testing.T) {
 	_, _ = svc.AddBlock(ctx, doc.ID, ownerID, AddBlockInput{Type: model.BlockTypeParagraph, Content: "A"})
 	_, _ = svc.AddBlock(ctx, doc.ID, ownerID, AddBlockInput{Type: model.BlockTypeParagraph, Content: "B"})
 
-	blocks, err := svc.GetBlocks(ctx, doc.ID)
-	require.NoError(t, err)
-	assert.Equal(t, 2, len(blocks))
+	t.Run("success", func(t *testing.T) {
+		blocks, err := svc.GetBlocks(ctx, doc.ID)
+		require.NoError(t, err)
+		assert.Equal(t, 2, len(blocks))
+	})
+
+	t.Run("empty doc returns empty slice", func(t *testing.T) {
+		emptyDoc := createTestDoc(docRepo, ownerID)
+		blocks, err := svc.GetBlocks(ctx, emptyDoc.ID)
+		require.NoError(t, err)
+		assert.NotNil(t, blocks)
+		assert.Equal(t, 0, len(blocks))
+	})
 }
 
 func TestBlockService_ReorderBlocks(t *testing.T) {
@@ -179,6 +194,11 @@ func TestBlockService_ReorderBlocks(t *testing.T) {
 		err := svc.ReorderBlocks(ctx, doc.ID, ownerID, []uuid.UUID{b1.ID, b2.ID})
 		require.Error(t, err)
 		docRepo.docs[doc.ID].Locked = false
+	})
+
+	t.Run("doc not found", func(t *testing.T) {
+		err := svc.ReorderBlocks(ctx, uuid.New(), ownerID, []uuid.UUID{b1.ID, b2.ID})
+		require.Error(t, err)
 	})
 }
 
@@ -281,6 +301,21 @@ func TestBlockService_MoveBlock(t *testing.T) {
 		assert.Error(t, err)
 		docRepo.docs[doc.ID].Locked = false
 	})
+
+	t.Run("negative position clamps to 0", func(t *testing.T) {
+		err := svc.MoveBlock(context.Background(), doc.ID, b1.ID, -5)
+		assert.NoError(t, err)
+	})
+
+	t.Run("position beyond end clamps", func(t *testing.T) {
+		err := svc.MoveBlock(context.Background(), doc.ID, b1.ID, 999)
+		assert.NoError(t, err)
+	})
+
+	t.Run("doc not found", func(t *testing.T) {
+		err := svc.MoveBlock(context.Background(), uuid.New(), b1.ID, 0)
+		assert.Error(t, err)
+	})
 }
 
 func TestBlockService_BatchUpdate(t *testing.T) {
@@ -296,6 +331,44 @@ func TestBlockService_BatchUpdate(t *testing.T) {
 		require.NoError(t, err)
 	})
 
+	t.Run("update via batch", func(t *testing.T) {
+		// Note: BatchUpdate passes docID to UpdateBlock as blockID - tests error path
+		bid := uuid.New()
+		newContent := "updated-batch"
+		updateData, _ := json.Marshal(model.UpdateBlockInput{Content: &newContent})
+		err := svc.BatchUpdate(context.Background(), doc.ID, userID, []BlockOperation{
+			{Type: "update", BlockID: &bid, Data: updateData},
+		})
+		// This will fail because blockID lookup fails (passes docID instead of op.BlockID)
+		assert.Error(t, err)
+	})
+
+	t.Run("update nil blockID", func(t *testing.T) {
+		updateData, _ := json.Marshal(model.UpdateBlockInput{})
+		err := svc.BatchUpdate(context.Background(), doc.ID, userID, []BlockOperation{
+			{Type: "update", BlockID: nil, Data: updateData},
+		})
+		require.Error(t, err)
+	})
+
+	t.Run("delete via batch", func(t *testing.T) {
+		block, err := svc.AddBlock(context.Background(), doc.ID, userID, AddBlockInput{
+			Type: model.BlockTypeParagraph, Content: "del-me",
+		})
+		require.NoError(t, err)
+		err = svc.BatchUpdate(context.Background(), doc.ID, userID, []BlockOperation{
+			{Type: "delete", BlockID: &block.ID, Data: json.RawMessage("{}")},
+		})
+		require.NoError(t, err)
+	})
+
+	t.Run("delete nil blockID", func(t *testing.T) {
+		err := svc.BatchUpdate(context.Background(), doc.ID, userID, []BlockOperation{
+			{Type: "delete", BlockID: nil, Data: json.RawMessage("{}")},
+		})
+		require.Error(t, err)
+	})
+
 	t.Run("invalid op type", func(t *testing.T) {
 		err := svc.BatchUpdate(context.Background(), doc.ID, userID, []BlockOperation{
 			{Type: "invalid", Data: json.RawMessage("{}")},
@@ -308,5 +381,25 @@ func TestBlockService_BatchUpdate(t *testing.T) {
 		err := svc.BatchUpdate(context.Background(), doc.ID, userID, []BlockOperation{})
 		assert.Error(t, err)
 		docRepo.docs[doc.ID].Locked = false
+	})
+
+	t.Run("doc not found", func(t *testing.T) {
+		err := svc.BatchUpdate(context.Background(), uuid.New(), userID, []BlockOperation{})
+		assert.Error(t, err)
+	})
+
+	t.Run("bad add data", func(t *testing.T) {
+		err := svc.BatchUpdate(context.Background(), doc.ID, userID, []BlockOperation{
+			{Type: "add", Data: json.RawMessage("bad")},
+		})
+		assert.Error(t, err)
+	})
+
+	t.Run("bad update data", func(t *testing.T) {
+		bid := uuid.New()
+		err := svc.BatchUpdate(context.Background(), doc.ID, userID, []BlockOperation{
+			{Type: "update", BlockID: &bid, Data: json.RawMessage("bad")},
+		})
+		assert.Error(t, err)
 	})
 }

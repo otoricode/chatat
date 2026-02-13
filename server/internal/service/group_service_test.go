@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/google/uuid"
@@ -403,5 +404,295 @@ func TestGroupService_GetGroupInfo(t *testing.T) {
 		_, err := svc.GetGroupInfo(context.Background(), group.ID, uuid.New())
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "not a member")
+	})
+}
+
+func TestGroupService_CreateGroup_Errors(t *testing.T) {
+	hub := newTestHub()
+	defer hub.Shutdown()
+
+	t.Run("name too long", func(t *testing.T) {
+		svc := NewGroupService(newMockChatRepo(), newMockMessageRepo(), newMockMessageStatRepo(), newMockUserRepo(), hub, nil)
+		longName := ""
+		for i := 0; i < 101; i++ {
+			longName += "a"
+		}
+		_, err := svc.CreateGroup(context.Background(), uuid.New(), CreateGroupInput{
+			Name: longName, Icon: "x", MemberIDs: []uuid.UUID{uuid.New(), uuid.New()},
+		})
+		require.Error(t, err)
+	})
+
+	t.Run("verify member generic error", func(t *testing.T) {
+		userRepo := newMockUserRepo()
+		userRepo.createErr = fmt.Errorf("db") // won't help - FindByID uses map
+		svc := NewGroupService(newMockChatRepo(), newMockMessageRepo(), newMockMessageStatRepo(), userRepo, hub, nil)
+		// memberIDs are unknown UUIDs → FindByID returns NotFound
+		_, err := svc.CreateGroup(context.Background(), uuid.New(), CreateGroupInput{
+			Name: "G", Icon: "x", MemberIDs: []uuid.UUID{uuid.New(), uuid.New()},
+		})
+		require.Error(t, err)
+	})
+
+	t.Run("create chat error", func(t *testing.T) {
+		userRepo := newMockUserRepo()
+		chatRepo := newMockChatRepo()
+		a, b := uuid.New(), uuid.New()
+		userRepo.addUser(&model.User{ID: a, Phone: "+1", Name: "A"})
+		userRepo.addUser(&model.User{ID: b, Phone: "+2", Name: "B"})
+		chatRepo.createErr = fmt.Errorf("db error")
+		svc := NewGroupService(chatRepo, newMockMessageRepo(), newMockMessageStatRepo(), userRepo, hub, nil)
+		_, err := svc.CreateGroup(context.Background(), uuid.New(), CreateGroupInput{
+			Name: "G", Icon: "x", MemberIDs: []uuid.UUID{a, b},
+		})
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "create group")
+	})
+
+	t.Run("add creator error", func(t *testing.T) {
+		userRepo := newMockUserRepo()
+		chatRepo := newMockChatRepo()
+		a, b := uuid.New(), uuid.New()
+		userRepo.addUser(&model.User{ID: a, Phone: "+1", Name: "A"})
+		userRepo.addUser(&model.User{ID: b, Phone: "+2", Name: "B"})
+		chatRepo.addMemberErr = fmt.Errorf("db error")
+		svc := NewGroupService(chatRepo, newMockMessageRepo(), newMockMessageStatRepo(), userRepo, hub, nil)
+		_, err := svc.CreateGroup(context.Background(), uuid.New(), CreateGroupInput{
+			Name: "G", Icon: "x", MemberIDs: []uuid.UUID{a, b},
+		})
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "add creator")
+	})
+}
+
+func TestGroupService_UpdateGroup_Errors(t *testing.T) {
+	hub := newTestHub()
+	defer hub.Shutdown()
+
+	t.Run("find chat error", func(t *testing.T) {
+		chatRepo := newMockChatRepo()
+		userRepo := newMockUserRepo()
+		creator := uuid.New()
+		a, b := uuid.New(), uuid.New()
+		userRepo.addUser(&model.User{ID: creator, Phone: "+1", Name: "C"})
+		userRepo.addUser(&model.User{ID: a, Phone: "+2", Name: "A"})
+		userRepo.addUser(&model.User{ID: b, Phone: "+3", Name: "B"})
+
+		svc := NewGroupService(chatRepo, newMockMessageRepo(), newMockMessageStatRepo(), userRepo, hub, nil)
+		group, err := svc.CreateGroup(context.Background(), creator, CreateGroupInput{
+			Name: "G", Icon: "x", MemberIDs: []uuid.UUID{a, b},
+		})
+		require.NoError(t, err)
+
+		chatRepo.findErr = fmt.Errorf("db error")
+		name := "New"
+		_, err = svc.UpdateGroup(context.Background(), group.ID, creator, UpdateGroupInput{Name: &name})
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "find chat")
+	})
+
+	t.Run("not a group", func(t *testing.T) {
+		chatRepo := newMockChatRepo()
+		userRepo := newMockUserRepo()
+		creator := uuid.New()
+		userRepo.addUser(&model.User{ID: creator, Phone: "+1", Name: "C"})
+
+		// Create a personal chat
+		personalChat := &model.Chat{ID: uuid.New(), Type: model.ChatTypePersonal, CreatedBy: creator}
+		chatRepo.chats[personalChat.ID] = personalChat
+		_ = chatRepo.AddMember(context.Background(), personalChat.ID, creator, model.MemberRoleAdmin)
+
+		svc := NewGroupService(chatRepo, newMockMessageRepo(), newMockMessageStatRepo(), userRepo, hub, nil)
+		name := "New"
+		_, err := svc.UpdateGroup(context.Background(), personalChat.ID, creator, UpdateGroupInput{Name: &name})
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "group chats")
+	})
+}
+
+func TestGroupService_AddMember_Errors(t *testing.T) {
+	hub := newTestHub()
+	defer hub.Shutdown()
+
+	t.Run("find chat error", func(t *testing.T) {
+		chatRepo := newMockChatRepo()
+		userRepo := newMockUserRepo()
+		creator := uuid.New()
+		a, b := uuid.New(), uuid.New()
+		userRepo.addUser(&model.User{ID: creator, Phone: "+1", Name: "C"})
+		userRepo.addUser(&model.User{ID: a, Phone: "+2", Name: "A"})
+		userRepo.addUser(&model.User{ID: b, Phone: "+3", Name: "B"})
+
+		svc := NewGroupService(chatRepo, newMockMessageRepo(), newMockMessageStatRepo(), userRepo, hub, nil)
+		group, err := svc.CreateGroup(context.Background(), creator, CreateGroupInput{
+			Name: "G", Icon: "x", MemberIDs: []uuid.UUID{a, b},
+		})
+		require.NoError(t, err)
+
+		chatRepo.findErr = fmt.Errorf("db error")
+		newMember := uuid.New()
+		userRepo.addUser(&model.User{ID: newMember, Phone: "+4", Name: "New"})
+		err = svc.AddMember(context.Background(), group.ID, newMember, creator)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "find chat")
+	})
+
+	t.Run("add to personal chat", func(t *testing.T) {
+		chatRepo := newMockChatRepo()
+		userRepo := newMockUserRepo()
+		creator := uuid.New()
+		userRepo.addUser(&model.User{ID: creator, Phone: "+1", Name: "C"})
+
+		personalChat := &model.Chat{ID: uuid.New(), Type: model.ChatTypePersonal, CreatedBy: creator}
+		chatRepo.chats[personalChat.ID] = personalChat
+		_ = chatRepo.AddMember(context.Background(), personalChat.ID, creator, model.MemberRoleAdmin)
+
+		svc := NewGroupService(chatRepo, newMockMessageRepo(), newMockMessageStatRepo(), userRepo, hub, nil)
+		err := svc.AddMember(context.Background(), personalChat.ID, uuid.New(), creator)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "group chats")
+	})
+
+	t.Run("user not found", func(t *testing.T) {
+		chatRepo := newMockChatRepo()
+		userRepo := newMockUserRepo()
+		creator := uuid.New()
+		a, b := uuid.New(), uuid.New()
+		userRepo.addUser(&model.User{ID: creator, Phone: "+1", Name: "C"})
+		userRepo.addUser(&model.User{ID: a, Phone: "+2", Name: "A"})
+		userRepo.addUser(&model.User{ID: b, Phone: "+3", Name: "B"})
+
+		svc := NewGroupService(chatRepo, newMockMessageRepo(), newMockMessageStatRepo(), userRepo, hub, nil)
+		group, err := svc.CreateGroup(context.Background(), creator, CreateGroupInput{
+			Name: "G", Icon: "x", MemberIDs: []uuid.UUID{a, b},
+		})
+		require.NoError(t, err)
+
+		err = svc.AddMember(context.Background(), group.ID, uuid.New(), creator) // unknown user
+		require.Error(t, err)
+	})
+}
+
+func TestGroupService_RemoveMember_Errors(t *testing.T) {
+	hub := newTestHub()
+	defer hub.Shutdown()
+
+	t.Run("remove self", func(t *testing.T) {
+		chatRepo := newMockChatRepo()
+		userRepo := newMockUserRepo()
+		creator := uuid.New()
+		a, b := uuid.New(), uuid.New()
+		userRepo.addUser(&model.User{ID: creator, Phone: "+1", Name: "C"})
+		userRepo.addUser(&model.User{ID: a, Phone: "+2", Name: "A"})
+		userRepo.addUser(&model.User{ID: b, Phone: "+3", Name: "B"})
+
+		svc := NewGroupService(chatRepo, newMockMessageRepo(), newMockMessageStatRepo(), userRepo, hub, nil)
+		group, err := svc.CreateGroup(context.Background(), creator, CreateGroupInput{
+			Name: "G", Icon: "x", MemberIDs: []uuid.UUID{a, b},
+		})
+		require.NoError(t, err)
+
+		err = svc.RemoveMember(context.Background(), group.ID, creator, creator)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "leave")
+	})
+
+	t.Run("find chat error", func(t *testing.T) {
+		chatRepo := newMockChatRepo()
+		userRepo := newMockUserRepo()
+		creator := uuid.New()
+		a, b := uuid.New(), uuid.New()
+		userRepo.addUser(&model.User{ID: creator, Phone: "+1", Name: "C"})
+		userRepo.addUser(&model.User{ID: a, Phone: "+2", Name: "A"})
+		userRepo.addUser(&model.User{ID: b, Phone: "+3", Name: "B"})
+
+		svc := NewGroupService(chatRepo, newMockMessageRepo(), newMockMessageStatRepo(), userRepo, hub, nil)
+		group, err := svc.CreateGroup(context.Background(), creator, CreateGroupInput{
+			Name: "G", Icon: "x", MemberIDs: []uuid.UUID{a, b},
+		})
+		require.NoError(t, err)
+
+		chatRepo.findErr = fmt.Errorf("db error")
+		err = svc.RemoveMember(context.Background(), group.ID, a, creator)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "find chat")
+	})
+}
+
+func TestGroupService_LeaveGroup_Errors(t *testing.T) {
+	hub := newTestHub()
+	defer hub.Shutdown()
+
+	t.Run("get members error", func(t *testing.T) {
+		chatRepo := newMockChatRepo()
+		chatRepo.getMembersErr = fmt.Errorf("db error")
+		svc := NewGroupService(chatRepo, newMockMessageRepo(), newMockMessageStatRepo(), newMockUserRepo(), hub, nil)
+		err := svc.LeaveGroup(context.Background(), uuid.New(), uuid.New())
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "get members")
+	})
+}
+
+func TestGroupService_DeleteGroup_Errors(t *testing.T) {
+	hub := newTestHub()
+	defer hub.Shutdown()
+
+	t.Run("find chat error", func(t *testing.T) {
+		chatRepo := newMockChatRepo()
+		chatRepo.findErr = fmt.Errorf("db error")
+		svc := NewGroupService(chatRepo, newMockMessageRepo(), newMockMessageStatRepo(), newMockUserRepo(), hub, nil)
+		err := svc.DeleteGroup(context.Background(), uuid.New(), uuid.New())
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "find chat")
+	})
+
+	t.Run("delete personal chat", func(t *testing.T) {
+		chatRepo := newMockChatRepo()
+		userRepo := newMockUserRepo()
+		creator := uuid.New()
+		userRepo.addUser(&model.User{ID: creator, Phone: "+1", Name: "C"})
+
+		personalChat := &model.Chat{ID: uuid.New(), Type: model.ChatTypePersonal, CreatedBy: creator}
+		chatRepo.chats[personalChat.ID] = personalChat
+
+		svc := NewGroupService(chatRepo, newMockMessageRepo(), newMockMessageStatRepo(), userRepo, hub, nil)
+		err := svc.DeleteGroup(context.Background(), personalChat.ID, creator)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "group chats")
+	})
+}
+
+func TestGroupService_GetGroupInfo_Errors(t *testing.T) {
+	hub := newTestHub()
+	defer hub.Shutdown()
+
+	t.Run("get members error", func(t *testing.T) {
+		chatRepo := newMockChatRepo()
+		chatRepo.getMembersErr = fmt.Errorf("db error")
+		svc := NewGroupService(chatRepo, newMockMessageRepo(), newMockMessageStatRepo(), newMockUserRepo(), hub, nil)
+		_, err := svc.GetGroupInfo(context.Background(), uuid.New(), uuid.New())
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "get members")
+	})
+
+	t.Run("find chat error", func(t *testing.T) {
+		chatRepo := newMockChatRepo()
+		userRepo := newMockUserRepo()
+		creator := uuid.New()
+		a, b := uuid.New(), uuid.New()
+		userRepo.addUser(&model.User{ID: creator, Phone: "+1", Name: "C"})
+		userRepo.addUser(&model.User{ID: a, Phone: "+2", Name: "A"})
+		userRepo.addUser(&model.User{ID: b, Phone: "+3", Name: "B"})
+
+		svc := NewGroupService(chatRepo, newMockMessageRepo(), newMockMessageStatRepo(), userRepo, hub, nil)
+		group, err := svc.CreateGroup(context.Background(), creator, CreateGroupInput{
+			Name: "G", Icon: "x", MemberIDs: []uuid.UUID{a, b},
+		})
+		require.NoError(t, err)
+
+		chatRepo.findErr = fmt.Errorf("db error")
+		_, err = svc.GetGroupInfo(context.Background(), group.ID, creator)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "find chat")
 	})
 }

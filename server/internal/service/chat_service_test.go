@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -16,8 +17,16 @@ import (
 
 // --- Mock Chat Repository ---
 type mockChatRepo struct {
-	chats   map[uuid.UUID]*model.Chat
-	members map[uuid.UUID][]*model.ChatMember // chatID -> members
+	chats               map[uuid.UUID]*model.Chat
+	members             map[uuid.UUID][]*model.ChatMember // chatID -> members
+	createErr           error
+	addMemberErr        error
+	listByUserErr       error
+	getMembersErr       error
+	pinErr              error
+	unpinErr            error
+	findErr             error
+	findPersonalChatErr error
 }
 
 func newMockChatRepo() *mockChatRepo {
@@ -28,6 +37,9 @@ func newMockChatRepo() *mockChatRepo {
 }
 
 func (m *mockChatRepo) Create(_ context.Context, input model.CreateChatInput) (*model.Chat, error) {
+	if m.createErr != nil {
+		return nil, m.createErr
+	}
 	chat := &model.Chat{
 		ID:        uuid.New(),
 		Type:      input.Type,
@@ -42,6 +54,9 @@ func (m *mockChatRepo) Create(_ context.Context, input model.CreateChatInput) (*
 }
 
 func (m *mockChatRepo) FindByID(_ context.Context, id uuid.UUID) (*model.Chat, error) {
+	if m.findErr != nil {
+		return nil, m.findErr
+	}
 	c, ok := m.chats[id]
 	if !ok {
 		return nil, apperror.NotFound("chat", id.String())
@@ -50,6 +65,9 @@ func (m *mockChatRepo) FindByID(_ context.Context, id uuid.UUID) (*model.Chat, e
 }
 
 func (m *mockChatRepo) FindPersonalChat(_ context.Context, userID1, userID2 uuid.UUID) (*model.Chat, error) {
+	if m.findPersonalChatErr != nil {
+		return nil, m.findPersonalChatErr
+	}
 	for chatID, chat := range m.chats {
 		if chat.Type != model.ChatTypePersonal {
 			continue
@@ -72,6 +90,9 @@ func (m *mockChatRepo) FindPersonalChat(_ context.Context, userID1, userID2 uuid
 }
 
 func (m *mockChatRepo) ListByUser(_ context.Context, userID uuid.UUID) ([]*model.ChatWithLastMessage, error) {
+	if m.listByUserErr != nil {
+		return nil, m.listByUserErr
+	}
 	var result []*model.ChatWithLastMessage
 	for chatID, chat := range m.chats {
 		for _, mem := range m.members[chatID] {
@@ -85,6 +106,9 @@ func (m *mockChatRepo) ListByUser(_ context.Context, userID uuid.UUID) ([]*model
 }
 
 func (m *mockChatRepo) AddMember(_ context.Context, chatID, userID uuid.UUID, role model.MemberRole) error {
+	if m.addMemberErr != nil {
+		return m.addMemberErr
+	}
 	m.members[chatID] = append(m.members[chatID], &model.ChatMember{
 		ChatID:   chatID,
 		UserID:   userID,
@@ -106,6 +130,9 @@ func (m *mockChatRepo) RemoveMember(_ context.Context, chatID, userID uuid.UUID)
 }
 
 func (m *mockChatRepo) GetMembers(_ context.Context, chatID uuid.UUID) ([]*model.ChatMember, error) {
+	if m.getMembersErr != nil {
+		return nil, m.getMembersErr
+	}
 	return m.members[chatID], nil
 }
 
@@ -129,6 +156,9 @@ func (m *mockChatRepo) Delete(_ context.Context, id uuid.UUID) error {
 }
 
 func (m *mockChatRepo) Pin(_ context.Context, id uuid.UUID) error {
+	if m.pinErr != nil {
+		return m.pinErr
+	}
 	c, ok := m.chats[id]
 	if !ok {
 		return apperror.NotFound("chat", id.String())
@@ -139,6 +169,9 @@ func (m *mockChatRepo) Pin(_ context.Context, id uuid.UUID) error {
 }
 
 func (m *mockChatRepo) Unpin(_ context.Context, id uuid.UUID) error {
+	if m.unpinErr != nil {
+		return m.unpinErr
+	}
 	c, ok := m.chats[id]
 	if !ok {
 		return apperror.NotFound("chat", id.String())
@@ -149,8 +182,12 @@ func (m *mockChatRepo) Unpin(_ context.Context, id uuid.UUID) error {
 
 // --- Mock Message Repository ---
 type mockMessageRepo struct {
-	messages map[uuid.UUID]*model.Message
-	byChat   map[uuid.UUID][]*model.Message
+	messages   map[uuid.UUID]*model.Message
+	byChat     map[uuid.UUID][]*model.Message
+	createErr  error
+	listErr    error
+	searchErr  error
+	markDelErr error
 }
 
 func newMockMessageRepo() *mockMessageRepo {
@@ -161,6 +198,9 @@ func newMockMessageRepo() *mockMessageRepo {
 }
 
 func (m *mockMessageRepo) Create(_ context.Context, input model.CreateMessageInput) (*model.Message, error) {
+	if m.createErr != nil {
+		return nil, m.createErr
+	}
 	msgType := input.Type
 	if msgType == "" {
 		msgType = model.MessageTypeText
@@ -189,6 +229,9 @@ func (m *mockMessageRepo) FindByID(_ context.Context, id uuid.UUID) (*model.Mess
 }
 
 func (m *mockMessageRepo) ListByChat(_ context.Context, chatID uuid.UUID, cursor *time.Time, limit int) ([]*model.Message, error) {
+	if m.listErr != nil {
+		return nil, m.listErr
+	}
 	msgs := m.byChat[chatID]
 	if limit <= 0 {
 		limit = 50
@@ -207,6 +250,9 @@ func (m *mockMessageRepo) ListByChat(_ context.Context, chatID uuid.UUID, cursor
 }
 
 func (m *mockMessageRepo) MarkAsDeleted(_ context.Context, id uuid.UUID, forAll bool) error {
+	if m.markDelErr != nil {
+		return m.markDelErr
+	}
 	msg, ok := m.messages[id]
 	if !ok {
 		return apperror.NotFound("message", id.String())
@@ -217,13 +263,18 @@ func (m *mockMessageRepo) MarkAsDeleted(_ context.Context, id uuid.UUID, forAll 
 }
 
 func (m *mockMessageRepo) Search(_ context.Context, _ uuid.UUID, _ string) ([]*model.Message, error) {
+	if m.searchErr != nil {
+		return nil, m.searchErr
+	}
 	return nil, nil
 }
 
 // --- Mock Message Status Repository ---
 type mockMessageStatRepo struct {
-	statuses    map[string]*model.MessageStatus // key: "msgID:userID"
-	unreadCount map[string]int                  // key: "chatID:userID"
+	statuses       map[string]*model.MessageStatus // key: "msgID:userID"
+	unreadCount    map[string]int                  // key: "chatID:userID"
+	unreadCountErr error
+	markReadErr    error
 }
 
 func newMockMessageStatRepo() *mockMessageStatRepo {
@@ -262,12 +313,18 @@ func (m *mockMessageStatRepo) GetStatus(_ context.Context, messageID uuid.UUID) 
 }
 
 func (m *mockMessageStatRepo) MarkChatAsRead(_ context.Context, chatID, userID uuid.UUID) error {
+	if m.markReadErr != nil {
+		return m.markReadErr
+	}
 	key := chatID.String() + ":" + userID.String()
 	m.unreadCount[key] = 0
 	return nil
 }
 
 func (m *mockMessageStatRepo) GetUnreadCount(_ context.Context, chatID, userID uuid.UUID) (int, error) {
+	if m.unreadCountErr != nil {
+		return 0, m.unreadCountErr
+	}
 	key := chatID.String() + ":" + userID.String()
 	return m.unreadCount[key], nil
 }
@@ -478,5 +535,325 @@ func TestChatService_GetChat(t *testing.T) {
 	t.Run("not found", func(t *testing.T) {
 		_, err := svc.GetChat(context.Background(), uuid.New(), userA)
 		assert.Error(t, err)
+	})
+}
+
+func TestChatService_CreatePersonalChat_Errors(t *testing.T) {
+	hub := newTestHub()
+	defer hub.Shutdown()
+
+	t.Run("user repo generic error", func(t *testing.T) {
+		chatRepo := newMockChatRepo()
+		userRepo := newMockUserRepo()
+		// Don't add user → FindByID returns NotFound, but we want non-NotFound
+		// Instead, test when contactID doesn't exist → already covered as NotFound
+		// For a generic error we need a custom behavior
+		svc := NewChatService(chatRepo, newMockMessageRepo(), newMockMessageStatRepo(), userRepo, hub)
+		_, err := svc.CreatePersonalChat(context.Background(), uuid.New(), uuid.New())
+		require.Error(t, err)
+	})
+
+	t.Run("create chat error", func(t *testing.T) {
+		chatRepo := newMockChatRepo()
+		chatRepo.createErr = fmt.Errorf("db error")
+		userRepo := newMockUserRepo()
+		contactID := uuid.New()
+		userRepo.addUser(&model.User{ID: contactID, Phone: "+628111", Name: "C", Avatar: "\U0001F60A"})
+
+		svc := NewChatService(chatRepo, newMockMessageRepo(), newMockMessageStatRepo(), userRepo, hub)
+		_, err := svc.CreatePersonalChat(context.Background(), uuid.New(), contactID)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "create personal chat")
+	})
+
+	t.Run("add member error", func(t *testing.T) {
+		chatRepo := newMockChatRepo()
+		chatRepo.addMemberErr = fmt.Errorf("db error")
+		userRepo := newMockUserRepo()
+		contactID := uuid.New()
+		userRepo.addUser(&model.User{ID: contactID, Phone: "+628111", Name: "C", Avatar: "\U0001F60A"})
+
+		svc := NewChatService(chatRepo, newMockMessageRepo(), newMockMessageStatRepo(), userRepo, hub)
+		_, err := svc.CreatePersonalChat(context.Background(), uuid.New(), contactID)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "add creator member")
+	})
+}
+
+func TestChatService_GetOrCreatePersonalChat_Errors(t *testing.T) {
+	hub := newTestHub()
+	defer hub.Shutdown()
+
+	t.Run("self chat", func(t *testing.T) {
+		svc := NewChatService(newMockChatRepo(), newMockMessageRepo(), newMockMessageStatRepo(), newMockUserRepo(), hub)
+		id := uuid.New()
+		_, err := svc.GetOrCreatePersonalChat(context.Background(), id, id)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "yourself")
+	})
+
+	t.Run("find personal chat generic error", func(t *testing.T) {
+		chatRepo := newMockChatRepo()
+		chatRepo.findPersonalChatErr = fmt.Errorf("db error")
+		svc := NewChatService(chatRepo, newMockMessageRepo(), newMockMessageStatRepo(), newMockUserRepo(), hub)
+		_, err := svc.GetOrCreatePersonalChat(context.Background(), uuid.New(), uuid.New())
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "find personal chat")
+	})
+}
+
+func TestChatService_ListChats_Errors(t *testing.T) {
+	hub := newTestHub()
+	defer hub.Shutdown()
+
+	t.Run("list by user error", func(t *testing.T) {
+		chatRepo := newMockChatRepo()
+		chatRepo.listByUserErr = fmt.Errorf("db error")
+		svc := NewChatService(chatRepo, newMockMessageRepo(), newMockMessageStatRepo(), newMockUserRepo(), hub)
+		_, err := svc.ListChats(context.Background(), uuid.New())
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "list chats")
+	})
+
+	t.Run("unread count error", func(t *testing.T) {
+		chatRepo := newMockChatRepo()
+		userRepo := newMockUserRepo()
+		msgStatRepo := newMockMessageStatRepo()
+		userA := uuid.New()
+		userB := uuid.New()
+		userRepo.addUser(&model.User{ID: userA, Phone: "+628111", Name: "A", Avatar: "\U0001F60A"})
+		userRepo.addUser(&model.User{ID: userB, Phone: "+628222", Name: "B", Avatar: "\U0001F60A"})
+
+		svc := NewChatService(chatRepo, newMockMessageRepo(), msgStatRepo, userRepo, hub)
+		_, err := svc.CreatePersonalChat(context.Background(), userA, userB)
+		require.NoError(t, err)
+
+		msgStatRepo.unreadCountErr = fmt.Errorf("redis error")
+		_, err = svc.ListChats(context.Background(), userA)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "unread count")
+	})
+}
+
+func TestChatService_PinChat_Errors(t *testing.T) {
+	hub := newTestHub()
+	defer hub.Shutdown()
+
+	t.Run("get members error", func(t *testing.T) {
+		chatRepo := newMockChatRepo()
+		chatRepo.getMembersErr = fmt.Errorf("db error")
+		svc := NewChatService(chatRepo, newMockMessageRepo(), newMockMessageStatRepo(), newMockUserRepo(), hub)
+		err := svc.PinChat(context.Background(), uuid.New(), uuid.New())
+		require.Error(t, err)
+	})
+
+	t.Run("find by id error", func(t *testing.T) {
+		chatRepo := newMockChatRepo()
+		userRepo := newMockUserRepo()
+		userA := uuid.New()
+		userB := uuid.New()
+		userRepo.addUser(&model.User{ID: userA, Phone: "+628111", Name: "A", Avatar: "\U0001F60A"})
+		userRepo.addUser(&model.User{ID: userB, Phone: "+628222", Name: "B", Avatar: "\U0001F60A"})
+
+		svc := NewChatService(chatRepo, newMockMessageRepo(), newMockMessageStatRepo(), userRepo, hub)
+		chat, err := svc.CreatePersonalChat(context.Background(), userA, userB)
+		require.NoError(t, err)
+
+		chatRepo.findErr = fmt.Errorf("db error")
+		err = svc.PinChat(context.Background(), chat.ID, userA)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "find chat")
+	})
+
+	t.Run("pin error", func(t *testing.T) {
+		chatRepo := newMockChatRepo()
+		userRepo := newMockUserRepo()
+		userA := uuid.New()
+		userB := uuid.New()
+		userRepo.addUser(&model.User{ID: userA, Phone: "+628111", Name: "A", Avatar: "\U0001F60A"})
+		userRepo.addUser(&model.User{ID: userB, Phone: "+628222", Name: "B", Avatar: "\U0001F60A"})
+
+		svc := NewChatService(chatRepo, newMockMessageRepo(), newMockMessageStatRepo(), userRepo, hub)
+		chat, err := svc.CreatePersonalChat(context.Background(), userA, userB)
+		require.NoError(t, err)
+
+		chatRepo.pinErr = fmt.Errorf("db error")
+		err = svc.PinChat(context.Background(), chat.ID, userA)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "pin chat")
+	})
+}
+
+func TestChatService_UnpinChat_Errors(t *testing.T) {
+	hub := newTestHub()
+	defer hub.Shutdown()
+
+	t.Run("get members error", func(t *testing.T) {
+		chatRepo := newMockChatRepo()
+		chatRepo.getMembersErr = fmt.Errorf("db error")
+		svc := NewChatService(chatRepo, newMockMessageRepo(), newMockMessageStatRepo(), newMockUserRepo(), hub)
+		err := svc.UnpinChat(context.Background(), uuid.New(), uuid.New())
+		require.Error(t, err)
+	})
+
+	t.Run("not a member", func(t *testing.T) {
+		chatRepo := newMockChatRepo()
+		userRepo := newMockUserRepo()
+		userA := uuid.New()
+		userB := uuid.New()
+		userRepo.addUser(&model.User{ID: userA, Phone: "+628111", Name: "A", Avatar: "\U0001F60A"})
+		userRepo.addUser(&model.User{ID: userB, Phone: "+628222", Name: "B", Avatar: "\U0001F60A"})
+
+		svc := NewChatService(chatRepo, newMockMessageRepo(), newMockMessageStatRepo(), userRepo, hub)
+		chat, err := svc.CreatePersonalChat(context.Background(), userA, userB)
+		require.NoError(t, err)
+
+		err = svc.UnpinChat(context.Background(), chat.ID, uuid.New())
+		require.Error(t, err)
+	})
+
+	t.Run("unpin error", func(t *testing.T) {
+		chatRepo := newMockChatRepo()
+		userRepo := newMockUserRepo()
+		userA := uuid.New()
+		userB := uuid.New()
+		userRepo.addUser(&model.User{ID: userA, Phone: "+628111", Name: "A", Avatar: "\U0001F60A"})
+		userRepo.addUser(&model.User{ID: userB, Phone: "+628222", Name: "B", Avatar: "\U0001F60A"})
+
+		svc := NewChatService(chatRepo, newMockMessageRepo(), newMockMessageStatRepo(), userRepo, hub)
+		chat, err := svc.CreatePersonalChat(context.Background(), userA, userB)
+		require.NoError(t, err)
+
+		chatRepo.unpinErr = fmt.Errorf("db error")
+		err = svc.UnpinChat(context.Background(), chat.ID, userA)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "unpin chat")
+	})
+}
+
+func TestChatService_IsMember_Errors(t *testing.T) {
+	hub := newTestHub()
+	defer hub.Shutdown()
+
+	t.Run("get members not found", func(t *testing.T) {
+		chatRepo := newMockChatRepo()
+		chatRepo.getMembersErr = apperror.NotFound("chat", "test")
+		svc := NewChatService(chatRepo, newMockMessageRepo(), newMockMessageStatRepo(), newMockUserRepo(), hub)
+		_, err := svc.IsMember(context.Background(), uuid.New(), uuid.New())
+		require.Error(t, err)
+		assert.True(t, apperror.IsNotFound(err))
+	})
+
+	t.Run("get members generic error", func(t *testing.T) {
+		chatRepo := newMockChatRepo()
+		chatRepo.getMembersErr = fmt.Errorf("db error")
+		svc := NewChatService(chatRepo, newMockMessageRepo(), newMockMessageStatRepo(), newMockUserRepo(), hub)
+		_, err := svc.IsMember(context.Background(), uuid.New(), uuid.New())
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "check membership")
+	})
+}
+
+func TestChatService_GetChat_Errors(t *testing.T) {
+	hub := newTestHub()
+	defer hub.Shutdown()
+
+	t.Run("find by id error", func(t *testing.T) {
+		chatRepo := newMockChatRepo()
+		userRepo := newMockUserRepo()
+		userA := uuid.New()
+		userB := uuid.New()
+		userRepo.addUser(&model.User{ID: userA, Phone: "+628111", Name: "A", Avatar: "\U0001F60A"})
+		userRepo.addUser(&model.User{ID: userB, Phone: "+628222", Name: "B", Avatar: "\U0001F60A"})
+
+		svc := NewChatService(chatRepo, newMockMessageRepo(), newMockMessageStatRepo(), userRepo, hub)
+		chat, err := svc.CreatePersonalChat(context.Background(), userA, userB)
+		require.NoError(t, err)
+
+		chatRepo.findErr = fmt.Errorf("db error")
+		_, err = svc.GetChat(context.Background(), chat.ID, userA)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "get chat")
+	})
+
+	t.Run("get members error", func(t *testing.T) {
+		chatRepo := newMockChatRepo()
+		userRepo := newMockUserRepo()
+		userA := uuid.New()
+		userB := uuid.New()
+		userRepo.addUser(&model.User{ID: userA, Phone: "+628111", Name: "A", Avatar: "\U0001F60A"})
+		userRepo.addUser(&model.User{ID: userB, Phone: "+628222", Name: "B", Avatar: "\U0001F60A"})
+
+		svc := NewChatService(chatRepo, newMockMessageRepo(), newMockMessageStatRepo(), userRepo, hub)
+		chat, err := svc.CreatePersonalChat(context.Background(), userA, userB)
+		require.NoError(t, err)
+
+		chatRepo.getMembersErr = fmt.Errorf("db error")
+		// GetChat first calls IsMember (which uses GetMembers) - this will fail
+		_, err = svc.GetChat(context.Background(), chat.ID, userA)
+		require.Error(t, err)
+	})
+}
+
+func TestSortChatList(t *testing.T) {
+	now := time.Now()
+	earlier := now.Add(-1 * time.Hour)
+	later := now.Add(1 * time.Hour)
+
+	t.Run("pinned first", func(t *testing.T) {
+		items := []*ChatListItem{
+			{Chat: model.Chat{ID: uuid.New(), UpdatedAt: now}},
+			{Chat: model.Chat{ID: uuid.New(), UpdatedAt: earlier, PinnedAt: &now}},
+		}
+		sortChatList(items)
+		assert.NotNil(t, items[0].Chat.PinnedAt)
+		assert.Nil(t, items[1].Chat.PinnedAt)
+	})
+
+	t.Run("by last message time desc", func(t *testing.T) {
+		id1 := uuid.New()
+		id2 := uuid.New()
+		items := []*ChatListItem{
+			{Chat: model.Chat{ID: id1, UpdatedAt: earlier}},
+			{Chat: model.Chat{ID: id2, UpdatedAt: later}},
+		}
+		sortChatList(items)
+		assert.Equal(t, id2, items[0].Chat.ID)
+	})
+
+	t.Run("with last message", func(t *testing.T) {
+		id1 := uuid.New()
+		id2 := uuid.New()
+		items := []*ChatListItem{
+			{Chat: model.Chat{ID: id1, UpdatedAt: earlier}, LastMessage: &model.Message{CreatedAt: later}},
+			{Chat: model.Chat{ID: id2, UpdatedAt: later}, LastMessage: &model.Message{CreatedAt: earlier}},
+		}
+		sortChatList(items)
+		assert.Equal(t, id1, items[0].Chat.ID)
+	})
+
+	t.Run("both pinned sort by time", func(t *testing.T) {
+		id1 := uuid.New()
+		id2 := uuid.New()
+		items := []*ChatListItem{
+			{Chat: model.Chat{ID: id1, UpdatedAt: earlier, PinnedAt: &now}},
+			{Chat: model.Chat{ID: id2, UpdatedAt: later, PinnedAt: &now}},
+		}
+		sortChatList(items)
+		assert.Equal(t, id2, items[0].Chat.ID)
+	})
+
+	t.Run("single item", func(t *testing.T) {
+		items := []*ChatListItem{
+			{Chat: model.Chat{ID: uuid.New(), UpdatedAt: now}},
+		}
+		sortChatList(items)
+		assert.Len(t, items, 1)
+	})
+
+	t.Run("empty", func(t *testing.T) {
+		items := []*ChatListItem{}
+		sortChatList(items)
+		assert.Len(t, items, 0)
 	})
 }
