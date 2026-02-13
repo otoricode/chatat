@@ -148,3 +148,115 @@ export interface MediaResponse {
   thumbnailURL: string;
   createdAt: string;
 }
+
+// Document types
+export type BlockType =
+  | 'paragraph'
+  | 'heading1'
+  | 'heading2'
+  | 'heading3'
+  | 'bullet-list'
+  | 'numbered-list'
+  | 'checklist'
+  | 'table'
+  | 'callout'
+  | 'code'
+  | 'toggle'
+  | 'divider'
+  | 'quote';
+
+export type CollaboratorRole = 'editor' | 'viewer';
+
+export interface Block {
+  id: string;
+  documentId: string;
+  type: BlockType;
+  content: string;
+  checked?: boolean;
+  rows?: unknown[];
+  columns?: unknown[];
+  language?: string;
+  emoji?: string;
+  color?: string;
+  sortOrder: number;
+  parentBlockId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Document {
+  id: string;
+  title: string;
+  icon: string;
+  cover?: string;
+  ownerId: string;
+  chatId?: string;
+  topicId?: string;
+  isStandalone: boolean;
+  requireSigs: boolean;
+  locked: boolean;
+  lockedAt?: string;
+  lockedBy?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DocumentCollaboratorInfo {
+  userId: string;
+  name: string;
+  avatar: string;
+  role: CollaboratorRole;
+  addedAt: string;
+}
+
+export interface DocumentSigner {
+  documentId: string;
+  userId: string;
+  signedAt?: string;
+  signerName: string;
+}
+
+export interface DocumentFull {
+  document: Document;
+  blocks: Block[];
+  collaborators: DocumentCollaboratorInfo[];
+  signers: DocumentSigner[];
+  tags: string[];
+  history: DocumentHistory[];
+}
+
+export interface DocumentListItem {
+  id: string;
+  title: string;
+  icon: string;
+  locked: boolean;
+  requireSigs: boolean;
+  ownerId: string;
+  contextType: string;
+  updatedAt: string;
+}
+
+export interface DocumentHistory {
+  id: string;
+  documentId: string;
+  userId: string;
+  action: string;
+  details: string;
+  createdAt: string;
+}
+
+export interface DocumentTemplate {
+  id: string;
+  name: string;
+  icon: string;
+  blocks: TemplateBlock[];
+}
+
+export interface TemplateBlock {
+  type: string;
+  content: string;
+  rows?: unknown;
+  columns?: unknown;
+  emoji?: string;
+  color?: string;
+}
