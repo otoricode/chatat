@@ -67,12 +67,12 @@ Setiap kali menyelesaikan satu phase, jalankan checklist ini:
 - [x] Frontend: Input bar dengan tombol kirim
 - [ ] Tab Chat + Tab Dokumen dalam chat personal
 
-## Phase 08 — Chat Group
-- [ ] Backend: Group CRUD (create, update name/icon, delete)
-- [ ] Backend: Member management (add, remove, admin promotion)
-- [ ] Frontend: Group creation wizard (nama, ikon, pilih anggota)
-- [ ] Frontend: Group chat screen + member list
-- [ ] Frontend: Group settings (edit nama, ikon, anggota)
+## Phase 08 — Chat Group ✅ (2025-06-14)
+- [x] Backend: Group CRUD (create, update name/icon, delete)
+- [x] Backend: Member management (add, remove, admin promotion)
+- [x] Frontend: Group creation wizard (nama, ikon, pilih anggota)
+- [x] Frontend: Group chat screen + member list
+- [x] Frontend: Group settings (edit nama, ikon, anggota)
 - [ ] Tab Chat + Tab Dokumen + Tab Topik dalam grup
 
 ## Phase 09 — Real-time Messaging
