@@ -134,3 +134,85 @@ func (h *UserHandler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
 
 	response.NoContent(w)
 }
+
+// GetPrivacySettings handles GET /api/v1/users/me/privacy
+func (h *UserHandler) GetPrivacySettings(w http.ResponseWriter, r *http.Request) {
+	userID, err := GetUserID(r)
+	if err != nil {
+		response.Error(w, apperror.Unauthorized("user not authenticated"))
+		return
+	}
+
+	user, err := h.userService.GetProfile(r.Context(), userID)
+	if err != nil {
+		if appErr, ok := err.(*apperror.AppError); ok {
+			response.Error(w, appErr)
+			return
+		}
+		response.Error(w, apperror.Internal(err))
+		return
+	}
+
+	response.OK(w, user.PrivacySettings)
+}
+
+type updatePrivacyRequest struct {
+	LastSeenVisibility     *string `json:"lastSeenVisibility"`
+	OnlineVisibility       *string `json:"onlineVisibility"`
+	ReadReceipts           *bool   `json:"readReceipts"`
+	ProfilePhotoVisibility *string `json:"profilePhotoVisibility"`
+}
+
+// UpdatePrivacySettings handles PUT /api/v1/users/me/privacy
+func (h *UserHandler) UpdatePrivacySettings(w http.ResponseWriter, r *http.Request) {
+	userID, err := GetUserID(r)
+	if err != nil {
+		response.Error(w, apperror.Unauthorized("user not authenticated"))
+		return
+	}
+
+	var req updatePrivacyRequest
+	if err := DecodeJSON(r, &req); err != nil {
+		response.Error(w, apperror.BadRequest("invalid request body"))
+		return
+	}
+
+	// Get current privacy settings to merge partial updates
+	user, err := h.userService.GetProfile(r.Context(), userID)
+	if err != nil {
+		if appErr, ok := err.(*apperror.AppError); ok {
+			response.Error(w, appErr)
+			return
+		}
+		response.Error(w, apperror.Internal(err))
+		return
+	}
+
+	ps := user.PrivacySettings
+	if req.LastSeenVisibility != nil {
+		ps.LastSeenVisibility = *req.LastSeenVisibility
+	}
+	if req.OnlineVisibility != nil {
+		ps.OnlineVisibility = *req.OnlineVisibility
+	}
+	if req.ReadReceipts != nil {
+		ps.ReadReceipts = *req.ReadReceipts
+	}
+	if req.ProfilePhotoVisibility != nil {
+		ps.ProfilePhotoVisibility = *req.ProfilePhotoVisibility
+	}
+
+	updated, err := h.userService.UpdateProfile(r.Context(), userID, model.UpdateUserInput{
+		PrivacySettings: &ps,
+	})
+	if err != nil {
+		if appErr, ok := err.(*apperror.AppError); ok {
+			response.Error(w, appErr)
+			return
+		}
+		response.Error(w, apperror.Internal(err))
+		return
+	}
+
+	response.OK(w, updated.PrivacySettings)
+}

@@ -4,6 +4,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strings"
 )
 
 // Config holds all configuration values for the application.
@@ -28,6 +29,9 @@ type Config struct {
 
 	// FCM (Push Notifications) configuration
 	FCMCredentialsFile string // path to Firebase service account JSON
+
+	// CORS configuration
+	CORSOrigins string // comma-separated allowed origins
 }
 
 // Load reads configuration from environment variables and returns a Config.
@@ -51,6 +55,7 @@ func Load() (*Config, error) {
 		S3Region:    getEnv("S3_REGION", "us-east-1"),
 
 		FCMCredentialsFile: getEnv("FCM_CREDENTIALS_FILE", ""),
+		CORSOrigins:        getEnv("CORS_ALLOWED_ORIGINS", "*"),
 	}
 
 	if err := cfg.validate(); err != nil {
@@ -68,6 +73,18 @@ func (c *Config) IsDevelopment() bool {
 // IsProduction returns true if the environment is production.
 func (c *Config) IsProduction() bool {
 	return c.Environment == "production"
+}
+
+// CORSAllowedOrigins returns the list of allowed CORS origins.
+func (c *Config) CORSAllowedOrigins() []string {
+	if c.CORSOrigins == "" || c.CORSOrigins == "*" {
+		return []string{"*"}
+	}
+	origins := strings.Split(c.CORSOrigins, ",")
+	for i := range origins {
+		origins[i] = strings.TrimSpace(origins[i])
+	}
+	return origins
 }
 
 func (c *Config) validate() error {

@@ -139,6 +139,32 @@ func validateUpdateInput(input model.UpdateUserInput) error {
 	if input.Status != nil && len(*input.Status) > 200 {
 		return apperror.Validation("status", "status must be at most 200 characters")
 	}
+	if input.PrivacySettings != nil {
+		if err := validatePrivacySettings(*input.PrivacySettings); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// validVisibility values for privacy settings.
+var validVisibility = map[string]bool{
+	"everyone": true,
+	"contacts": true,
+	"nobody":   true,
+}
+
+// validatePrivacySettings validates privacy setting values.
+func validatePrivacySettings(ps model.PrivacySettings) error {
+	if !validVisibility[ps.LastSeenVisibility] {
+		return apperror.Validation("lastSeenVisibility", "must be everyone, contacts, or nobody")
+	}
+	if !validVisibility[ps.OnlineVisibility] {
+		return apperror.Validation("onlineVisibility", "must be everyone, contacts, or nobody")
+	}
+	if !validVisibility[ps.ProfilePhotoVisibility] {
+		return apperror.Validation("profilePhotoVisibility", "must be everyone, contacts, or nobody")
+	}
 	return nil
 }
 
