@@ -64,3 +64,23 @@ func ParsePagination(r *http.Request) (cursor string, limit int) {
 
 	return cursor, limit
 }
+
+// ParseOffsetPagination extracts offset and limit from query parameters.
+// Default limit is 20, max 100. Offset defaults to 0.
+func ParseOffsetPagination(r *http.Request) (offset, limit int) {
+	limit = 20
+
+	if o := r.URL.Query().Get("offset"); o != "" {
+		if parsed, err := strconv.Atoi(o); err == nil && parsed >= 0 {
+			offset = parsed
+		}
+	}
+
+	if l := r.URL.Query().Get("limit"); l != "" {
+		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 && parsed <= 100 {
+			limit = parsed
+		}
+	}
+
+	return offset, limit
+}

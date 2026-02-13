@@ -25,6 +25,7 @@ func NewRouterWithRedis(cfg *config.Config, deps *Dependencies, redisClient *red
 	r.Use(mw.SecurityHeaders)
 	r.Use(chimiddleware.RequestID)
 	r.Use(chimiddleware.RealIP)
+	r.Use(chimiddleware.Compress(5)) // gzip level 5
 	r.Use(mw.Logger)
 	r.Use(chimiddleware.Recoverer)
 	r.Use(chimiddleware.Timeout(30 * time.Second))
