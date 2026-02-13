@@ -39,6 +39,7 @@ type Dependencies struct {
 	TemplateService     service.TemplateService
 	NotificationService service.NotificationService
 	SearchService       service.SearchService
+	BackupService       service.BackupService
 
 	// Repositories
 	UserRepo        repository.UserRepository
@@ -55,6 +56,7 @@ type Dependencies struct {
 	MediaRepo       repository.MediaRepository
 	DeviceTokenRepo repository.DeviceTokenRepository
 	SearchRepo      repository.SearchRepository
+	BackupRepo      repository.BackupRepository
 
 	// Handlers
 	AuthHandler         *AuthHandler
@@ -68,6 +70,7 @@ type Dependencies struct {
 	EntityHandler       *EntityHandler
 	NotificationHandler *NotificationHandler
 	SearchHandler       *SearchHandler
+	BackupHandler       *BackupHandler
 	WSHandler           *WSHandler
 }
 
@@ -88,6 +91,7 @@ func NewDependencies(cfg *config.Config, db *pgxpool.Pool, redisClient *redis.Cl
 	mediaRepo := repository.NewMediaRepository(db)
 	deviceTokenRepo := repository.NewDeviceTokenRepository(db)
 	searchRepo := repository.NewSearchRepository(db)
+	backupRepo := repository.NewBackupRepository(db)
 
 	// Services
 	smsProvider := service.NewLogSMSProvider()
@@ -151,6 +155,8 @@ func NewDependencies(cfg *config.Config, db *pgxpool.Pool, redisClient *redis.Cl
 	notifHandler := NewNotificationHandler(notifSvc)
 	searchSvc := service.NewSearchService(searchRepo, chatRepo)
 	searchHandler := NewSearchHandler(searchSvc)
+	backupSvc := service.NewBackupService(backupRepo, userRepo, chatRepo, messageRepo, contactRepo, documentRepo)
+	backupHandler := NewBackupHandler(backupSvc)
 
 	deps := &Dependencies{
 		Config: cfg,
@@ -177,6 +183,7 @@ func NewDependencies(cfg *config.Config, db *pgxpool.Pool, redisClient *redis.Cl
 		TemplateService:     templateSvc,
 		NotificationService: notifSvc,
 		SearchService:       searchSvc,
+		BackupService:       backupSvc,
 
 		UserRepo:        userRepo,
 		ContactRepo:     contactRepo,
@@ -192,6 +199,7 @@ func NewDependencies(cfg *config.Config, db *pgxpool.Pool, redisClient *redis.Cl
 		MediaRepo:       mediaRepo,
 		DeviceTokenRepo: deviceTokenRepo,
 		SearchRepo:      searchRepo,
+		BackupRepo:      backupRepo,
 
 		AuthHandler:         authHandler,
 		WebhookHandler:      webhookHandler,
@@ -204,6 +212,7 @@ func NewDependencies(cfg *config.Config, db *pgxpool.Pool, redisClient *redis.Cl
 		EntityHandler:       entityHandler,
 		NotificationHandler: notifHandler,
 		SearchHandler:       searchHandler,
+		BackupHandler:       backupHandler,
 		WSHandler:           NewWSHandler(hub, cfg.JWTSecret, chatRepo, topicRepo, messageStatRepo, redisClient),
 	}
 

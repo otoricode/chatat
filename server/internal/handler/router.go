@@ -193,6 +193,14 @@ func NewRouter(cfg *config.Config, deps *Dependencies) *chi.Mux {
 				r.Get("/contacts", deps.SearchHandler.SearchContacts)
 				r.Get("/entities", deps.SearchHandler.SearchEntities)
 			})
+
+			r.Route("/backup", func(r chi.Router) {
+				r.Get("/export", deps.BackupHandler.Export)
+				r.Post("/import", deps.BackupHandler.Import)
+				r.Post("/log", deps.BackupHandler.LogBackup)
+				r.Get("/history", deps.BackupHandler.GetHistory)
+				r.Get("/latest", deps.BackupHandler.GetLatest)
+			})
 		})
 	})
 
