@@ -62,4 +62,4 @@ yarn-error.log*
 tmp/
 temp/
 
-./tmp
+./tmptmp/
