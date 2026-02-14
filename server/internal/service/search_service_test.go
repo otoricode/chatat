@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -20,6 +21,11 @@ type mockSearchRepo struct {
 	documents []*model.DocumentSearchRow
 	contacts  []*model.User
 	entities  []*model.Entity
+
+	searchMsgErr error
+	searchDocErr error
+	searchConErr error
+	searchEntErr error
 }
 
 func newMockSearchRepo() *mockSearchRepo {
@@ -32,6 +38,9 @@ func newMockSearchRepo() *mockSearchRepo {
 }
 
 func (m *mockSearchRepo) SearchMessages(_ context.Context, _ uuid.UUID, _ string, offset, limit int) ([]*model.MessageSearchRow, error) {
+	if m.searchMsgErr != nil {
+		return nil, m.searchMsgErr
+	}
 	end := offset + limit
 	if end > len(m.messages) {
 		end = len(m.messages)
@@ -60,6 +69,9 @@ func (m *mockSearchRepo) SearchMessagesInChat(_ context.Context, chatID uuid.UUI
 }
 
 func (m *mockSearchRepo) SearchDocuments(_ context.Context, _ uuid.UUID, _ string, offset, limit int) ([]*model.DocumentSearchRow, error) {
+	if m.searchDocErr != nil {
+		return nil, m.searchDocErr
+	}
 	end := offset + limit
 	if end > len(m.documents) {
 		end = len(m.documents)
@@ -71,6 +83,9 @@ func (m *mockSearchRepo) SearchDocuments(_ context.Context, _ uuid.UUID, _ strin
 }
 
 func (m *mockSearchRepo) SearchContacts(_ context.Context, _ uuid.UUID, _ string, limit int) ([]*model.User, error) {
+	if m.searchConErr != nil {
+		return nil, m.searchConErr
+	}
 	end := limit
 	if end > len(m.contacts) {
 		end = len(m.contacts)
@@ -79,6 +94,9 @@ func (m *mockSearchRepo) SearchContacts(_ context.Context, _ uuid.UUID, _ string
 }
 
 func (m *mockSearchRepo) SearchEntities(_ context.Context, _ uuid.UUID, _ string, limit int) ([]*model.Entity, error) {
+	if m.searchEntErr != nil {
+		return nil, m.searchEntErr
+	}
 	end := limit
 	if end > len(m.entities) {
 		end = len(m.entities)
@@ -278,4 +296,119 @@ func TestBuildTSQuery(t *testing.T) {
 		q := repository.BuildTSQuery("   ")
 		assert.Equal(t, "", q)
 	})
+}
+
+// --- Additional Coverage Tests ---
+
+func TestSearchService_SearchDocuments_Errors(t *testing.T) {
+	searchRepo := newMockSearchRepo()
+	chatRepo := newMockNotifChatRepo()
+	svc := NewSearchService(searchRepo, chatRepo)
+	userID := uuid.New()
+
+	searchRepo.documents = []*model.DocumentSearchRow{
+		{ID: uuid.New(), Title: "Doc", Icon: "memo", OwnerID: userID, UpdatedAt: time.Now(), Highlight: "<mark>Doc</mark>"},
+	}
+
+	t.Run("short query rejected", func(t *testing.T) {
+		_, err := svc.SearchDocuments(context.Background(), userID, "a", SearchOpts{Limit: 20})
+		require.Error(t, err)
+	})
+
+	t.Run("default limit applied", func(t *testing.T) {
+		results, err := svc.SearchDocuments(context.Background(), userID, "doc", SearchOpts{})
+		require.NoError(t, err)
+		assert.Len(t, results, 1)
+	})
+}
+
+func TestSearchService_SearchContacts_ShortQuery(t *testing.T) {
+	searchRepo := newMockSearchRepo()
+	chatRepo := newMockNotifChatRepo()
+	svc := NewSearchService(searchRepo, chatRepo)
+
+	_, err := svc.SearchContacts(context.Background(), uuid.New(), "x")
+	require.Error(t, err)
+}
+
+func TestSearchService_SearchEntities_ShortQuery(t *testing.T) {
+	searchRepo := newMockSearchRepo()
+	chatRepo := newMockNotifChatRepo()
+	svc := NewSearchService(searchRepo, chatRepo)
+
+	_, err := svc.SearchEntities(context.Background(), uuid.New(), "x")
+	require.Error(t, err)
+}
+
+func TestSearchService_SearchAll_LimitClamping(t *testing.T) {
+	searchRepo := newMockSearchRepo()
+	chatRepo := newMockNotifChatRepo()
+	svc := NewSearchService(searchRepo, chatRepo)
+	userID := uuid.New()
+
+	t.Run("limit zero defaults to 3", func(t *testing.T) {
+		results, err := svc.SearchAll(context.Background(), userID, "test", 0)
+		require.NoError(t, err)
+		assert.NotNil(t, results)
+	})
+
+	t.Run("limit over 5 defaults to 3", func(t *testing.T) {
+		results, err := svc.SearchAll(context.Background(), userID, "test", 10)
+		require.NoError(t, err)
+		assert.NotNil(t, results)
+	})
+}
+
+func TestSearchService_SearchAll_ErrorPaths(t *testing.T) {
+	userID := uuid.New()
+
+	t.Run("search messages error", func(t *testing.T) {
+		searchRepo := newMockSearchRepo()
+		chatRepo := newMockNotifChatRepo()
+		svc := NewSearchService(searchRepo, chatRepo)
+		searchRepo.searchMsgErr = errors.New("db error")
+		_, err := svc.SearchAll(context.Background(), userID, "test", 3)
+		require.Error(t, err)
+	})
+
+	t.Run("search documents error", func(t *testing.T) {
+		searchRepo := newMockSearchRepo()
+		chatRepo := newMockNotifChatRepo()
+		svc := NewSearchService(searchRepo, chatRepo)
+		searchRepo.searchDocErr = errors.New("db error")
+		_, err := svc.SearchAll(context.Background(), userID, "test", 3)
+		require.Error(t, err)
+	})
+
+	t.Run("search contacts error", func(t *testing.T) {
+		searchRepo := newMockSearchRepo()
+		chatRepo := newMockNotifChatRepo()
+		svc := NewSearchService(searchRepo, chatRepo)
+		searchRepo.searchConErr = errors.New("db error")
+		_, err := svc.SearchAll(context.Background(), userID, "test", 3)
+		require.Error(t, err)
+	})
+
+	t.Run("search entities error", func(t *testing.T) {
+		searchRepo := newMockSearchRepo()
+		chatRepo := newMockNotifChatRepo()
+		svc := NewSearchService(searchRepo, chatRepo)
+		searchRepo.searchEntErr = errors.New("db error")
+		_, err := svc.SearchAll(context.Background(), userID, "test", 3)
+		require.Error(t, err)
+	})
+}
+
+func TestSearchService_SearchInChat_DefaultLimit(t *testing.T) {
+	searchRepo := newMockSearchRepo()
+	chatRepo := newMockNotifChatRepo()
+	svc := NewSearchService(searchRepo, chatRepo)
+
+	userID := uuid.New()
+	chatID := uuid.New()
+	chatRepo.members[chatID] = []*model.ChatMember{{UserID: userID}}
+
+	results, err := svc.SearchInChat(context.Background(), chatID, userID, "hello", SearchOpts{})
+	require.NoError(t, err)
+	assert.NotNil(t, results)
 }

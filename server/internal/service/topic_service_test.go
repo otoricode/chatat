@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -17,6 +18,8 @@ import (
 type mockTopicRepo struct {
 	topics  map[uuid.UUID]*model.Topic
 	members map[uuid.UUID][]*model.TopicMember // topicID -> members
+
+	getMembersErr error
 }
 
 func newMockTopicRepo() *mockTopicRepo {
@@ -104,6 +107,9 @@ func (m *mockTopicRepo) RemoveMember(_ context.Context, topicID, userID uuid.UUI
 }
 
 func (m *mockTopicRepo) GetMembers(_ context.Context, topicID uuid.UUID) ([]*model.TopicMember, error) {
+	if m.getMembersErr != nil {
+		return nil, m.getMembersErr
+	}
 	return m.members[topicID], nil
 }
 
@@ -138,6 +144,11 @@ func (m *mockTopicRepo) Delete(_ context.Context, id uuid.UUID) error {
 type mockTopicMsgRepo struct {
 	messages map[uuid.UUID]*model.TopicMessage
 	byTopic  map[uuid.UUID][]*model.TopicMessage
+
+	createErr      error
+	findErr        error
+	listErr        error
+	markDeletedErr error
 }
 
 func newMockTopicMsgRepo() *mockTopicMsgRepo {
@@ -148,6 +159,9 @@ func newMockTopicMsgRepo() *mockTopicMsgRepo {
 }
 
 func (m *mockTopicMsgRepo) Create(_ context.Context, input model.CreateTopicMessageInput) (*model.TopicMessage, error) {
+	if m.createErr != nil {
+		return nil, m.createErr
+	}
 	msgType := input.Type
 	if msgType == "" {
 		msgType = model.MessageTypeText
@@ -167,6 +181,9 @@ func (m *mockTopicMsgRepo) Create(_ context.Context, input model.CreateTopicMess
 }
 
 func (m *mockTopicMsgRepo) FindByID(_ context.Context, id uuid.UUID) (*model.TopicMessage, error) {
+	if m.findErr != nil {
+		return nil, m.findErr
+	}
 	msg, ok := m.messages[id]
 	if !ok {
 		return nil, apperror.NotFound("topic message", id.String())
@@ -175,6 +192,9 @@ func (m *mockTopicMsgRepo) FindByID(_ context.Context, id uuid.UUID) (*model.Top
 }
 
 func (m *mockTopicMsgRepo) ListByTopic(_ context.Context, topicID uuid.UUID, cursor *time.Time, limit int) ([]*model.TopicMessage, error) {
+	if m.listErr != nil {
+		return nil, m.listErr
+	}
 	msgs := m.byTopic[topicID]
 	if limit <= 0 {
 		limit = 50
@@ -193,6 +213,9 @@ func (m *mockTopicMsgRepo) ListByTopic(_ context.Context, topicID uuid.UUID, cur
 }
 
 func (m *mockTopicMsgRepo) MarkAsDeleted(_ context.Context, id uuid.UUID, forAll bool) error {
+	if m.markDeletedErr != nil {
+		return m.markDeletedErr
+	}
 	msg, ok := m.messages[id]
 	if !ok {
 		return apperror.NotFound("topic message", id.String())
@@ -588,5 +611,455 @@ func TestTopicMessageService_DeleteMessage(t *testing.T) {
 		err := svc.DeleteMessage(context.Background(), msg.ID, user, true)
 		require.NoError(t, err)
 		assert.True(t, topicMsgRepo.messages[msg.ID].IsDeleted)
+	})
+}
+
+func TestTopicService_GetTopic(t *testing.T) {
+	svc, _, _, chatRepo, userRepo := setupTopicService()
+
+	userA := uuid.New()
+	userB := uuid.New()
+	userRepo.addUser(&model.User{ID: userA, Phone: "+628111", Name: "A"})
+	userRepo.addUser(&model.User{ID: userB, Phone: "+628222", Name: "B"})
+
+	// Create a parent chat
+	chatID := uuid.New()
+	chatRepo.chats[chatID] = &model.Chat{ID: chatID, Type: model.ChatTypeGroup, Name: "Group"}
+	_ = chatRepo.AddMember(context.Background(), chatID, userA, model.MemberRoleAdmin)
+	_ = chatRepo.AddMember(context.Background(), chatID, userB, model.MemberRoleMember)
+
+	// Create topic
+	topic, err := svc.CreateTopic(context.Background(), userA, CreateTopicInput{
+		Name:     "Test Topic",
+		Icon:     "\U0001F4AC",
+		ParentID: chatID,
+	})
+	require.NoError(t, err)
+
+	t.Run("success", func(t *testing.T) {
+		detail, err := svc.GetTopic(context.Background(), topic.ID, userA)
+		require.NoError(t, err)
+		assert.Equal(t, topic.ID, detail.Topic.ID)
+		assert.NotEmpty(t, detail.Members)
+	})
+
+	t.Run("non member forbidden", func(t *testing.T) {
+		outsider := uuid.New()
+		_, err := svc.GetTopic(context.Background(), topic.ID, outsider)
+		assert.Error(t, err)
+	})
+
+	t.Run("not found", func(t *testing.T) {
+		_, err := svc.GetTopic(context.Background(), uuid.New(), userA)
+		assert.Error(t, err)
+	})
+}
+
+func TestTopicService_ListByUser(t *testing.T) {
+	svc, _, _, chatRepo, userRepo := setupTopicService()
+
+	userA := uuid.New()
+	userRepo.addUser(&model.User{ID: userA, Phone: "+628111", Name: "A"})
+
+	chatID := uuid.New()
+	chatRepo.chats[chatID] = &model.Chat{ID: chatID, Type: model.ChatTypeGroup, Name: "Group"}
+	_ = chatRepo.AddMember(context.Background(), chatID, userA, model.MemberRoleAdmin)
+
+	_, err := svc.CreateTopic(context.Background(), userA, CreateTopicInput{
+		Name:     "Topic 1",
+		Icon:     "\U0001F4AC",
+		ParentID: chatID,
+	})
+	require.NoError(t, err)
+
+	items, err := svc.ListByUser(context.Background(), userA)
+	require.NoError(t, err)
+	assert.Len(t, items, 1)
+}
+
+func TestTopicService_UpdateTopic(t *testing.T) {
+	svc, topicRepo, _, chatRepo, userRepo := setupTopicService()
+
+	userA := uuid.New()
+	userRepo.addUser(&model.User{ID: userA, Phone: "+628111", Name: "A"})
+
+	chatID := uuid.New()
+	chatRepo.chats[chatID] = &model.Chat{ID: chatID, Type: model.ChatTypeGroup, Name: "Group"}
+	_ = chatRepo.AddMember(context.Background(), chatID, userA, model.MemberRoleAdmin)
+
+	topic, err := svc.CreateTopic(context.Background(), userA, CreateTopicInput{
+		Name:     "Old Name",
+		Icon:     "\U0001F4AC",
+		ParentID: chatID,
+	})
+	require.NoError(t, err)
+
+	newName := "New Name"
+	updated, err := svc.UpdateTopic(context.Background(), topic.ID, userA, UpdateTopicInput{
+		Name: &newName,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "New Name", updated.Name)
+
+	// Verify in repo
+	assert.Equal(t, "New Name", topicRepo.topics[topic.ID].Name)
+
+	t.Run("non admin cannot update", func(t *testing.T) {
+		outsider := uuid.New()
+		_, err := svc.UpdateTopic(context.Background(), topic.ID, outsider, UpdateTopicInput{
+			Name: &newName,
+		})
+		assert.Error(t, err)
+	})
+}
+
+// --- Topic Message Error-Path Tests ---
+
+func TestTopicMessageService_SendMessage_Errors(t *testing.T) {
+	topicRepo := newMockTopicRepo()
+	topicMsgRepo := newMockTopicMsgRepo()
+	svc := NewTopicMessageService(topicMsgRepo, topicRepo, nil)
+
+	topicID := uuid.New()
+	user := uuid.New()
+	topicRepo.topics[topicID] = &model.Topic{ID: topicID, Name: "T"}
+	topicRepo.members[topicID] = []*model.TopicMember{
+		{TopicID: topicID, UserID: user, Role: model.MemberRoleAdmin},
+	}
+
+	t.Run("default type is text", func(t *testing.T) {
+		msg, err := svc.SendMessage(context.Background(), SendTopicMessageInput{
+			TopicID: topicID, SenderID: user, Content: "Hi",
+		})
+		require.NoError(t, err)
+		assert.Equal(t, model.MessageTypeText, msg.Type)
+	})
+
+	t.Run("reply to message in different topic", func(t *testing.T) {
+		otherMsg := &model.TopicMessage{ID: uuid.New(), TopicID: uuid.New()}
+		topicMsgRepo.messages[otherMsg.ID] = otherMsg
+		replyID := otherMsg.ID
+		_, err := svc.SendMessage(context.Background(), SendTopicMessageInput{
+			TopicID: topicID, SenderID: user, Content: "Reply", Type: model.MessageTypeText,
+			ReplyToID: &replyID,
+		})
+		require.Error(t, err)
+	})
+
+	t.Run("reply find generic error", func(t *testing.T) {
+		topicMsgRepo.findErr = errors.New("db error")
+		badID := uuid.New()
+		_, err := svc.SendMessage(context.Background(), SendTopicMessageInput{
+			TopicID: topicID, SenderID: user, Content: "Reply", Type: model.MessageTypeText,
+			ReplyToID: &badID,
+		})
+		require.Error(t, err)
+		topicMsgRepo.findErr = nil
+	})
+
+	t.Run("create error", func(t *testing.T) {
+		topicMsgRepo.createErr = errors.New("db insert failed")
+		_, err := svc.SendMessage(context.Background(), SendTopicMessageInput{
+			TopicID: topicID, SenderID: user, Content: "Hello", Type: model.MessageTypeText,
+		})
+		require.Error(t, err)
+		topicMsgRepo.createErr = nil
+	})
+
+	t.Run("get members error", func(t *testing.T) {
+		topicRepo.getMembersErr = errors.New("db error")
+		_, err := svc.SendMessage(context.Background(), SendTopicMessageInput{
+			TopicID: topicID, SenderID: user, Content: "Hello", Type: model.MessageTypeText,
+		})
+		require.Error(t, err)
+		topicRepo.getMembersErr = nil
+	})
+}
+
+func TestTopicMessageService_GetMessages_Errors(t *testing.T) {
+	topicRepo := newMockTopicRepo()
+	topicMsgRepo := newMockTopicMsgRepo()
+	svc := NewTopicMessageService(topicMsgRepo, topicRepo, nil)
+
+	topicID := uuid.New()
+
+	t.Run("invalid cursor", func(t *testing.T) {
+		_, err := svc.GetMessages(context.Background(), topicID, "bad-cursor", 10)
+		require.Error(t, err)
+	})
+
+	t.Run("list error", func(t *testing.T) {
+		topicMsgRepo.listErr = errors.New("db error")
+		_, err := svc.GetMessages(context.Background(), topicID, "", 10)
+		require.Error(t, err)
+		topicMsgRepo.listErr = nil
+	})
+
+	t.Run("default limit when zero", func(t *testing.T) {
+		page, err := svc.GetMessages(context.Background(), topicID, "", 0)
+		require.NoError(t, err)
+		assert.NotNil(t, page)
+	})
+
+	t.Run("with valid cursor", func(t *testing.T) {
+		cursor := time.Now().Add(time.Hour).Format(time.RFC3339Nano)
+		page, err := svc.GetMessages(context.Background(), topicID, cursor, 10)
+		require.NoError(t, err)
+		assert.NotNil(t, page)
+	})
+}
+
+func TestTopicMessageService_DeleteMessage_Errors(t *testing.T) {
+	topicRepo := newMockTopicRepo()
+	topicMsgRepo := newMockTopicMsgRepo()
+	svc := NewTopicMessageService(topicMsgRepo, topicRepo, nil)
+
+	topicID := uuid.New()
+	sender := uuid.New()
+
+	msg := &model.TopicMessage{ID: uuid.New(), TopicID: topicID, SenderID: sender}
+	topicMsgRepo.messages[msg.ID] = msg
+
+	t.Run("mark deleted error", func(t *testing.T) {
+		topicMsgRepo.markDeletedErr = errors.New("db error")
+		err := svc.DeleteMessage(context.Background(), msg.ID, sender, false)
+		require.Error(t, err)
+		topicMsgRepo.markDeletedErr = nil
+	})
+
+	t.Run("find error", func(t *testing.T) {
+		topicMsgRepo.findErr = errors.New("db error")
+		err := svc.DeleteMessage(context.Background(), msg.ID, sender, false)
+		require.Error(t, err)
+		topicMsgRepo.findErr = nil
+	})
+
+	t.Run("delete for all no hub", func(t *testing.T) {
+		err := svc.DeleteMessage(context.Background(), msg.ID, sender, true)
+		require.NoError(t, err)
+	})
+}
+
+func TestTopicService_ListByChat_Errors(t *testing.T) {
+	topicRepo := newMockTopicRepo()
+	topicMsgRepo := newMockTopicMsgRepo()
+	chatRepo := newMockChatRepo()
+	userRepo := newMockUserRepo()
+	hub := newTestHub()
+	defer hub.Shutdown()
+
+	svc := NewTopicService(topicRepo, topicMsgRepo, chatRepo, userRepo, hub)
+
+	t.Run("not a member of parent chat", func(t *testing.T) {
+		chatID := uuid.New()
+		creator := uuid.New()
+		userRepo.addUser(&model.User{ID: creator, Phone: "+1", Name: "C"})
+
+		chatRepo.chats[chatID] = &model.Chat{ID: chatID, Type: model.ChatTypeGroup}
+		_ = chatRepo.AddMember(context.Background(), chatID, creator, model.MemberRoleAdmin)
+
+		_, err := svc.ListByChat(context.Background(), chatID, uuid.New())
+		require.Error(t, err)
+	})
+
+	t.Run("get parent members error", func(t *testing.T) {
+		chatRepo.getMembersErr = errors.New("db error")
+		_, err := svc.ListByChat(context.Background(), uuid.New(), uuid.New())
+		require.Error(t, err)
+		chatRepo.getMembersErr = nil
+	})
+}
+
+func TestTopicService_GetTopic_Errors(t *testing.T) {
+	topicRepo := newMockTopicRepo()
+	topicMsgRepo := newMockTopicMsgRepo()
+	chatRepo := newMockChatRepo()
+	userRepo := newMockUserRepo()
+	hub := newTestHub()
+	defer hub.Shutdown()
+
+	svc := NewTopicService(topicRepo, topicMsgRepo, chatRepo, userRepo, hub)
+
+	t.Run("topic not found", func(t *testing.T) {
+		_, err := svc.GetTopic(context.Background(), uuid.New(), uuid.New())
+		require.Error(t, err)
+	})
+
+	t.Run("not a member", func(t *testing.T) {
+		creator := uuid.New()
+		userRepo.addUser(&model.User{ID: creator, Phone: "+1", Name: "C"})
+
+		chatID := uuid.New()
+		chatRepo.chats[chatID] = &model.Chat{ID: chatID, Type: model.ChatTypeGroup}
+		_ = chatRepo.AddMember(context.Background(), chatID, creator, model.MemberRoleAdmin)
+
+		topic, err := svc.CreateTopic(context.Background(), creator, CreateTopicInput{
+			Name:      "TestTopic",
+			Icon:      "T",
+			ParentID:  chatID,
+			MemberIDs: []uuid.UUID{},
+		})
+		require.NoError(t, err)
+
+		_, err = svc.GetTopic(context.Background(), topic.ID, uuid.New())
+		require.Error(t, err)
+	})
+
+	t.Run("get members error", func(t *testing.T) {
+		creator := uuid.New()
+		userRepo.addUser(&model.User{ID: creator, Phone: "+2", Name: "C2"})
+
+		chatID := uuid.New()
+		chatRepo.chats[chatID] = &model.Chat{ID: chatID, Type: model.ChatTypeGroup}
+		_ = chatRepo.AddMember(context.Background(), chatID, creator, model.MemberRoleAdmin)
+
+		topic, err := svc.CreateTopic(context.Background(), creator, CreateTopicInput{
+			Name:      "TestTopic2",
+			Icon:      "T",
+			ParentID:  chatID,
+			MemberIDs: []uuid.UUID{},
+		})
+		require.NoError(t, err)
+
+		topicRepo.getMembersErr = errors.New("db error")
+		_, err = svc.GetTopic(context.Background(), topic.ID, creator)
+		require.Error(t, err)
+		topicRepo.getMembersErr = nil
+	})
+}
+
+func TestTopicService_UpdateTopic_Errors(t *testing.T) {
+	topicRepo := newMockTopicRepo()
+	topicMsgRepo := newMockTopicMsgRepo()
+	chatRepo := newMockChatRepo()
+	userRepo := newMockUserRepo()
+	hub := newTestHub()
+	defer hub.Shutdown()
+
+	svc := NewTopicService(topicRepo, topicMsgRepo, chatRepo, userRepo, hub)
+
+	t.Run("not admin", func(t *testing.T) {
+		creator := uuid.New()
+		other := uuid.New()
+		userRepo.addUser(&model.User{ID: creator, Phone: "+1", Name: "C"})
+		userRepo.addUser(&model.User{ID: other, Phone: "+2", Name: "O"})
+
+		chatID := uuid.New()
+		chatRepo.chats[chatID] = &model.Chat{ID: chatID, Type: model.ChatTypeGroup}
+		_ = chatRepo.AddMember(context.Background(), chatID, creator, model.MemberRoleAdmin)
+		_ = chatRepo.AddMember(context.Background(), chatID, other, model.MemberRoleMember)
+
+		topic, err := svc.CreateTopic(context.Background(), creator, CreateTopicInput{
+			Name:      "TopicForUpdate",
+			Icon:      "U",
+			ParentID:  chatID,
+			MemberIDs: []uuid.UUID{other},
+		})
+		require.NoError(t, err)
+
+		newName := "Updated"
+		_, err = svc.UpdateTopic(context.Background(), topic.ID, other, UpdateTopicInput{Name: &newName})
+		require.Error(t, err)
+	})
+}
+
+func TestTopicService_AddMember_Errors(t *testing.T) {
+	topicRepo := newMockTopicRepo()
+	topicMsgRepo := newMockTopicMsgRepo()
+	chatRepo := newMockChatRepo()
+	userRepo := newMockUserRepo()
+	hub := newTestHub()
+	defer hub.Shutdown()
+
+	svc := NewTopicService(topicRepo, topicMsgRepo, chatRepo, userRepo, hub)
+
+	creator := uuid.New()
+	other := uuid.New()
+	outsider := uuid.New()
+	userRepo.addUser(&model.User{ID: creator, Phone: "+1", Name: "C"})
+	userRepo.addUser(&model.User{ID: other, Phone: "+2", Name: "O"})
+	userRepo.addUser(&model.User{ID: outsider, Phone: "+3", Name: "X"})
+
+	chatID := uuid.New()
+	chatRepo.chats[chatID] = &model.Chat{ID: chatID, Type: model.ChatTypeGroup}
+	_ = chatRepo.AddMember(context.Background(), chatID, creator, model.MemberRoleAdmin)
+	_ = chatRepo.AddMember(context.Background(), chatID, other, model.MemberRoleMember)
+
+	topic, _ := svc.CreateTopic(context.Background(), creator, CreateTopicInput{
+		Name:      "TopicForAdd",
+		Icon:      "A",
+		ParentID:  chatID,
+		MemberIDs: []uuid.UUID{},
+	})
+
+	t.Run("user not in parent chat", func(t *testing.T) {
+		err := svc.AddMember(context.Background(), topic.ID, outsider, creator)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "parent chat")
+	})
+}
+
+func TestTopicService_RemoveMember_Errors(t *testing.T) {
+	topicRepo := newMockTopicRepo()
+	topicMsgRepo := newMockTopicMsgRepo()
+	chatRepo := newMockChatRepo()
+	userRepo := newMockUserRepo()
+	hub := newTestHub()
+	defer hub.Shutdown()
+
+	svc := NewTopicService(topicRepo, topicMsgRepo, chatRepo, userRepo, hub)
+
+	creator := uuid.New()
+	userRepo.addUser(&model.User{ID: creator, Phone: "+1", Name: "C"})
+
+	chatID := uuid.New()
+	chatRepo.chats[chatID] = &model.Chat{ID: chatID, Type: model.ChatTypeGroup}
+	_ = chatRepo.AddMember(context.Background(), chatID, creator, model.MemberRoleAdmin)
+
+	topic, _ := svc.CreateTopic(context.Background(), creator, CreateTopicInput{
+		Name:      "TopicForRemove",
+		Icon:      "R",
+		ParentID:  chatID,
+		MemberIDs: []uuid.UUID{},
+	})
+
+	t.Run("remove self", func(t *testing.T) {
+		err := svc.RemoveMember(context.Background(), topic.ID, creator, creator)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "leave")
+	})
+}
+
+func TestTopicService_DeleteTopic_Errors(t *testing.T) {
+	topicRepo := newMockTopicRepo()
+	topicMsgRepo := newMockTopicMsgRepo()
+	chatRepo := newMockChatRepo()
+	userRepo := newMockUserRepo()
+	hub := newTestHub()
+	defer hub.Shutdown()
+
+	svc := NewTopicService(topicRepo, topicMsgRepo, chatRepo, userRepo, hub)
+
+	t.Run("not admin", func(t *testing.T) {
+		creator := uuid.New()
+		other := uuid.New()
+		userRepo.addUser(&model.User{ID: creator, Phone: "+1", Name: "C"})
+		userRepo.addUser(&model.User{ID: other, Phone: "+2", Name: "O"})
+
+		chatID := uuid.New()
+		chatRepo.chats[chatID] = &model.Chat{ID: chatID, Type: model.ChatTypeGroup}
+		_ = chatRepo.AddMember(context.Background(), chatID, creator, model.MemberRoleAdmin)
+		_ = chatRepo.AddMember(context.Background(), chatID, other, model.MemberRoleMember)
+
+		topic, err := svc.CreateTopic(context.Background(), creator, CreateTopicInput{
+			Name:      "TopicForDelete",
+			Icon:      "D",
+			ParentID:  chatID,
+			MemberIDs: []uuid.UUID{other},
+		})
+		require.NoError(t, err)
+
+		err = svc.DeleteTopic(context.Background(), topic.ID, other)
+		require.Error(t, err)
 	})
 }

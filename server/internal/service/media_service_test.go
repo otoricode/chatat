@@ -434,3 +434,132 @@ func (f *failingMediaRepo) Delete(_ context.Context, _ uuid.UUID) error {
 
 // Suppress unused import warning
 var _ = time.Now
+
+func TestMediaService_GetDownloadURL_Subtests(t *testing.T) {
+	mediaRepo := newMockMediaRepo()
+	storageSvc := newMockStorageService()
+	svc := NewMediaService(mediaRepo, storageSvc, NewImageService())
+	ctx := context.Background()
+	uploaderID := uuid.New()
+
+	t.Run("success", func(t *testing.T) {
+		// Upload a file first
+		pdfData := []byte("download test")
+		result, err := svc.Upload(ctx, MediaUploadInput{
+			UploaderID:  uploaderID,
+			Filename:    "dl.pdf",
+			ContentType: "application/pdf",
+			Size:        int64(len(pdfData)),
+			Data:        bytes.NewReader(pdfData),
+		})
+		require.NoError(t, err)
+
+		url, err := svc.GetDownloadURL(ctx, result.ID)
+		require.NoError(t, err)
+		assert.Contains(t, url, "signed=1")
+	})
+
+	t.Run("not found", func(t *testing.T) {
+		_, err := svc.GetDownloadURL(ctx, uuid.New())
+		require.Error(t, err)
+	})
+}
+
+func TestMediaService_Delete_Subtests(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("success with thumbnail", func(t *testing.T) {
+		mediaRepo := newMockMediaRepo()
+		storageSvc := newMockStorageService()
+		svc := NewMediaService(mediaRepo, storageSvc, NewImageService())
+		uploaderID := uuid.New()
+
+		jpegData := createTestJPEG(800, 600)
+		result, err := svc.Upload(ctx, MediaUploadInput{
+			UploaderID:  uploaderID,
+			Filename:    "del.jpg",
+			ContentType: "image/jpeg",
+			Size:        int64(len(jpegData)),
+			Data:        bytes.NewReader(jpegData),
+		})
+		require.NoError(t, err)
+
+		err = svc.Delete(ctx, result.ID, uploaderID)
+		require.NoError(t, err)
+	})
+
+	t.Run("not uploader", func(t *testing.T) {
+		mediaRepo := newMockMediaRepo()
+		storageSvc := newMockStorageService()
+		svc := NewMediaService(mediaRepo, storageSvc, NewImageService())
+		uploaderID := uuid.New()
+
+		pdfData := []byte("cant delete")
+		result, err := svc.Upload(ctx, MediaUploadInput{
+			UploaderID:  uploaderID,
+			Filename:    "mine.pdf",
+			ContentType: "application/pdf",
+			Size:        int64(len(pdfData)),
+			Data:        bytes.NewReader(pdfData),
+		})
+		require.NoError(t, err)
+
+		err = svc.Delete(ctx, result.ID, uuid.New())
+		require.Error(t, err)
+	})
+
+	t.Run("not found", func(t *testing.T) {
+		svc := NewMediaService(newMockMediaRepo(), newMockStorageService(), NewImageService())
+		err := svc.Delete(ctx, uuid.New(), uuid.New())
+		require.Error(t, err)
+	})
+}
+
+func TestMediaService_GetByID_StorageError(t *testing.T) {
+	mediaRepo := newMockMediaRepo()
+	storageSvc := newMockStorageService()
+	svc := NewMediaService(mediaRepo, storageSvc, NewImageService())
+	ctx := context.Background()
+	uploaderID := uuid.New()
+
+	// Upload a file
+	pdfData := []byte("get test")
+	result, err := svc.Upload(ctx, MediaUploadInput{
+		UploaderID:  uploaderID,
+		Filename:    "get.pdf",
+		ContentType: "application/pdf",
+		Size:        int64(len(pdfData)),
+		Data:        bytes.NewReader(pdfData),
+	})
+	require.NoError(t, err)
+
+	// Delete from storage to cause GetURL error
+	media := mediaRepo.media[result.ID]
+	delete(storageSvc.files, media.StorageKey)
+
+	_, err = svc.GetByID(ctx, result.ID)
+	require.Error(t, err)
+}
+
+func TestMediaService_ToResponse_WithThumbnail(t *testing.T) {
+	mediaRepo := newMockMediaRepo()
+	storageSvc := newMockStorageService()
+	svc := NewMediaService(mediaRepo, storageSvc, NewImageService())
+	ctx := context.Background()
+	uploaderID := uuid.New()
+
+	// Upload image (generates thumbnail)
+	jpegData := createTestJPEG(800, 600)
+	result, err := svc.Upload(ctx, MediaUploadInput{
+		UploaderID:  uploaderID,
+		Filename:    "thumb.jpg",
+		ContentType: "image/jpeg",
+		Size:        int64(len(jpegData)),
+		Data:        bytes.NewReader(jpegData),
+	})
+	require.NoError(t, err)
+
+	resp, err := svc.GetByID(ctx, result.ID)
+	require.NoError(t, err)
+	assert.NotEmpty(t, resp.ThumbnailURL)
+}

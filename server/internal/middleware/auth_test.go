@@ -1,6 +1,7 @@
 package middleware_test
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -111,4 +112,70 @@ func TestGetUserID_NotSet(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/test", nil)
 	_, ok := middleware.GetUserID(req.Context())
 	assert.False(t, ok)
+}
+
+func TestWithUserID(t *testing.T) {
+	uid := uuid.New()
+	ctx := middleware.WithUserID(context.Background(), uid)
+	id, ok := middleware.GetUserID(ctx)
+	assert.True(t, ok)
+	assert.Equal(t, uid, id)
+}
+
+func TestAuth_InvalidSubject(t *testing.T) {
+	// Token with non-UUID subject
+	claims := jwt.MapClaims{
+		"sub": "not-a-uuid",
+		"exp": jwt.NewNumericDate(time.Now().Add(time.Hour)),
+		"iat": jwt.NewNumericDate(time.Now()),
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString([]byte(testSecret))
+	require.NoError(t, err)
+
+	handler := middleware.Auth(testSecret)(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	req.Header.Set("Authorization", "Bearer "+tokenString)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusUnauthorized, rec.Code)
+}
+
+func TestAuth_MissingSubject(t *testing.T) {
+	// Token without "sub" claim
+	claims := jwt.MapClaims{
+		"exp": jwt.NewNumericDate(time.Now().Add(time.Hour)),
+		"iat": jwt.NewNumericDate(time.Now()),
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString([]byte(testSecret))
+	require.NoError(t, err)
+
+	handler := middleware.Auth(testSecret)(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	req.Header.Set("Authorization", "Bearer "+tokenString)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusUnauthorized, rec.Code)
+}
+
+func TestAuth_NoSpaceInHeader(t *testing.T) {
+	handler := middleware.Auth(testSecret)(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	req.Header.Set("Authorization", "BearerTokenWithoutSpace")
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusUnauthorized, rec.Code)
 }

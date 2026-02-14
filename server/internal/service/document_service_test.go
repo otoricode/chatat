@@ -239,7 +239,12 @@ func (m *mockDocumentRepo) Delete(_ context.Context, id uuid.UUID) error {
 }
 
 type mockBlockRepo struct {
-	blocks map[uuid.UUID]*model.Block
+	blocks     map[uuid.UUID]*model.Block
+	listErr    error
+	updateErr  error
+	deleteErr  error
+	reorderErr error
+	createErr  error
 }
 
 func newMockBlockRepo() *mockBlockRepo {
@@ -247,6 +252,9 @@ func newMockBlockRepo() *mockBlockRepo {
 }
 
 func (m *mockBlockRepo) Create(_ context.Context, input model.CreateBlockInput) (*model.Block, error) {
+	if m.createErr != nil {
+		return nil, m.createErr
+	}
 	b := &model.Block{
 		ID:         uuid.New(),
 		DocumentID: input.DocumentID,
@@ -269,6 +277,9 @@ func (m *mockBlockRepo) FindByID(_ context.Context, id uuid.UUID) (*model.Block,
 }
 
 func (m *mockBlockRepo) ListByDocument(_ context.Context, docID uuid.UUID) ([]*model.Block, error) {
+	if m.listErr != nil {
+		return nil, m.listErr
+	}
 	var result []*model.Block
 	for _, b := range m.blocks {
 		if b.DocumentID == docID {
@@ -279,6 +290,9 @@ func (m *mockBlockRepo) ListByDocument(_ context.Context, docID uuid.UUID) ([]*m
 }
 
 func (m *mockBlockRepo) Update(_ context.Context, id uuid.UUID, input model.UpdateBlockInput) (*model.Block, error) {
+	if m.updateErr != nil {
+		return nil, m.updateErr
+	}
 	b, ok := m.blocks[id]
 	if !ok {
 		return nil, apperror.NotFound("block", id.String())
@@ -290,9 +304,17 @@ func (m *mockBlockRepo) Update(_ context.Context, id uuid.UUID, input model.Upda
 	return b, nil
 }
 
-func (m *mockBlockRepo) Reorder(_ context.Context, _ uuid.UUID, _ []uuid.UUID) error { return nil }
+func (m *mockBlockRepo) Reorder(_ context.Context, _ uuid.UUID, _ []uuid.UUID) error {
+	if m.reorderErr != nil {
+		return m.reorderErr
+	}
+	return nil
+}
 
 func (m *mockBlockRepo) Delete(_ context.Context, id uuid.UUID) error {
+	if m.deleteErr != nil {
+		return m.deleteErr
+	}
 	if _, ok := m.blocks[id]; !ok {
 		return apperror.NotFound("block", id.String())
 	}
@@ -853,5 +875,695 @@ func TestDocumentService_Signers(t *testing.T) {
 		appErr, ok := err.(*apperror.AppError)
 		require.True(t, ok)
 		assert.Equal(t, "BAD_REQUEST", appErr.Code)
+	})
+}
+
+func TestDocumentService_GetHistory(t *testing.T) {
+	docRepo := newMockDocumentRepo()
+	blockRepo := newMockBlockRepo()
+	historyRepo := &mockDocHistoryRepo{}
+	userRepo := &docTestUserRepo{users: make(map[uuid.UUID]*model.User)}
+	templateSvc := NewTemplateService()
+
+	svc := NewDocumentService(docRepo, blockRepo, historyRepo, userRepo, templateSvc, nil)
+	ctx := context.Background()
+	ownerID := uuid.New()
+
+	t.Run("returns history entries", func(t *testing.T) {
+		result, err := svc.Create(ctx, CreateDocumentInput{Title: "HistDoc", OwnerID: ownerID})
+		require.NoError(t, err)
+
+		history, err := svc.GetHistory(ctx, result.Document.ID)
+		require.NoError(t, err)
+		assert.True(t, len(history) > 0)
+		assert.Equal(t, "created", history[0].Action)
+	})
+
+	t.Run("no history for unknown doc", func(t *testing.T) {
+		history, err := svc.GetHistory(ctx, uuid.New())
+		require.NoError(t, err)
+		assert.Empty(t, history)
+	})
+}
+
+func TestDocumentService_RemoveTag(t *testing.T) {
+	docRepo := newMockDocumentRepo()
+	blockRepo := newMockBlockRepo()
+	historyRepo := &mockDocHistoryRepo{}
+	userRepo := &docTestUserRepo{users: make(map[uuid.UUID]*model.User)}
+	templateSvc := NewTemplateService()
+
+	svc := NewDocumentService(docRepo, blockRepo, historyRepo, userRepo, templateSvc, nil)
+	ctx := context.Background()
+	ownerID := uuid.New()
+
+	result, err := svc.Create(ctx, CreateDocumentInput{Title: "TagDoc", OwnerID: ownerID})
+	require.NoError(t, err)
+
+	_ = svc.AddTag(ctx, result.Document.ID, "important")
+
+	t.Run("remove existing tag", func(t *testing.T) {
+		err := svc.RemoveTag(ctx, result.Document.ID, "important")
+		assert.NoError(t, err)
+	})
+}
+
+// --- Additional error-path and coverage tests ---
+
+type mockNotifSvc struct{}
+
+func (m *mockNotifSvc) SendToUser(_ context.Context, _ uuid.UUID, _ model.Notification) error {
+	return nil
+}
+func (m *mockNotifSvc) SendToUsers(_ context.Context, _ []uuid.UUID, _ model.Notification) error {
+	return nil
+}
+func (m *mockNotifSvc) SendToChat(_ context.Context, _ uuid.UUID, _ uuid.UUID, _ model.Notification) error {
+	return nil
+}
+func (m *mockNotifSvc) RegisterDevice(_ context.Context, _ uuid.UUID, _, _ string) error { return nil }
+func (m *mockNotifSvc) RemoveDevice(_ context.Context, _ uuid.UUID, _ string) error      { return nil }
+func (m *mockNotifSvc) UnregisterDevice(_ context.Context, _ uuid.UUID, _ string) error  { return nil }
+
+func TestDocumentService_LockDocument_Errors(t *testing.T) {
+	ctx := context.Background()
+	ownerID := uuid.New()
+	collabID := uuid.New()
+	userRepo := &docTestUserRepo{users: map[uuid.UUID]*model.User{
+		ownerID:  {ID: ownerID, Name: "Owner"},
+		collabID: {ID: collabID, Name: "Collab"},
+	}}
+
+	t.Run("not found", func(t *testing.T) {
+		svc := NewDocumentService(newMockDocumentRepo(), newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), nil)
+		err := svc.LockDocument(ctx, uuid.New(), ownerID, model.LockedByManual)
+		require.Error(t, err)
+	})
+
+	t.Run("lock with signatures mode", func(t *testing.T) {
+		docRepo := newMockDocumentRepo()
+		svc := NewDocumentService(docRepo, newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), &mockNotifSvc{})
+
+		doc, _ := svc.Create(ctx, CreateDocumentInput{Title: "SigLock", OwnerID: ownerID})
+		_ = svc.AddSigner(ctx, doc.Document.ID, ownerID, collabID)
+		err := svc.LockDocument(ctx, doc.Document.ID, ownerID, model.LockedBySignatures)
+		require.NoError(t, err)
+
+		fetched, _ := docRepo.FindByID(ctx, doc.Document.ID)
+		assert.True(t, fetched.Locked)
+	})
+
+	t.Run("lock with notif and collaborators", func(t *testing.T) {
+		docRepo := newMockDocumentRepo()
+		svc := NewDocumentService(docRepo, newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), &mockNotifSvc{})
+
+		doc, _ := svc.Create(ctx, CreateDocumentInput{Title: "NotifLock", OwnerID: ownerID})
+		_ = svc.AddCollaborator(ctx, doc.Document.ID, ownerID, collabID, model.CollaboratorRoleEditor)
+		err := svc.LockDocument(ctx, doc.Document.ID, ownerID, model.LockedByManual)
+		require.NoError(t, err)
+	})
+}
+
+func TestDocumentService_UnlockDocument_Errors(t *testing.T) {
+	ctx := context.Background()
+	ownerID := uuid.New()
+	signerID := uuid.New()
+	userRepo := &docTestUserRepo{users: map[uuid.UUID]*model.User{
+		ownerID:  {ID: ownerID, Name: "Owner"},
+		signerID: {ID: signerID, Name: "Signer"},
+	}}
+
+	t.Run("not found", func(t *testing.T) {
+		svc := NewDocumentService(newMockDocumentRepo(), newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), nil)
+		err := svc.UnlockDocument(ctx, uuid.New(), ownerID)
+		require.Error(t, err)
+	})
+
+	t.Run("non-owner cannot unlock", func(t *testing.T) {
+		svc := NewDocumentService(newMockDocumentRepo(), newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), nil)
+		doc, _ := svc.Create(ctx, CreateDocumentInput{Title: "Locked", OwnerID: ownerID})
+		_ = svc.LockDocument(ctx, doc.Document.ID, ownerID, model.LockedByManual)
+		err := svc.UnlockDocument(ctx, doc.Document.ID, uuid.New())
+		require.Error(t, err)
+	})
+
+	t.Run("cannot unlock signed doc", func(t *testing.T) {
+		svc := NewDocumentService(newMockDocumentRepo(), newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), nil)
+		doc, _ := svc.Create(ctx, CreateDocumentInput{Title: "Signed", OwnerID: ownerID})
+		_ = svc.AddSigner(ctx, doc.Document.ID, ownerID, signerID)
+		_ = svc.LockDocument(ctx, doc.Document.ID, ownerID, model.LockedBySignatures)
+		_, _ = svc.SignDocument(ctx, doc.Document.ID, signerID, "Signer")
+
+		err := svc.UnlockDocument(ctx, doc.Document.ID, ownerID)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "sudah ditandatangani")
+	})
+
+	t.Run("can unlock sig-locked unsigned doc", func(t *testing.T) {
+		svc := NewDocumentService(newMockDocumentRepo(), newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), nil)
+		doc, _ := svc.Create(ctx, CreateDocumentInput{Title: "SigNoSign", OwnerID: ownerID})
+		_ = svc.AddSigner(ctx, doc.Document.ID, ownerID, signerID)
+		_ = svc.LockDocument(ctx, doc.Document.ID, ownerID, model.LockedBySignatures)
+
+		err := svc.UnlockDocument(ctx, doc.Document.ID, ownerID)
+		require.NoError(t, err)
+	})
+}
+
+func TestDocumentService_AddSigner_Errors(t *testing.T) {
+	ctx := context.Background()
+	ownerID := uuid.New()
+	signerID := uuid.New()
+	userRepo := &docTestUserRepo{users: map[uuid.UUID]*model.User{
+		ownerID:  {ID: ownerID, Name: "Owner"},
+		signerID: {ID: signerID, Name: "Signer"},
+	}}
+
+	t.Run("not found", func(t *testing.T) {
+		svc := NewDocumentService(newMockDocumentRepo(), newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), nil)
+		err := svc.AddSigner(ctx, uuid.New(), ownerID, signerID)
+		require.Error(t, err)
+	})
+
+	t.Run("add signer with notif", func(t *testing.T) {
+		svc := NewDocumentService(newMockDocumentRepo(), newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), &mockNotifSvc{})
+		doc, _ := svc.Create(ctx, CreateDocumentInput{Title: "NotifSign", OwnerID: ownerID})
+		err := svc.AddSigner(ctx, doc.Document.ID, ownerID, signerID)
+		require.NoError(t, err)
+	})
+}
+
+func TestDocumentService_RemoveSigner_Errors(t *testing.T) {
+	ctx := context.Background()
+	ownerID := uuid.New()
+	signerID := uuid.New()
+	userRepo := &docTestUserRepo{users: map[uuid.UUID]*model.User{
+		ownerID:  {ID: ownerID, Name: "Owner"},
+		signerID: {ID: signerID, Name: "Signer"},
+	}}
+
+	t.Run("not found doc", func(t *testing.T) {
+		svc := NewDocumentService(newMockDocumentRepo(), newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), nil)
+		err := svc.RemoveSigner(ctx, uuid.New(), ownerID, signerID)
+		require.Error(t, err)
+	})
+
+	t.Run("non-owner cannot remove signer", func(t *testing.T) {
+		svc := NewDocumentService(newMockDocumentRepo(), newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), nil)
+		doc, _ := svc.Create(ctx, CreateDocumentInput{Title: "RS", OwnerID: ownerID})
+		_ = svc.AddSigner(ctx, doc.Document.ID, ownerID, signerID)
+		err := svc.RemoveSigner(ctx, doc.Document.ID, uuid.New(), signerID)
+		require.Error(t, err)
+	})
+
+	t.Run("cannot remove from locked doc", func(t *testing.T) {
+		svc := NewDocumentService(newMockDocumentRepo(), newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), nil)
+		doc, _ := svc.Create(ctx, CreateDocumentInput{Title: "LockedRS", OwnerID: ownerID})
+		_ = svc.AddSigner(ctx, doc.Document.ID, ownerID, signerID)
+		_ = svc.LockDocument(ctx, doc.Document.ID, ownerID, model.LockedBySignatures)
+		err := svc.RemoveSigner(ctx, doc.Document.ID, ownerID, signerID)
+		require.Error(t, err)
+	})
+}
+
+func TestDocumentService_RemoveCollaborator_Errors(t *testing.T) {
+	ctx := context.Background()
+	ownerID := uuid.New()
+	collabID := uuid.New()
+	userRepo := &docTestUserRepo{users: make(map[uuid.UUID]*model.User)}
+
+	t.Run("non-owner cannot remove", func(t *testing.T) {
+		svc := NewDocumentService(newMockDocumentRepo(), newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), nil)
+		doc, _ := svc.Create(ctx, CreateDocumentInput{Title: "RC", OwnerID: ownerID})
+		_ = svc.AddCollaborator(ctx, doc.Document.ID, ownerID, collabID, model.CollaboratorRoleEditor)
+		err := svc.RemoveCollaborator(ctx, doc.Document.ID, uuid.New(), collabID)
+		require.Error(t, err)
+	})
+
+	t.Run("not found doc", func(t *testing.T) {
+		svc := NewDocumentService(newMockDocumentRepo(), newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), nil)
+		err := svc.RemoveCollaborator(ctx, uuid.New(), ownerID, collabID)
+		require.Error(t, err)
+	})
+}
+
+func TestDocumentService_UpdateCollaboratorRole_Errors(t *testing.T) {
+	ctx := context.Background()
+	ownerID := uuid.New()
+	collabID := uuid.New()
+	userRepo := &docTestUserRepo{users: make(map[uuid.UUID]*model.User)}
+
+	t.Run("non-owner cannot update role", func(t *testing.T) {
+		svc := NewDocumentService(newMockDocumentRepo(), newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), nil)
+		doc, _ := svc.Create(ctx, CreateDocumentInput{Title: "UCR", OwnerID: ownerID})
+		_ = svc.AddCollaborator(ctx, doc.Document.ID, ownerID, collabID, model.CollaboratorRoleEditor)
+		err := svc.UpdateCollaboratorRole(ctx, doc.Document.ID, uuid.New(), collabID, model.CollaboratorRoleViewer)
+		require.Error(t, err)
+	})
+
+	t.Run("not found doc", func(t *testing.T) {
+		svc := NewDocumentService(newMockDocumentRepo(), newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), nil)
+		err := svc.UpdateCollaboratorRole(ctx, uuid.New(), ownerID, collabID, model.CollaboratorRoleViewer)
+		require.Error(t, err)
+	})
+}
+
+func TestDocumentService_SignDocument_Errors(t *testing.T) {
+	ctx := context.Background()
+	ownerID := uuid.New()
+	signerID := uuid.New()
+	userRepo := &docTestUserRepo{users: map[uuid.UUID]*model.User{
+		ownerID:  {ID: ownerID, Name: "Owner"},
+		signerID: {ID: signerID, Name: "SignerUser"},
+	}}
+
+	t.Run("not found doc", func(t *testing.T) {
+		svc := NewDocumentService(newMockDocumentRepo(), newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), nil)
+		_, err := svc.SignDocument(ctx, uuid.New(), signerID, "Test")
+		require.Error(t, err)
+	})
+
+	t.Run("sign with empty name uses user name", func(t *testing.T) {
+		svc := NewDocumentService(newMockDocumentRepo(), newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), nil)
+		doc, _ := svc.Create(ctx, CreateDocumentInput{Title: "EmptyName", OwnerID: ownerID})
+		_ = svc.AddSigner(ctx, doc.Document.ID, ownerID, signerID)
+		_ = svc.LockDocument(ctx, doc.Document.ID, ownerID, model.LockedBySignatures)
+
+		result, err := svc.SignDocument(ctx, doc.Document.ID, signerID, "")
+		require.NoError(t, err)
+		assert.NotNil(t, result)
+	})
+}
+
+func TestDocumentService_Duplicate_WithBlocks(t *testing.T) {
+	ctx := context.Background()
+	ownerID := uuid.New()
+	userRepo := &docTestUserRepo{users: make(map[uuid.UUID]*model.User)}
+
+	t.Run("duplicate with blocks", func(t *testing.T) {
+		docRepo := newMockDocumentRepo()
+		blockRepo := newMockBlockRepo()
+		svc := NewDocumentService(docRepo, blockRepo, &mockDocHistoryRepo{}, userRepo, NewTemplateService(), nil)
+
+		doc, _ := svc.Create(ctx, CreateDocumentInput{Title: "Orig", OwnerID: ownerID, TemplateID: "notulen-rapat"})
+		dup, err := svc.Duplicate(ctx, doc.Document.ID, ownerID)
+		require.NoError(t, err)
+		assert.True(t, len(dup.Blocks) > 0)
+	})
+
+	t.Run("not found", func(t *testing.T) {
+		svc := NewDocumentService(newMockDocumentRepo(), newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), nil)
+		_, err := svc.Duplicate(ctx, uuid.New(), ownerID)
+		require.Error(t, err)
+	})
+}
+
+func TestDocumentService_ListByContext_Topic(t *testing.T) {
+	ctx := context.Background()
+	ownerID := uuid.New()
+	userRepo := &docTestUserRepo{users: make(map[uuid.UUID]*model.User)}
+
+	svc := NewDocumentService(newMockDocumentRepo(), newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), nil)
+	topicID := uuid.New()
+	_, _ = svc.Create(ctx, CreateDocumentInput{Title: "TopicDoc", OwnerID: ownerID, TopicID: &topicID})
+
+	items, err := svc.ListByContext(ctx, "topic", topicID)
+	require.NoError(t, err)
+	assert.True(t, len(items) > 0)
+	assert.Equal(t, "topic", items[0].ContextType)
+}
+
+func TestDocumentService_toListItems_ContextTypes(t *testing.T) {
+	ctx := context.Background()
+	ownerID := uuid.New()
+	userRepo := &docTestUserRepo{users: make(map[uuid.UUID]*model.User)}
+
+	svc := NewDocumentService(newMockDocumentRepo(), newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), nil)
+
+	// Standalone doc
+	standalone, _ := svc.Create(ctx, CreateDocumentInput{Title: "Standalone", OwnerID: ownerID, IsStandalone: true})
+
+	// Topic doc
+	topicID := uuid.New()
+	topicDoc, _ := svc.Create(ctx, CreateDocumentInput{Title: "TopicD", OwnerID: ownerID, TopicID: &topicID})
+
+	items, err := svc.ListAll(ctx, ownerID)
+	require.NoError(t, err)
+
+	for _, item := range items {
+		if item.ID == standalone.Document.ID {
+			assert.Equal(t, "standalone", item.ContextType)
+		}
+		if item.ID == topicDoc.Document.ID {
+			assert.Equal(t, "topic", item.ContextType)
+		}
+	}
+}
+
+func TestDocumentService_Update_EditorCollaborator(t *testing.T) {
+	ctx := context.Background()
+	ownerID := uuid.New()
+	editorID := uuid.New()
+	userRepo := &docTestUserRepo{users: make(map[uuid.UUID]*model.User)}
+	docRepo := newMockDocumentRepo()
+
+	svc := NewDocumentService(docRepo, newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), nil)
+	doc, _ := svc.Create(ctx, CreateDocumentInput{Title: "EditorTest", OwnerID: ownerID})
+	_ = svc.AddCollaborator(ctx, doc.Document.ID, ownerID, editorID, model.CollaboratorRoleEditor)
+
+	newTitle := "EditorUpdated"
+	result, err := svc.Update(ctx, doc.Document.ID, editorID, model.UpdateDocumentInput{Title: &newTitle})
+	require.NoError(t, err)
+	assert.Equal(t, "EditorUpdated", result.Title)
+}
+
+func TestDocumentService_Create_Errors(t *testing.T) {
+	ctx := context.Background()
+	userRepo := &docTestUserRepo{users: make(map[uuid.UUID]*model.User)}
+	ownerID := uuid.New()
+
+	t.Run("default title and icon", func(t *testing.T) {
+		svc := NewDocumentService(newMockDocumentRepo(), newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), nil)
+		doc, err := svc.Create(ctx, CreateDocumentInput{OwnerID: ownerID})
+		require.NoError(t, err)
+		assert.Equal(t, "Dokumen Tanpa Judul", doc.Document.Title)
+		assert.NotEmpty(t, doc.Document.Icon)
+		assert.True(t, doc.Document.IsStandalone)
+	})
+
+	t.Run("with template having rows and columns", func(t *testing.T) {
+		svc := NewDocumentService(newMockDocumentRepo(), newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), nil)
+		doc, err := svc.Create(ctx, CreateDocumentInput{
+			OwnerID:    ownerID,
+			TemplateID: "inventaris-aset",
+		})
+		require.NoError(t, err)
+		assert.NotEmpty(t, doc.Blocks)
+	})
+
+	t.Run("with template having emoji and color", func(t *testing.T) {
+		svc := NewDocumentService(newMockDocumentRepo(), newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), nil)
+		// Use notulen-rapat or absensi which may have callout blocks
+		doc, err := svc.Create(ctx, CreateDocumentInput{
+			OwnerID:    ownerID,
+			TemplateID: "notulen-rapat",
+		})
+		require.NoError(t, err)
+		assert.NotEmpty(t, doc.Blocks)
+	})
+}
+
+func TestDocumentService_ListAll_Error(t *testing.T) {
+	ctx := context.Background()
+	userRepo := &docTestUserRepo{users: make(map[uuid.UUID]*model.User)}
+	docRepo := newMockDocumentRepo()
+
+	svc := NewDocumentService(docRepo, newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), nil)
+	ownerID := uuid.New()
+
+	// Add doc owned by user
+	_, err := svc.Create(ctx, CreateDocumentInput{Title: "MyDoc", OwnerID: ownerID})
+	require.NoError(t, err)
+
+	items, err := svc.ListAll(ctx, ownerID)
+	require.NoError(t, err)
+	assert.Len(t, items, 1)
+}
+
+func TestDocumentService_Update_LockedDoc(t *testing.T) {
+	ctx := context.Background()
+	ownerID := uuid.New()
+	userRepo := &docTestUserRepo{users: make(map[uuid.UUID]*model.User)}
+	docRepo := newMockDocumentRepo()
+
+	svc := NewDocumentService(docRepo, newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), nil)
+	doc, _ := svc.Create(ctx, CreateDocumentInput{Title: "LockedDoc", OwnerID: ownerID})
+
+	// Lock manually
+	docRepo.docs[doc.Document.ID].Locked = true
+
+	newTitle := "Attempted"
+	_, err := svc.Update(ctx, doc.Document.ID, ownerID, model.UpdateDocumentInput{Title: &newTitle})
+	require.Error(t, err)
+}
+
+func TestDocumentService_Update_NonOwnerNonEditor(t *testing.T) {
+	ctx := context.Background()
+	ownerID := uuid.New()
+	viewerID := uuid.New()
+	userRepo := &docTestUserRepo{users: make(map[uuid.UUID]*model.User)}
+	docRepo := newMockDocumentRepo()
+
+	svc := NewDocumentService(docRepo, newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), nil)
+	doc, _ := svc.Create(ctx, CreateDocumentInput{Title: "ViewerDoc", OwnerID: ownerID})
+	_ = svc.AddCollaborator(ctx, doc.Document.ID, ownerID, viewerID, model.CollaboratorRoleViewer)
+
+	newTitle := "Attempted"
+	_, err := svc.Update(ctx, doc.Document.ID, viewerID, model.UpdateDocumentInput{Title: &newTitle})
+	require.Error(t, err)
+}
+
+func TestDocumentService_Delete_LockedDoc(t *testing.T) {
+	ctx := context.Background()
+	ownerID := uuid.New()
+	userRepo := &docTestUserRepo{users: make(map[uuid.UUID]*model.User)}
+	docRepo := newMockDocumentRepo()
+
+	svc := NewDocumentService(docRepo, newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), nil)
+	doc, _ := svc.Create(ctx, CreateDocumentInput{Title: "LockedDoc", OwnerID: ownerID})
+	docRepo.docs[doc.Document.ID].Locked = true
+
+	err := svc.Delete(ctx, doc.Document.ID, ownerID)
+	require.Error(t, err)
+}
+
+func TestDocumentService_Delete_NonOwner(t *testing.T) {
+	ctx := context.Background()
+	ownerID := uuid.New()
+	otherID := uuid.New()
+	userRepo := &docTestUserRepo{users: make(map[uuid.UUID]*model.User)}
+	docRepo := newMockDocumentRepo()
+
+	svc := NewDocumentService(docRepo, newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), nil)
+	doc, _ := svc.Create(ctx, CreateDocumentInput{Title: "NotMine", OwnerID: ownerID})
+
+	err := svc.Delete(ctx, doc.Document.ID, otherID)
+	require.Error(t, err)
+}
+
+func TestDocumentService_SignDocument_MoreErrors(t *testing.T) {
+	ctx := context.Background()
+	ownerID := uuid.New()
+	signerID := uuid.New()
+	nonSignerID := uuid.New()
+	userRepo := &docTestUserRepo{users: map[uuid.UUID]*model.User{
+		ownerID:     {ID: ownerID, Name: "Owner"},
+		signerID:    {ID: signerID, Name: "Signer"},
+		nonSignerID: {ID: nonSignerID, Name: "Other"},
+	}}
+
+	t.Run("not in signature mode", func(t *testing.T) {
+		svc := NewDocumentService(newMockDocumentRepo(), newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), nil)
+		doc, _ := svc.Create(ctx, CreateDocumentInput{Title: "NoSigMode", OwnerID: ownerID})
+		// Lock manually (not in signature mode)
+		_, err := svc.SignDocument(ctx, doc.Document.ID, signerID, "Test")
+		require.Error(t, err)
+	})
+
+	t.Run("not a signer", func(t *testing.T) {
+		svc := NewDocumentService(newMockDocumentRepo(), newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), nil)
+		doc, _ := svc.Create(ctx, CreateDocumentInput{Title: "NotSigner", OwnerID: ownerID})
+		_ = svc.AddSigner(ctx, doc.Document.ID, ownerID, signerID)
+		_ = svc.LockDocument(ctx, doc.Document.ID, ownerID, model.LockedBySignatures)
+
+		_, err := svc.SignDocument(ctx, doc.Document.ID, nonSignerID, "Test")
+		require.Error(t, err)
+	})
+
+	t.Run("already signed", func(t *testing.T) {
+		svc := NewDocumentService(newMockDocumentRepo(), newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), nil)
+		doc, _ := svc.Create(ctx, CreateDocumentInput{Title: "AlreadySigned", OwnerID: ownerID})
+		_ = svc.AddSigner(ctx, doc.Document.ID, ownerID, signerID)
+		_ = svc.LockDocument(ctx, doc.Document.ID, ownerID, model.LockedBySignatures)
+
+		_, err := svc.SignDocument(ctx, doc.Document.ID, signerID, "Test")
+		require.NoError(t, err)
+
+		// Try to sign again
+		_, err = svc.SignDocument(ctx, doc.Document.ID, signerID, "Test")
+		require.Error(t, err)
+	})
+}
+
+func TestDocumentService_ListByContext_Errors(t *testing.T) {
+	ctx := context.Background()
+	userRepo := &docTestUserRepo{users: make(map[uuid.UUID]*model.User)}
+	svc := NewDocumentService(newMockDocumentRepo(), newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), nil)
+
+	t.Run("invalid context type", func(t *testing.T) {
+		_, err := svc.ListByContext(ctx, "invalid", uuid.New())
+		require.Error(t, err)
+	})
+
+	t.Run("chat context", func(t *testing.T) {
+		ownerID := uuid.New()
+		chatID := uuid.New()
+		_, _ = svc.Create(ctx, CreateDocumentInput{Title: "ChatDoc", OwnerID: ownerID, ChatID: &chatID})
+
+		items, err := svc.ListByContext(ctx, "chat", chatID)
+		require.NoError(t, err)
+		assert.True(t, len(items) > 0)
+		assert.Equal(t, "chat", items[0].ContextType)
+	})
+}
+
+func TestDocumentService_AddCollaborator_OwnerAsCollaborator(t *testing.T) {
+	ctx := context.Background()
+	ownerID := uuid.New()
+	userRepo := &docTestUserRepo{users: make(map[uuid.UUID]*model.User)}
+
+	svc := NewDocumentService(newMockDocumentRepo(), newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), nil)
+	doc, _ := svc.Create(ctx, CreateDocumentInput{Title: "SelfCollab", OwnerID: ownerID})
+
+	err := svc.AddCollaborator(ctx, doc.Document.ID, ownerID, ownerID, model.CollaboratorRoleEditor)
+	require.Error(t, err)
+}
+
+func TestDocumentService_UnlockDocument_MoreErrors(t *testing.T) {
+	ctx := context.Background()
+	ownerID := uuid.New()
+	userRepo := &docTestUserRepo{users: make(map[uuid.UUID]*model.User)}
+
+	t.Run("not locked", func(t *testing.T) {
+		svc := NewDocumentService(newMockDocumentRepo(), newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), nil)
+		doc, _ := svc.Create(ctx, CreateDocumentInput{Title: "NotLocked", OwnerID: ownerID})
+
+		err := svc.UnlockDocument(ctx, doc.Document.ID, ownerID)
+		require.Error(t, err)
+	})
+
+	t.Run("non-owner cannot unlock", func(t *testing.T) {
+		svc := NewDocumentService(newMockDocumentRepo(), newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), nil)
+		doc, _ := svc.Create(ctx, CreateDocumentInput{Title: "NotOwner", OwnerID: ownerID})
+		_ = svc.LockDocument(ctx, doc.Document.ID, ownerID, model.LockedByManual)
+
+		err := svc.UnlockDocument(ctx, doc.Document.ID, uuid.New())
+		require.Error(t, err)
+	})
+
+	t.Run("cannot unlock signed doc", func(t *testing.T) {
+		signerID := uuid.New()
+		ur := &docTestUserRepo{users: map[uuid.UUID]*model.User{
+			ownerID:  {ID: ownerID, Name: "Owner"},
+			signerID: {ID: signerID, Name: "Signer"},
+		}}
+		svc := NewDocumentService(newMockDocumentRepo(), newMockBlockRepo(), &mockDocHistoryRepo{}, ur, NewTemplateService(), nil)
+		doc, _ := svc.Create(ctx, CreateDocumentInput{Title: "SignedDoc", OwnerID: ownerID})
+		_ = svc.AddSigner(ctx, doc.Document.ID, ownerID, signerID)
+		_ = svc.LockDocument(ctx, doc.Document.ID, ownerID, model.LockedBySignatures)
+		_, _ = svc.SignDocument(ctx, doc.Document.ID, signerID, "Signer")
+
+		err := svc.UnlockDocument(ctx, doc.Document.ID, ownerID)
+		require.Error(t, err)
+	})
+}
+
+func TestDocumentService_LockDocument_MoreErrors(t *testing.T) {
+	ctx := context.Background()
+	ownerID := uuid.New()
+	userRepo := &docTestUserRepo{users: make(map[uuid.UUID]*model.User)}
+
+	t.Run("non-owner cannot lock", func(t *testing.T) {
+		svc := NewDocumentService(newMockDocumentRepo(), newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), nil)
+		doc, _ := svc.Create(ctx, CreateDocumentInput{Title: "NotOwner", OwnerID: ownerID})
+
+		err := svc.LockDocument(ctx, doc.Document.ID, uuid.New(), model.LockedByManual)
+		require.Error(t, err)
+	})
+
+	t.Run("already locked", func(t *testing.T) {
+		svc := NewDocumentService(newMockDocumentRepo(), newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), nil)
+		doc, _ := svc.Create(ctx, CreateDocumentInput{Title: "AlreadyLocked", OwnerID: ownerID})
+		_ = svc.LockDocument(ctx, doc.Document.ID, ownerID, model.LockedByManual)
+
+		err := svc.LockDocument(ctx, doc.Document.ID, ownerID, model.LockedByManual)
+		require.Error(t, err)
+	})
+
+	t.Run("lock signatures without signers", func(t *testing.T) {
+		svc := NewDocumentService(newMockDocumentRepo(), newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), nil)
+		doc, _ := svc.Create(ctx, CreateDocumentInput{Title: "NoSigners", OwnerID: ownerID})
+
+		err := svc.LockDocument(ctx, doc.Document.ID, ownerID, model.LockedBySignatures)
+		require.Error(t, err)
+	})
+
+	t.Run("lock with notification service", func(t *testing.T) {
+		collabID := uuid.New()
+		ur := &docTestUserRepo{users: map[uuid.UUID]*model.User{
+			ownerID:  {ID: ownerID, Name: "Owner"},
+			collabID: {ID: collabID, Name: "Collab"},
+		}}
+		notif := &mockNotifSvc{}
+		svc := NewDocumentService(newMockDocumentRepo(), newMockBlockRepo(), &mockDocHistoryRepo{}, ur, NewTemplateService(), notif)
+		doc, _ := svc.Create(ctx, CreateDocumentInput{Title: "WithNotif", OwnerID: ownerID})
+		_ = svc.AddCollaborator(ctx, doc.Document.ID, ownerID, collabID, model.CollaboratorRoleEditor)
+
+		err := svc.LockDocument(ctx, doc.Document.ID, ownerID, model.LockedByManual)
+		require.NoError(t, err)
+	})
+}
+
+func TestDocumentService_AddSigner_MoreErrors(t *testing.T) {
+	ctx := context.Background()
+	ownerID := uuid.New()
+	signerID := uuid.New()
+
+	t.Run("non-owner cannot add signer", func(t *testing.T) {
+		userRepo := &docTestUserRepo{users: make(map[uuid.UUID]*model.User)}
+		svc := NewDocumentService(newMockDocumentRepo(), newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), nil)
+		doc, _ := svc.Create(ctx, CreateDocumentInput{Title: "NonOwner", OwnerID: ownerID})
+
+		err := svc.AddSigner(ctx, doc.Document.ID, uuid.New(), signerID)
+		require.Error(t, err)
+	})
+
+	t.Run("cannot add to locked doc", func(t *testing.T) {
+		ur := &docTestUserRepo{users: map[uuid.UUID]*model.User{
+			ownerID:  {ID: ownerID, Name: "Owner"},
+			signerID: {ID: signerID, Name: "Signer"},
+		}}
+		svc := NewDocumentService(newMockDocumentRepo(), newMockBlockRepo(), &mockDocHistoryRepo{}, ur, NewTemplateService(), nil)
+		doc, _ := svc.Create(ctx, CreateDocumentInput{Title: "Locked", OwnerID: ownerID})
+		_ = svc.AddSigner(ctx, doc.Document.ID, ownerID, signerID)
+		_ = svc.LockDocument(ctx, doc.Document.ID, ownerID, model.LockedBySignatures)
+
+		newSigner := uuid.New()
+		err := svc.AddSigner(ctx, doc.Document.ID, ownerID, newSigner)
+		require.Error(t, err)
+	})
+
+	t.Run("with notification service", func(t *testing.T) {
+		ur := &docTestUserRepo{users: map[uuid.UUID]*model.User{
+			ownerID:  {ID: ownerID, Name: "Owner"},
+			signerID: {ID: signerID, Name: "Signer"},
+		}}
+		notif := &mockNotifSvc{}
+		svc := NewDocumentService(newMockDocumentRepo(), newMockBlockRepo(), &mockDocHistoryRepo{}, ur, NewTemplateService(), notif)
+		doc, _ := svc.Create(ctx, CreateDocumentInput{Title: "WithNotif", OwnerID: ownerID})
+
+		err := svc.AddSigner(ctx, doc.Document.ID, ownerID, signerID)
+		require.NoError(t, err)
+	})
+}
+
+func TestDocumentService_Tag_Errors(t *testing.T) {
+	ctx := context.Background()
+	userRepo := &docTestUserRepo{users: make(map[uuid.UUID]*model.User)}
+	svc := NewDocumentService(newMockDocumentRepo(), newMockBlockRepo(), &mockDocHistoryRepo{}, userRepo, NewTemplateService(), nil)
+
+	t.Run("empty tag", func(t *testing.T) {
+		err := svc.AddTag(ctx, uuid.New(), "")
+		require.Error(t, err)
 	})
 }

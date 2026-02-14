@@ -114,3 +114,91 @@ func TestTokenService_Revoke(t *testing.T) {
 	_, err = svc.Refresh(ctx, tokens.RefreshToken)
 	assert.Error(t, err)
 }
+
+func TestTokenService_Refresh_InvalidToken(t *testing.T) {
+	_, client := setupTokenTest(t)
+	defer func() { _ = client.Close() }()
+
+	svc := service.NewTokenService(client, service.DefaultTokenConfig("test-secret-key-123"))
+	ctx := context.Background()
+
+	_, err := svc.Refresh(ctx, "invalid-token")
+	assert.Error(t, err)
+}
+
+func TestTokenService_Refresh_RevokedToken(t *testing.T) {
+	s, client := setupTokenTest(t)
+	defer func() { _ = client.Close() }()
+
+	svc := service.NewTokenService(client, service.DefaultTokenConfig("test-secret-key-123"))
+	ctx := context.Background()
+	userID := uuid.New()
+
+	tokens, err := svc.Generate(ctx, userID)
+	require.NoError(t, err)
+
+	// Delete the refresh token from Redis to simulate revocation
+	claims, err := svc.Validate(tokens.RefreshToken)
+	require.NoError(t, err)
+	s.Del("refresh:" + claims.ID)
+
+	_, err = svc.Refresh(ctx, tokens.RefreshToken)
+	assert.Error(t, err)
+}
+
+func TestTokenService_Refresh_MismatchedUser(t *testing.T) {
+	s, client := setupTokenTest(t)
+	defer func() { _ = client.Close() }()
+
+	svc := service.NewTokenService(client, service.DefaultTokenConfig("test-secret-key-123"))
+	ctx := context.Background()
+	userID := uuid.New()
+
+	tokens, err := svc.Generate(ctx, userID)
+	require.NoError(t, err)
+
+	// Tamper with Redis value to a different user
+	claims, err := svc.Validate(tokens.RefreshToken)
+	require.NoError(t, err)
+	s.Set("refresh:"+claims.ID, uuid.New().String())
+
+	_, err = svc.Refresh(ctx, tokens.RefreshToken)
+	assert.Error(t, err)
+}
+
+func TestTokenService_Revoke_EmptyTokens(t *testing.T) {
+	_, client := setupTokenTest(t)
+	defer func() { _ = client.Close() }()
+
+	svc := service.NewTokenService(client, service.DefaultTokenConfig("test-secret-key-123"))
+	ctx := context.Background()
+
+	// Revoke with empty tokens should not error
+	err := svc.Revoke(ctx, "", "")
+	assert.NoError(t, err)
+}
+
+func TestTokenService_Revoke_InvalidTokens(t *testing.T) {
+	_, client := setupTokenTest(t)
+	defer func() { _ = client.Close() }()
+
+	svc := service.NewTokenService(client, service.DefaultTokenConfig("test-secret-key-123"))
+	ctx := context.Background()
+
+	// Revoke with invalid tokens should not error (invalid tokens are ignored)
+	err := svc.Revoke(ctx, "invalid-access", "invalid-refresh")
+	assert.NoError(t, err)
+}
+
+func TestTokenService_Generate_RedisError(t *testing.T) {
+	s, client := setupTokenTest(t)
+	defer func() { _ = client.Close() }()
+
+	svc := service.NewTokenService(client, service.DefaultTokenConfig("test-secret-key-123"))
+
+	// Close miniredis to cause Redis error
+	s.Close()
+
+	_, err := svc.Generate(context.Background(), uuid.New())
+	assert.Error(t, err)
+}

@@ -197,6 +197,15 @@ func TestDocumentCRDT_Clock(t *testing.T) {
 		ts := crdt.ReceiveTick(farFuture)
 		assert.True(t, ts > farFuture)
 	})
+
+	t.Run("tick else branch when clock is ahead of now", func(t *testing.T) {
+		// Set clock far into the future so time.Now().UnixMilli() < Clock
+		crdt2 := NewDocumentCRDT(uuid.New())
+		crdt2.Clock = int64(99999999999999) // far future
+		prev := crdt2.Clock
+		ts := crdt2.Tick()
+		assert.Equal(t, prev+1, ts, "should increment clock by 1 when now <= clock")
+	})
 }
 
 func TestDocumentCRDTManager(t *testing.T) {

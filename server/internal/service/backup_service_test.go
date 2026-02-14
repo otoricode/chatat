@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -15,7 +16,10 @@ import (
 // --- Mock Backup Repository ---
 
 type mockBackupRepo struct {
-	records []model.BackupRecord
+	records   []model.BackupRecord
+	createErr error
+	findErr   error
+	latestErr error
 }
 
 func newMockBackupRepo() *mockBackupRepo {
@@ -23,6 +27,9 @@ func newMockBackupRepo() *mockBackupRepo {
 }
 
 func (m *mockBackupRepo) Create(_ context.Context, userID uuid.UUID, input model.LogBackupInput) (*model.BackupRecord, error) {
+	if m.createErr != nil {
+		return nil, m.createErr
+	}
 	status := input.Status
 	if status == "" {
 		status = model.BackupStatusCompleted
@@ -51,6 +58,9 @@ func (m *mockBackupRepo) UpdateStatus(_ context.Context, id uuid.UUID, status mo
 }
 
 func (m *mockBackupRepo) FindByUserID(_ context.Context, userID uuid.UUID, limit int) ([]model.BackupRecord, error) {
+	if m.findErr != nil {
+		return nil, m.findErr
+	}
 	var result []model.BackupRecord
 	for _, r := range m.records {
 		if r.UserID == userID {
@@ -64,6 +74,9 @@ func (m *mockBackupRepo) FindByUserID(_ context.Context, userID uuid.UUID, limit
 }
 
 func (m *mockBackupRepo) FindLatestByUser(_ context.Context, userID uuid.UUID) (*model.BackupRecord, error) {
+	if m.latestErr != nil {
+		return nil, m.latestErr
+	}
 	var latest *model.BackupRecord
 	for i, r := range m.records {
 		if r.UserID == userID && r.Status == model.BackupStatusCompleted {
@@ -91,7 +104,8 @@ func (m *mockBackupRepo) Delete(_ context.Context, id uuid.UUID) error {
 // --- Mock Document Repo for backup tests ---
 
 type mockBackupDocRepo struct {
-	docs []*model.Document
+	docs       []*model.Document
+	listOwnErr error
 }
 
 func newMockBackupDocRepo() *mockBackupDocRepo {
@@ -115,6 +129,9 @@ func (m *mockBackupDocRepo) ListByTopic(_ context.Context, _ uuid.UUID) ([]*mode
 }
 
 func (m *mockBackupDocRepo) ListByOwner(_ context.Context, ownerID uuid.UUID) ([]*model.Document, error) {
+	if m.listOwnErr != nil {
+		return nil, m.listOwnErr
+	}
 	var result []*model.Document
 	for _, d := range m.docs {
 		if d.OwnerID == ownerID {
@@ -338,4 +355,211 @@ func TestBackupService_ImportUserData(t *testing.T) {
 	// Verify profile updated
 	u, _ := userRepo.FindByID(context.Background(), userID)
 	assert.Equal(t, "New Name", u.Name)
+}
+
+// --- Error-Path Tests ---
+
+func TestBackupService_ExportUserData_Errors(t *testing.T) {
+	t.Run("user not found", func(t *testing.T) {
+		userRepo := newMockUserRepo()
+		svc := NewBackupService(newMockBackupRepo(), userRepo, nil, nil, nil, nil)
+		_, err := svc.ExportUserData(context.Background(), uuid.New())
+		require.Error(t, err)
+	})
+
+	t.Run("user find error", func(t *testing.T) {
+		userRepo := newMockUserRepo()
+		userRepo.findErr = errors.New("db error")
+		svc := NewBackupService(newMockBackupRepo(), userRepo, nil, nil, nil, nil)
+		_, err := svc.ExportUserData(context.Background(), uuid.New())
+		require.Error(t, err)
+		userRepo.findErr = nil
+	})
+
+	t.Run("list chats error", func(t *testing.T) {
+		userRepo := newMockUserRepo()
+		chatRepo := newMockChatRepo()
+		uid := uuid.New()
+		userRepo.addUser(&model.User{ID: uid, Name: "A"})
+		chatRepo.listByUserErr = errors.New("db error")
+		svc := NewBackupService(newMockBackupRepo(), userRepo, chatRepo, nil, nil, nil)
+		_, err := svc.ExportUserData(context.Background(), uid)
+		require.Error(t, err)
+		chatRepo.listByUserErr = nil
+	})
+
+	t.Run("contacts error", func(t *testing.T) {
+		userRepo := newMockUserRepo()
+		chatRepo := newMockChatRepo()
+		contactRepo := newMockContactRepo()
+		uid := uuid.New()
+		userRepo.addUser(&model.User{ID: uid, Name: "A"})
+		contactRepo.findByUIDErr = errors.New("db error")
+		svc := NewBackupService(newMockBackupRepo(), userRepo, chatRepo, nil, contactRepo, nil)
+		_, err := svc.ExportUserData(context.Background(), uid)
+		require.Error(t, err)
+		contactRepo.findByUIDErr = nil
+	})
+
+	t.Run("documents error", func(t *testing.T) {
+		userRepo := newMockUserRepo()
+		chatRepo := newMockChatRepo()
+		contactRepo := newMockContactRepo()
+		docRepo := newMockBackupDocRepo()
+		uid := uuid.New()
+		userRepo.addUser(&model.User{ID: uid, Name: "A"})
+		docRepo.listOwnErr = errors.New("db error")
+		svc := NewBackupService(newMockBackupRepo(), userRepo, chatRepo, nil, contactRepo, docRepo)
+		_, err := svc.ExportUserData(context.Background(), uid)
+		require.Error(t, err)
+	})
+
+	t.Run("export with topic and chat docs", func(t *testing.T) {
+		userRepo := newMockUserRepo()
+		chatRepo := newMockChatRepo()
+		contactRepo := newMockContactRepo()
+		docRepo := newMockBackupDocRepo()
+		uid := uuid.New()
+		userRepo.addUser(&model.User{ID: uid, Name: "A"})
+		chatID := uuid.New()
+		topicID := uuid.New()
+		docRepo.docs = []*model.Document{
+			{ID: uuid.New(), Title: "D1", OwnerID: uid, ChatID: &chatID},
+			{ID: uuid.New(), Title: "D2", OwnerID: uid, TopicID: &topicID},
+		}
+		svc := NewBackupService(newMockBackupRepo(), userRepo, chatRepo, nil, contactRepo, docRepo)
+		bundle, err := svc.ExportUserData(context.Background(), uid)
+		require.NoError(t, err)
+		assert.Len(t, bundle.Data.Documents, 2)
+		assert.NotEmpty(t, bundle.Data.Documents[0].ChatID)
+		assert.NotEmpty(t, bundle.Data.Documents[1].TopicID)
+	})
+
+	t.Run("export with messages including deleted", func(t *testing.T) {
+		userRepo := newMockUserRepo()
+		chatRepo := newMockChatRepo()
+		msgRepo := newMockMessageRepo()
+		contactRepo := newMockContactRepo()
+		docRepo := newMockBackupDocRepo()
+		uid := uuid.New()
+		userRepo.addUser(&model.User{ID: uid, Name: "A"})
+
+		chat := &model.Chat{ID: uuid.New(), Type: model.ChatTypePersonal, CreatedBy: uid}
+		chatRepo.chats[chat.ID] = chat
+		_ = chatRepo.AddMember(context.Background(), chat.ID, uid, model.MemberRoleAdmin)
+
+		// Add messages: one normal, one deleted
+		msg1, _ := msgRepo.Create(context.Background(), model.CreateMessageInput{
+			ChatID: chat.ID, SenderID: uid, Content: "visible", Type: model.MessageTypeText,
+		})
+		msg2, _ := msgRepo.Create(context.Background(), model.CreateMessageInput{
+			ChatID: chat.ID, SenderID: uid, Content: "deleted", Type: model.MessageTypeText,
+		})
+		msgRepo.messages[msg2.ID].IsDeleted = true
+		_ = msg1 // used above
+
+		svc := NewBackupService(newMockBackupRepo(), userRepo, chatRepo, msgRepo, contactRepo, docRepo)
+		bundle, err := svc.ExportUserData(context.Background(), uid)
+		require.NoError(t, err)
+		assert.Len(t, bundle.Data.Messages, 1, "deleted message should be skipped")
+	})
+}
+
+func TestBackupService_ImportUserData_Errors(t *testing.T) {
+	t.Run("nil bundle", func(t *testing.T) {
+		svc := NewBackupService(newMockBackupRepo(), nil, nil, nil, nil, nil)
+		err := svc.ImportUserData(context.Background(), uuid.New(), nil)
+		require.Error(t, err)
+	})
+
+	t.Run("wrong version", func(t *testing.T) {
+		svc := NewBackupService(newMockBackupRepo(), nil, nil, nil, nil, nil)
+		err := svc.ImportUserData(context.Background(), uuid.New(), &model.BackupBundle{Version: 99})
+		require.Error(t, err)
+	})
+
+	t.Run("profile update error", func(t *testing.T) {
+		userRepo := newMockUserRepo()
+		userRepo.updateErr = errors.New("db error")
+		svc := NewBackupService(newMockBackupRepo(), userRepo, nil, nil, nil, nil)
+		err := svc.ImportUserData(context.Background(), uuid.New(), &model.BackupBundle{
+			Version: 1,
+			Data: model.BackupData{
+				Profile: &model.UserExport{Name: "X", Avatar: "A", Status: "S"},
+			},
+		})
+		require.Error(t, err)
+		userRepo.updateErr = nil
+	})
+
+	t.Run("import with invalid contact UUID", func(t *testing.T) {
+		userRepo := newMockUserRepo()
+		contactRepo := newMockContactRepo()
+		svc := NewBackupService(newMockBackupRepo(), userRepo, nil, nil, contactRepo, nil)
+		err := svc.ImportUserData(context.Background(), uuid.New(), &model.BackupBundle{
+			Version: 1,
+			Data: model.BackupData{
+				Contacts: []model.ContactExport{
+					{UserID: "not-a-uuid", Name: "Bad"},
+				},
+			},
+		})
+		require.NoError(t, err) // invalid UUID contacts are skipped
+	})
+
+	t.Run("import no profile", func(t *testing.T) {
+		userRepo := newMockUserRepo()
+		contactRepo := newMockContactRepo()
+		svc := NewBackupService(newMockBackupRepo(), userRepo, nil, nil, contactRepo, nil)
+		err := svc.ImportUserData(context.Background(), uuid.New(), &model.BackupBundle{
+			Version: 1,
+			Data:    model.BackupData{},
+		})
+		require.NoError(t, err)
+	})
+}
+
+func TestBackupService_LogBackup_Errors(t *testing.T) {
+	t.Run("empty platform", func(t *testing.T) {
+		svc := NewBackupService(newMockBackupRepo(), nil, nil, nil, nil, nil)
+		_, err := svc.LogBackup(context.Background(), uuid.New(), model.LogBackupInput{SizeBytes: 100})
+		require.Error(t, err)
+	})
+
+	t.Run("create error", func(t *testing.T) {
+		repo := newMockBackupRepo()
+		repo.createErr = errors.New("db error")
+		svc := NewBackupService(repo, nil, nil, nil, nil, nil)
+		_, err := svc.LogBackup(context.Background(), uuid.New(), model.LogBackupInput{
+			Platform: model.BackupPlatformGoogleDrive, SizeBytes: 100,
+		})
+		require.Error(t, err)
+	})
+}
+
+func TestBackupService_GetBackupHistory_Error(t *testing.T) {
+	repo := newMockBackupRepo()
+	repo.findErr = errors.New("db error")
+	svc := NewBackupService(repo, nil, nil, nil, nil, nil)
+	_, err := svc.GetBackupHistory(context.Background(), uuid.New())
+	require.Error(t, err)
+}
+
+func TestBackupService_GetBackupHistory_NilRecords(t *testing.T) {
+	repo := newMockBackupRepo()
+	svc := NewBackupService(repo, nil, nil, nil, nil, nil)
+	// No records for this user; mock returns nil => should get empty slice
+	records, err := svc.GetBackupHistory(context.Background(), uuid.New())
+	require.NoError(t, err)
+	assert.NotNil(t, records)
+	assert.Empty(t, records)
+}
+
+func TestBackupService_GetLatestBackup_Error(t *testing.T) {
+	repo := newMockBackupRepo()
+	repo.latestErr = errors.New("db error")
+	svc := NewBackupService(repo, nil, nil, nil, nil, nil)
+	rec, err := svc.GetLatestBackup(context.Background(), uuid.New())
+	require.NoError(t, err) // error is swallowed, returns nil
+	assert.Nil(t, rec)
 }

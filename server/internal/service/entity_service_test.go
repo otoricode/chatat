@@ -313,8 +313,8 @@ func (m *mockEntityDocRepo) ListCollaborators(_ context.Context, _ uuid.UUID) ([
 func (m *mockEntityDocRepo) UpdateCollaboratorRole(_ context.Context, _, _ uuid.UUID, _ model.CollaboratorRole) error {
 	return nil
 }
-func (m *mockEntityDocRepo) AddSigner(_ context.Context, _, _ uuid.UUID) error { return nil }
-func (m *mockEntityDocRepo) RemoveSigner(_ context.Context, _, _ uuid.UUID) error       { return nil }
+func (m *mockEntityDocRepo) AddSigner(_ context.Context, _, _ uuid.UUID) error    { return nil }
+func (m *mockEntityDocRepo) RemoveSigner(_ context.Context, _, _ uuid.UUID) error { return nil }
 func (m *mockEntityDocRepo) ListSigners(_ context.Context, _ uuid.UUID) ([]*model.DocumentSigner, error) {
 	return nil, nil
 }
@@ -324,10 +324,12 @@ func (m *mockEntityDocRepo) RecordSignature(_ context.Context, _, _ uuid.UUID, _
 func (m *mockEntityDocRepo) Lock(_ context.Context, _ uuid.UUID, _ model.LockedByType) error {
 	return nil
 }
-func (m *mockEntityDocRepo) Unlock(_ context.Context, _ uuid.UUID) error { return nil }
+func (m *mockEntityDocRepo) Unlock(_ context.Context, _ uuid.UUID) error              { return nil }
 func (m *mockEntityDocRepo) AddTag(_ context.Context, _ uuid.UUID, _ string) error    { return nil }
 func (m *mockEntityDocRepo) RemoveTag(_ context.Context, _ uuid.UUID, _ string) error { return nil }
-func (m *mockEntityDocRepo) ListTags(_ context.Context, _ uuid.UUID) ([]string, error)   { return nil, nil }
+func (m *mockEntityDocRepo) ListTags(_ context.Context, _ uuid.UUID) ([]string, error) {
+	return nil, nil
+}
 func (m *mockEntityDocRepo) UpdateSignerStatus(_ context.Context, _, _ uuid.UUID, _ string) error {
 	return nil
 }
@@ -636,6 +638,32 @@ func TestEntityService_LinkDocument(t *testing.T) {
 		appErr, ok := err.(*apperror.AppError)
 		require.True(t, ok)
 		assert.Equal(t, "FORBIDDEN", appErr.Code)
+	})
+
+	t.Run("unlink forbidden", func(t *testing.T) {
+		// Re-link first
+		_ = svc.LinkToDocument(ctx, entity.ID, doc.ID, userID)
+		otherID := uuid.New()
+		err := svc.UnlinkFromDocument(ctx, entity.ID, doc.ID, otherID)
+		require.Error(t, err)
+		appErr, ok := err.(*apperror.AppError)
+		require.True(t, ok)
+		assert.Equal(t, "FORBIDDEN", appErr.Code)
+	})
+
+	t.Run("link doc not found", func(t *testing.T) {
+		err := svc.LinkToDocument(ctx, entity.ID, uuid.New(), userID)
+		require.Error(t, err)
+	})
+
+	t.Run("link entity not found", func(t *testing.T) {
+		err := svc.LinkToDocument(ctx, uuid.New(), doc.ID, userID)
+		require.Error(t, err)
+	})
+
+	t.Run("unlink entity not found", func(t *testing.T) {
+		err := svc.UnlinkFromDocument(ctx, uuid.New(), doc.ID, userID)
+		require.Error(t, err)
 	})
 }
 

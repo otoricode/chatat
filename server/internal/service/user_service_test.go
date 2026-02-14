@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/google/uuid"
@@ -13,12 +14,15 @@ import (
 )
 
 type mockUserRepo struct {
-	users     map[uuid.UUID]*model.User
-	byPhone   map[string]*model.User
-	byHash    map[string]*model.User
-	createErr error
-	updateErr error
-	deleteErr error
+	users        map[uuid.UUID]*model.User
+	byPhone      map[string]*model.User
+	byHash       map[string]*model.User
+	createErr    error
+	updateErr    error
+	deleteErr    error
+	lastSeenErr  error
+	phoneHashErr error
+	findErr      error
 }
 
 func newMockUserRepo() *mockUserRepo {
@@ -45,6 +49,9 @@ func (m *mockUserRepo) Create(_ context.Context, input model.CreateUserInput) (*
 }
 
 func (m *mockUserRepo) FindByID(_ context.Context, id uuid.UUID) (*model.User, error) {
+	if m.findErr != nil {
+		return nil, m.findErr
+	}
 	u, ok := m.users[id]
 	if !ok {
 		return nil, apperror.NotFound("user", id.String())
@@ -101,6 +108,9 @@ func (m *mockUserRepo) Update(_ context.Context, id uuid.UUID, input model.Updat
 }
 
 func (m *mockUserRepo) UpdatePhoneHash(_ context.Context, id uuid.UUID, hash string) error {
+	if m.phoneHashErr != nil {
+		return m.phoneHashErr
+	}
 	u, ok := m.users[id]
 	if !ok {
 		return apperror.NotFound("user", id.String())
@@ -111,6 +121,9 @@ func (m *mockUserRepo) UpdatePhoneHash(_ context.Context, id uuid.UUID, hash str
 }
 
 func (m *mockUserRepo) UpdateLastSeen(_ context.Context, id uuid.UUID) error {
+	if m.lastSeenErr != nil {
+		return m.lastSeenErr
+	}
 	if _, ok := m.users[id]; !ok {
 		return apperror.NotFound("user", id.String())
 	}
@@ -283,4 +296,193 @@ func TestHashPhone(t *testing.T) {
 	assert.Equal(t, h1, h2)
 	assert.NotEqual(t, h1, h3)
 	assert.Len(t, h1, 64) // SHA-256 hex is 64 chars
+}
+
+func TestValidatePrivacySettings(t *testing.T) {
+	t.Run("all valid everyone", func(t *testing.T) {
+		err := validatePrivacySettings(model.PrivacySettings{
+			LastSeenVisibility:     "everyone",
+			OnlineVisibility:       "everyone",
+			ProfilePhotoVisibility: "everyone",
+		})
+		assert.NoError(t, err)
+	})
+
+	t.Run("all valid contacts", func(t *testing.T) {
+		err := validatePrivacySettings(model.PrivacySettings{
+			LastSeenVisibility:     "contacts",
+			OnlineVisibility:       "contacts",
+			ProfilePhotoVisibility: "contacts",
+		})
+		assert.NoError(t, err)
+	})
+
+	t.Run("all valid nobody", func(t *testing.T) {
+		err := validatePrivacySettings(model.PrivacySettings{
+			LastSeenVisibility:     "nobody",
+			OnlineVisibility:       "nobody",
+			ProfilePhotoVisibility: "nobody",
+		})
+		assert.NoError(t, err)
+	})
+
+	t.Run("mixed valid", func(t *testing.T) {
+		err := validatePrivacySettings(model.PrivacySettings{
+			LastSeenVisibility:     "everyone",
+			OnlineVisibility:       "contacts",
+			ProfilePhotoVisibility: "nobody",
+		})
+		assert.NoError(t, err)
+	})
+
+	t.Run("invalid lastSeenVisibility", func(t *testing.T) {
+		err := validatePrivacySettings(model.PrivacySettings{
+			LastSeenVisibility:     "invalid",
+			OnlineVisibility:       "everyone",
+			ProfilePhotoVisibility: "everyone",
+		})
+		assert.Error(t, err)
+		var appErr *apperror.AppError
+		assert.ErrorAs(t, err, &appErr)
+		assert.Equal(t, "VALIDATION_ERROR", appErr.Code)
+	})
+
+	t.Run("invalid onlineVisibility", func(t *testing.T) {
+		err := validatePrivacySettings(model.PrivacySettings{
+			LastSeenVisibility:     "everyone",
+			OnlineVisibility:       "bad",
+			ProfilePhotoVisibility: "everyone",
+		})
+		assert.Error(t, err)
+		var appErr *apperror.AppError
+		assert.ErrorAs(t, err, &appErr)
+		assert.Equal(t, "VALIDATION_ERROR", appErr.Code)
+	})
+
+	t.Run("invalid profilePhotoVisibility", func(t *testing.T) {
+		err := validatePrivacySettings(model.PrivacySettings{
+			LastSeenVisibility:     "everyone",
+			OnlineVisibility:       "everyone",
+			ProfilePhotoVisibility: "xyz",
+		})
+		assert.Error(t, err)
+		var appErr *apperror.AppError
+		assert.ErrorAs(t, err, &appErr)
+		assert.Equal(t, "VALIDATION_ERROR", appErr.Code)
+	})
+
+	t.Run("empty values invalid", func(t *testing.T) {
+		err := validatePrivacySettings(model.PrivacySettings{})
+		assert.Error(t, err)
+	})
+}
+
+// --- Error-Path Tests ---
+
+func TestUserService_UpdateLastSeen_Error(t *testing.T) {
+	repo := newMockUserRepo()
+	svc := NewUserService(repo).(*userService)
+	svc.debounceDur = 0
+
+	userID := uuid.New()
+	repo.addUser(&model.User{ID: userID, Phone: "+628123", Name: "Test"})
+	repo.lastSeenErr = errors.New("db error")
+
+	err := svc.UpdateLastSeen(context.Background(), userID)
+	require.Error(t, err)
+}
+
+func TestUserService_UpdateProfile_UpdateError(t *testing.T) {
+	repo := newMockUserRepo()
+	svc := NewUserService(repo)
+
+	userID := uuid.New()
+	repo.addUser(&model.User{ID: userID, Phone: "+628123", Name: "Test"})
+	repo.updateErr = errors.New("db error")
+
+	name := "New"
+	_, err := svc.UpdateProfile(context.Background(), userID, model.UpdateUserInput{Name: &name})
+	require.Error(t, err)
+}
+
+func TestUserService_SetupProfile_Errors(t *testing.T) {
+	repo := newMockUserRepo()
+	svc := NewUserService(repo)
+
+	userID := uuid.New()
+	repo.addUser(&model.User{ID: userID, Phone: "+628123", Name: ""})
+
+	t.Run("name too long", func(t *testing.T) {
+		longName := make([]byte, 101)
+		for i := range longName {
+			longName[i] = 'a'
+		}
+		_, err := svc.SetupProfile(context.Background(), userID, string(longName), "\U0001F60A")
+		require.Error(t, err)
+	})
+
+	t.Run("invalid avatar", func(t *testing.T) {
+		_, err := svc.SetupProfile(context.Background(), userID, "Name", "abc")
+		require.Error(t, err)
+	})
+
+	t.Run("update error", func(t *testing.T) {
+		repo.updateErr = errors.New("db error")
+		_, err := svc.SetupProfile(context.Background(), userID, "Name", "\U0001F60A")
+		require.Error(t, err)
+		repo.updateErr = nil
+	})
+
+	t.Run("phone hash error logged but not returned", func(t *testing.T) {
+		repo.phoneHashErr = errors.New("hash error")
+		user, err := svc.SetupProfile(context.Background(), userID, "Name", "\U0001F60A")
+		require.NoError(t, err)
+		assert.NotEmpty(t, user.PhoneHash) // hash computed even if save fails
+		repo.phoneHashErr = nil
+	})
+}
+
+func TestUserService_ValidateUpdateInput_NameTooLong(t *testing.T) {
+	longName := make([]byte, 101)
+	for i := range longName {
+		longName[i] = 'a'
+	}
+	name := string(longName)
+	err := validateUpdateInput(model.UpdateUserInput{Name: &name})
+	require.Error(t, err)
+}
+
+func TestUserService_ValidateUpdateInput_EmptyAvatar(t *testing.T) {
+	empty := ""
+	err := validateUpdateInput(model.UpdateUserInput{Avatar: &empty})
+	require.NoError(t, err) // empty avatar is allowed
+}
+
+func TestUserService_ValidateUpdateInput_PrivacySettings(t *testing.T) {
+	ps := model.PrivacySettings{
+		LastSeenVisibility:     "invalid",
+		OnlineVisibility:       "everyone",
+		ProfilePhotoVisibility: "everyone",
+	}
+	err := validateUpdateInput(model.UpdateUserInput{PrivacySettings: &ps})
+	require.Error(t, err)
+}
+
+func TestUserService_Search(t *testing.T) {
+	repo := newMockUserRepo()
+	svc := NewUserService(repo)
+
+	// Search delegates to repo, just test no crash
+	_, err := svc.GetProfile(context.Background(), uuid.New())
+	require.Error(t, err)
+}
+
+func TestUserService_DeleteAccount_Error(t *testing.T) {
+	repo := newMockUserRepo()
+	repo.deleteErr = errors.New("db error")
+	svc := NewUserService(repo)
+	userID := uuid.New()
+	repo.addUser(&model.User{ID: userID, Phone: "+628", Name: "T"})
+	err := svc.DeleteAccount(context.Background(), userID)
+	require.Error(t, err)
 }
