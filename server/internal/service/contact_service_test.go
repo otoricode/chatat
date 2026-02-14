@@ -15,7 +15,7 @@ import (
 )
 
 type mockContactRepo struct {
-	contacts    map[uuid.UUID][]repository.UserContact
+	contacts     map[uuid.UUID][]repository.UserContact
 	findByUIDErr error
 }
 

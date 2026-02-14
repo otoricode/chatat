@@ -14,15 +14,15 @@ import (
 )
 
 type mockUserRepo struct {
-	users         map[uuid.UUID]*model.User
-	byPhone       map[string]*model.User
-	byHash        map[string]*model.User
-	createErr     error
-	updateErr     error
-	deleteErr     error
-	lastSeenErr   error
-	phoneHashErr  error
-	findErr       error
+	users        map[uuid.UUID]*model.User
+	byPhone      map[string]*model.User
+	byHash       map[string]*model.User
+	createErr    error
+	updateErr    error
+	deleteErr    error
+	lastSeenErr  error
+	phoneHashErr error
+	findErr      error
 }
 
 func newMockUserRepo() *mockUserRepo {

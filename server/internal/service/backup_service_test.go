@@ -16,10 +16,10 @@ import (
 // --- Mock Backup Repository ---
 
 type mockBackupRepo struct {
-	records    []model.BackupRecord
-	createErr  error
-	findErr    error
-	latestErr  error
+	records   []model.BackupRecord
+	createErr error
+	findErr   error
+	latestErr error
 }
 
 func newMockBackupRepo() *mockBackupRepo {

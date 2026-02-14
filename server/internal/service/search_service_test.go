@@ -22,10 +22,10 @@ type mockSearchRepo struct {
 	contacts  []*model.User
 	entities  []*model.Entity
 
-	searchMsgErr  error
-	searchDocErr  error
-	searchConErr  error
-	searchEntErr  error
+	searchMsgErr error
+	searchDocErr error
+	searchConErr error
+	searchEntErr error
 }
 
 func newMockSearchRepo() *mockSearchRepo {

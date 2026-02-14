@@ -313,8 +313,8 @@ func (m *mockEntityDocRepo) ListCollaborators(_ context.Context, _ uuid.UUID) ([
 func (m *mockEntityDocRepo) UpdateCollaboratorRole(_ context.Context, _, _ uuid.UUID, _ model.CollaboratorRole) error {
 	return nil
 }
-func (m *mockEntityDocRepo) AddSigner(_ context.Context, _, _ uuid.UUID) error { return nil }
-func (m *mockEntityDocRepo) RemoveSigner(_ context.Context, _, _ uuid.UUID) error       { return nil }
+func (m *mockEntityDocRepo) AddSigner(_ context.Context, _, _ uuid.UUID) error    { return nil }
+func (m *mockEntityDocRepo) RemoveSigner(_ context.Context, _, _ uuid.UUID) error { return nil }
 func (m *mockEntityDocRepo) ListSigners(_ context.Context, _ uuid.UUID) ([]*model.DocumentSigner, error) {
 	return nil, nil
 }
@@ -324,10 +324,12 @@ func (m *mockEntityDocRepo) RecordSignature(_ context.Context, _, _ uuid.UUID, _
 func (m *mockEntityDocRepo) Lock(_ context.Context, _ uuid.UUID, _ model.LockedByType) error {
 	return nil
 }
-func (m *mockEntityDocRepo) Unlock(_ context.Context, _ uuid.UUID) error { return nil }
+func (m *mockEntityDocRepo) Unlock(_ context.Context, _ uuid.UUID) error              { return nil }
 func (m *mockEntityDocRepo) AddTag(_ context.Context, _ uuid.UUID, _ string) error    { return nil }
 func (m *mockEntityDocRepo) RemoveTag(_ context.Context, _ uuid.UUID, _ string) error { return nil }
-func (m *mockEntityDocRepo) ListTags(_ context.Context, _ uuid.UUID) ([]string, error)   { return nil, nil }
+func (m *mockEntityDocRepo) ListTags(_ context.Context, _ uuid.UUID) ([]string, error) {
+	return nil, nil
+}
 func (m *mockEntityDocRepo) UpdateSignerStatus(_ context.Context, _, _ uuid.UUID, _ string) error {
 	return nil
 }

@@ -28,6 +28,8 @@ type mockChatRepo struct {
 	unpinErr            error
 	findErr             error
 	findPersonalChatErr error
+	removeMemberErr     error
+	deleteErr           error
 }
 
 func newMockChatRepo() *mockChatRepo {
@@ -120,6 +122,9 @@ func (m *mockChatRepo) AddMember(_ context.Context, chatID, userID uuid.UUID, ro
 }
 
 func (m *mockChatRepo) RemoveMember(_ context.Context, chatID, userID uuid.UUID) error {
+	if m.removeMemberErr != nil {
+		return m.removeMemberErr
+	}
 	members := m.members[chatID]
 	for i, mem := range members {
 		if mem.UserID == userID {
@@ -149,6 +154,9 @@ func (m *mockChatRepo) Update(_ context.Context, id uuid.UUID, input model.Updat
 }
 
 func (m *mockChatRepo) Delete(_ context.Context, id uuid.UUID) error {
+	if m.deleteErr != nil {
+		return m.deleteErr
+	}
 	if _, ok := m.chats[id]; !ok {
 		return apperror.NotFound("chat", id.String())
 	}

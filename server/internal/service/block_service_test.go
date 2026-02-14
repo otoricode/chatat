@@ -403,3 +403,142 @@ func TestBlockService_BatchUpdate(t *testing.T) {
 		assert.Error(t, err)
 	})
 }
+
+func TestBlockService_UpdateBlock_DocFindError(t *testing.T) {
+	svc, docRepo, _ := newTestBlockService()
+	ctx := context.Background()
+	ownerID := uuid.New()
+	doc := createTestDoc(docRepo, ownerID)
+
+	block, err := svc.AddBlock(ctx, doc.ID, ownerID, AddBlockInput{
+		Type:    model.BlockTypeParagraph,
+		Content: "Test",
+	})
+	require.NoError(t, err)
+
+	// Remove doc so FindByID fails for block.DocumentID
+	delete(docRepo.docs, doc.ID)
+	newContent := "Updated"
+	_, err = svc.UpdateBlock(ctx, block.ID, ownerID, model.UpdateBlockInput{Content: &newContent})
+	require.Error(t, err)
+}
+
+func TestBlockService_UpdateBlock_RepoError(t *testing.T) {
+	svc, docRepo, blockRepo := newTestBlockService()
+	ctx := context.Background()
+	ownerID := uuid.New()
+	doc := createTestDoc(docRepo, ownerID)
+
+	block, err := svc.AddBlock(ctx, doc.ID, ownerID, AddBlockInput{
+		Type:    model.BlockTypeParagraph,
+		Content: "Test",
+	})
+	require.NoError(t, err)
+
+	blockRepo.updateErr = assert.AnError
+	newContent := "Updated"
+	_, err = svc.UpdateBlock(ctx, block.ID, ownerID, model.UpdateBlockInput{Content: &newContent})
+	require.Error(t, err)
+	blockRepo.updateErr = nil
+}
+
+func TestBlockService_DeleteBlock_RepoError(t *testing.T) {
+	svc, docRepo, blockRepo := newTestBlockService()
+	ctx := context.Background()
+	ownerID := uuid.New()
+	doc := createTestDoc(docRepo, ownerID)
+
+	block, err := svc.AddBlock(ctx, doc.ID, ownerID, AddBlockInput{
+		Type:    model.BlockTypeParagraph,
+		Content: "Test",
+	})
+	require.NoError(t, err)
+
+	blockRepo.deleteErr = assert.AnError
+	err = svc.DeleteBlock(ctx, block.ID, ownerID)
+	require.Error(t, err)
+	blockRepo.deleteErr = nil
+}
+
+func TestBlockService_DeleteBlock_DocFindError(t *testing.T) {
+	svc, docRepo, _ := newTestBlockService()
+	ctx := context.Background()
+	ownerID := uuid.New()
+	doc := createTestDoc(docRepo, ownerID)
+
+	block, err := svc.AddBlock(ctx, doc.ID, ownerID, AddBlockInput{
+		Type:    model.BlockTypeParagraph,
+		Content: "Test",
+	})
+	require.NoError(t, err)
+
+	delete(docRepo.docs, doc.ID)
+	err = svc.DeleteBlock(ctx, block.ID, ownerID)
+	require.Error(t, err)
+}
+
+func TestBlockService_GetBlocks_ListError(t *testing.T) {
+	svc, docRepo, blockRepo := newTestBlockService()
+	ctx := context.Background()
+	ownerID := uuid.New()
+	doc := createTestDoc(docRepo, ownerID)
+
+	blockRepo.listErr = assert.AnError
+	_, err := svc.GetBlocks(ctx, doc.ID)
+	require.Error(t, err)
+	blockRepo.listErr = nil
+}
+
+func TestBlockService_ReorderBlocks_RepoError(t *testing.T) {
+	svc, docRepo, blockRepo := newTestBlockService()
+	ctx := context.Background()
+	ownerID := uuid.New()
+	doc := createTestDoc(docRepo, ownerID)
+
+	blockRepo.reorderErr = assert.AnError
+	err := svc.ReorderBlocks(ctx, doc.ID, ownerID, []uuid.UUID{uuid.New()})
+	require.Error(t, err)
+	blockRepo.reorderErr = nil
+}
+
+func TestBlockService_AddBlock_CreateError(t *testing.T) {
+	svc, docRepo, blockRepo := newTestBlockService()
+	ctx := context.Background()
+	ownerID := uuid.New()
+	doc := createTestDoc(docRepo, ownerID)
+
+	blockRepo.createErr = assert.AnError
+	_, err := svc.AddBlock(ctx, doc.ID, ownerID, AddBlockInput{
+		Type:    model.BlockTypeParagraph,
+		Content: "Test",
+	})
+	require.Error(t, err)
+	blockRepo.createErr = nil
+}
+
+func TestBlockService_MoveBlock_ListError(t *testing.T) {
+	svc, docRepo, blockRepo := newTestBlockService()
+	ctx := context.Background()
+	ownerID := uuid.New()
+	doc := createTestDoc(docRepo, ownerID)
+
+	blockRepo.listErr = assert.AnError
+	err := svc.MoveBlock(ctx, doc.ID, uuid.New(), 0)
+	require.Error(t, err)
+	blockRepo.listErr = nil
+}
+
+func TestBlockService_MoveBlock_ReorderError(t *testing.T) {
+	svc, docRepo, blockRepo := newTestBlockService()
+	ctx := context.Background()
+	ownerID := uuid.New()
+	doc := createTestDoc(docRepo, ownerID)
+
+	b1, _ := svc.AddBlock(ctx, doc.ID, ownerID, AddBlockInput{Type: model.BlockTypeParagraph, Content: "A"})
+	_, _ = svc.AddBlock(ctx, doc.ID, ownerID, AddBlockInput{Type: model.BlockTypeParagraph, Content: "B"})
+
+	blockRepo.reorderErr = assert.AnError
+	err := svc.MoveBlock(ctx, doc.ID, b1.ID, 1)
+	require.Error(t, err)
+	blockRepo.reorderErr = nil
+}
