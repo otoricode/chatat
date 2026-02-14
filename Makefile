@@ -1,4 +1,4 @@
-.PHONY: dev db-up db-down db-reset test lint fmt build clean migrate-up migrate-down migrate-create
+.PHONY: dev db-up db-down db-reset test lint fmt build clean migrate-up migrate-down migrate-create test-go test-mobile test-coverage test-report docker-build
 
 # --- Server ---
 
@@ -11,8 +11,20 @@ build:
 clean:
 	rm -rf server/bin
 
-test:
-	cd server && go test ./... -v -count=1
+test: test-go test-mobile
+
+test-go:
+	cd server && go test ./... -short -count=1 -race -cover
+
+test-mobile:
+	cd mobile && npx jest --no-coverage
+
+test-coverage:
+	cd server && go test ./... -short -count=1 -race -coverprofile=coverage.out
+	cd mobile && npx jest --coverage
+
+test-report:
+	bash scripts/test-report.sh
 
 lint:
 	cd server && golangci-lint run ./...
@@ -33,6 +45,9 @@ db-down:
 
 db-reset:
 	docker compose down -v && docker compose up -d
+
+docker-build:
+	docker build -t chatat-server:latest server/
 
 # --- Migrations ---
 
@@ -64,4 +79,4 @@ mobile-typecheck:
 
 # --- All ---
 
-check: vet lint test mobile-typecheck
+check: vet lint test mobile-typecheck mobile-lint
