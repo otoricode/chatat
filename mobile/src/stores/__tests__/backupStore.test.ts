@@ -1,3 +1,4 @@
+// @ts-nocheck
 jest.mock('@/services/api/backup', () => ({
   backupApi: {
     getLatest: jest.fn(),

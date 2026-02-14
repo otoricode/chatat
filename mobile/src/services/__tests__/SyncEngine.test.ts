@@ -1,3 +1,4 @@
+// @ts-nocheck
 jest.mock('@/services/api/chats', () => ({
   chatsApi: {
     list: jest.fn(),

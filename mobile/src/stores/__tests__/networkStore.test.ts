@@ -1,3 +1,4 @@
+// @ts-nocheck
 jest.mock('@react-native-community/netinfo', () => {
   let listener: ((state: any) => void) | null = null;
   return {

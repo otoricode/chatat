@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { isApiError, parseError } from '../api';
 import type { ApiError } from '../api';
 

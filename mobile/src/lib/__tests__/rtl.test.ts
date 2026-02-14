@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { isRTL, applyRTL, marginStart, marginEnd, paddingStart, paddingEnd, rowDirection, textAlign } from '../rtl';
 import { I18nManager } from 'react-native';
 

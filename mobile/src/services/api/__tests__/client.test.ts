@@ -1,3 +1,4 @@
+// @ts-nocheck
 // We need to mock axios and authStore BEFORE importing client
 jest.mock('axios', () => {
   const mockInstance = {

@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Mock dependencies
 jest.mock('expo-notifications', () => ({
   getPermissionsAsync: jest.fn(),

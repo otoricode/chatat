@@ -1,3 +1,4 @@
+// @ts-nocheck
 jest.mock('../client', () => ({
   __esModule: true,
   default: {

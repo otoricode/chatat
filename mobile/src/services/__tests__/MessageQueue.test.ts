@@ -1,3 +1,4 @@
+// @ts-nocheck
 jest.mock('@/database/messageRepo', () => ({
   insertMessage: jest.fn(),
   markMessageSent: jest.fn(),

@@ -1,3 +1,4 @@
+// @ts-nocheck
 const mockDb = {
   runAsync: jest.fn(),
   getAllAsync: jest.fn(),

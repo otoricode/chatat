@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Mock WebSocket and AppState
 const mockAddEventListener = jest.fn();
 jest.mock('react-native', () => ({

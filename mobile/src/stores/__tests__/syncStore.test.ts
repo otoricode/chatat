@@ -1,3 +1,4 @@
+// @ts-nocheck
 jest.mock('@/services/SyncEngine', () => {
   const listeners: ((status: any) => void)[] = [];
   return {

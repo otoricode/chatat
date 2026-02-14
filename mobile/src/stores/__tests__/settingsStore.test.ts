@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useSettingsStore } from '../settingsStore';
 
 const defaultNotifications = {

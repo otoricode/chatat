@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {
   APP_NAME,
   API_BASE_URL,

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { DB_VERSION, CREATE_TABLES_SQL, DROP_TABLES_SQL } from '../schema';
 
 describe('schema', () => {

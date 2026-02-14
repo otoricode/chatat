@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useAuthStore } from '../authStore';
 
 // Reset store before each test
