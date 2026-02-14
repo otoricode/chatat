@@ -1,0 +1,44 @@
+appId: com.otoritech.chatat
+---
+# Create Group E2E Test
+# Prerequisite: user is already logged in
+# Tests: navigate to chat → new chat → create group → enter name → verify
+
+- launchApp
+
+# Wait for main screen
+- extendedWaitUntil:
+    visible: "Chat"
+    timeout: 10000
+
+# Navigate to Chat tab
+- tapOn: "Chat"
+
+# Tap new chat button
+- tapOn:
+    id: "new-chat-button"
+
+# Select "Grup Baru"
+- tapOn: "Grup Baru"
+
+# Wait for group creation screen
+- extendedWaitUntil:
+    visible: "Buat Grup"
+    timeout: 5000
+
+# Enter group name
+- tapOn:
+    id: "group-name-input"
+- inputText: "Test Group E2E"
+
+# Confirm group creation
+- tapOn:
+    id: "create-group-button"
+
+# Wait for group chat screen
+- extendedWaitUntil:
+    visible: "Test Group E2E"
+    timeout: 5000
+
+# Verify group name is displayed
+- assertVisible: "Test Group E2E"

@@ -1,0 +1,39 @@
+appId: com.otoritech.chatat
+---
+# Auth Flow E2E Test
+# Tests: phone input → OTP send → OTP verify → main screen
+
+- launchApp:
+    clearState: true
+
+# Wait for splash/loading
+- extendedWaitUntil:
+    visible: "Masukkan Nomor Telepon"
+    timeout: 10000
+
+# Enter phone number
+- tapOn:
+    id: "phone-input"
+- inputText: "+6281200000001"
+
+# Submit phone number
+- tapOn: "Kirim Kode OTP"
+
+# Wait for OTP screen
+- assertVisible: "Masukkan Kode OTP"
+
+# Enter test OTP
+- tapOn:
+    id: "otp-input"
+- inputText: "123456"
+
+# Submit OTP
+- tapOn: "Verifikasi"
+
+# Wait for main screen (chat tab should be visible)
+- extendedWaitUntil:
+    visible: "Chat"
+    timeout: 15000
+
+# Verify we are on the main screen
+- assertVisible: "Chat"

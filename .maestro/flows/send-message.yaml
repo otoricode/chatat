@@ -1,0 +1,37 @@
+appId: com.otoritech.chatat
+---
+# Send Message E2E Test
+# Prerequisite: user is already logged in
+# Tests: navigate to chat → type message → send → verify displayed
+
+- launchApp
+
+# Wait for main screen
+- extendedWaitUntil:
+    visible: "Chat"
+    timeout: 10000
+
+# Navigate to Chat tab
+- tapOn: "Chat"
+
+# Tap on first chat in list
+- tapOn:
+    id: "chat-list-item-0"
+
+# Wait for chat screen to load
+- extendedWaitUntil:
+    visible:
+      id: "message-input"
+    timeout: 5000
+
+# Type a message
+- tapOn:
+    id: "message-input"
+- inputText: "Hello from E2E test"
+
+# Send the message
+- tapOn:
+    id: "send-button"
+
+# Verify message appears in chat
+- assertVisible: "Hello from E2E test"

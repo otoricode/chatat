@@ -1,0 +1,43 @@
+appId: com.otoritech.chatat
+---
+# Create Document E2E Test
+# Prerequisite: user is already logged in
+# Tests: navigate to documents → create doc → enter title → verify
+
+- launchApp
+
+# Wait for main screen
+- extendedWaitUntil:
+    visible: "Chat"
+    timeout: 10000
+
+# Navigate to Documents tab
+- tapOn: "Dokumen"
+
+# Wait for documents screen
+- extendedWaitUntil:
+    visible: "Buat Dokumen"
+    timeout: 5000
+
+# Tap create document
+- tapOn: "Buat Dokumen"
+
+# Wait for template selection
+- assertVisible: "Pilih Template"
+
+# Select blank template
+- tapOn: "Kosong"
+
+# Wait for editor to load
+- extendedWaitUntil:
+    visible:
+      id: "doc-title-input"
+    timeout: 5000
+
+# Enter document title
+- tapOn:
+    id: "doc-title-input"
+- inputText: "Test Document E2E"
+
+# Verify title is displayed
+- assertVisible: "Test Document E2E"
