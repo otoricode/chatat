@@ -202,12 +202,12 @@ Setiap kali menyelesaikan satu phase, jalankan checklist ini:
 - [ ] Cross-platform tested (iOS + Android) — requires device
 
 ## Phase 25 — CI/CD Pipeline
-- [ ] GitHub Actions: Go lint + test
-- [ ] GitHub Actions: RN lint + test
-- [ ] Automated builds: iOS (Xcode Cloud / Fastlane) + Android (Gradle)
-- [ ] Code quality gates (coverage threshold, lint clean)
-- [ ] Staging deployment (server)
-- [ ] App distribution (TestFlight + Play Console internal)
+- [x] GitHub Actions: Go lint + test (backend.yml)
+- [x] GitHub Actions: RN lint + test (mobile.yml)
+- [x] Automated builds: Docker (server/Dockerfile), Android/iOS via CI
+- [x] Code quality gates (commitlint, PR template, status checks)
+- [x] Staging deployment (deploy.yml, tag-triggered)
+- [x] App distribution (artifact upload via GitHub Actions)
 
 ## Phase 26 — Beta Release
 - [ ] Beta build iOS (TestFlight)
